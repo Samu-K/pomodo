@@ -1,7 +1,4 @@
-use pomodo_lib::database::{
-    self,
-    session::{self, Session, SessionActions},
-};
+use pomodo_lib::database::{self};
 
 use std::error::Error;
 
@@ -16,35 +13,7 @@ pub struct Session {
 */
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let db = database::create_database(None).await;
-    let sa = SessionActions::new(db);
-    let ex_session = Session {
-        id: 0,
-        session_length: 20,
-        finished: true,
-        category_id: Some(0),
-        task_id: None,
-    };
-    let ex_session2 = Session {
-        id: 0,
-        session_length: 20,
-        finished: true,
-        category_id: Some(1),
-        task_id: Some(0),
-    };
-
-    let ins1 = sa.add_session(ex_session).await?;
-    println!("{:?}", ins1);
-    let ins2 = sa.add_session(ex_session2).await?;
-    println!("{:?}", ins2);
-    let sessions = sa.get_sessions().await;
-    println!("{:?}", sessions);
-
-    sa.delete_session(ins1).await?;
-    sa.delete_session(ins2).await?;
-
-    let sessions = sa.get_sessions().await;
-    println!("{:?}", sessions);
+    let _db = database::create_database(None).await;
 
     Ok(())
 }

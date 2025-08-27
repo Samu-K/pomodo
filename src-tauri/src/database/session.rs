@@ -1,8 +1,9 @@
 use crate::database;
 
+use chrono::NaiveDate;
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Row};
+use sqlx::FromRow;
 use std::error::Error;
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -59,14 +60,12 @@ impl SessionActions {
         if session.task_id.is_some() {
             query = query.bind(session.task_id);
         }
-        println!("SQL to run {sql}");
 
         let res = query
             .execute(&self.db)
             .await
             .map_err(|e| format!("Failed to insert session: {e}"));
 
-        println!("{:?}", res);
         Ok(res.unwrap().last_insert_rowid())
     }
     /*
@@ -78,6 +77,54 @@ impl SessionActions {
         let sql = "SELECT * FROM sessions";
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
+            .fetch(&self.db)
+            .try_collect()
+            .await?;
+
+        Ok(cats)
+    }
+
+    pub async fn get_incomplete_sessions(&self) -> Result<Vec<Session>, Box<dyn Error>> {
+        let sql = "SELECT * FROM sessions WHERE finished = false";
+
+        let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
+            .fetch(&self.db)
+            .try_collect()
+            .await?;
+
+        Ok(cats)
+    }
+
+    pub async fn get_category_sessions(&self, cat_id: i64) -> Result<Vec<Session>, Box<dyn Error>> {
+        let sql = "SELECT * FROM sessions WHERE category_id = $1";
+
+        let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
+            .bind(cat_id)
+            .fetch(&self.db)
+            .try_collect()
+            .await?;
+
+        Ok(cats)
+    }
+
+    pub async fn get_task_sessions(&self, task_id: i64) -> Result<Vec<Session>, Box<dyn Error>> {
+        let sql = "SELECT * FROM sessions WHERE task_id = $1";
+
+        let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
+            .bind(task_id)
+            .fetch(&self.db)
+            .try_collect()
+            .await?;
+
+        Ok(cats)
+    }
+
+    // gets all sessions on given date
+    pub async fn get_date_sessions(&self, date: NaiveDate) -> Result<Vec<Session>, Box<dyn Error>> {
+        let sql = "SELECT * FROM session WHERE created_at = $1";
+
+        let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
+            .bind(date)
             .fetch(&self.db)
             .try_collect()
             .await?;
@@ -124,6 +171,39 @@ impl SessionActions {
         Ok(())
     }
 
+    // link the session to a category
+    pub async fn set_session_category(
+        &self,
+        session_id: i64,
+        task_id: i64,
+    ) -> Result<(), Box<dyn Error>> {
+        let sql = "UPDATE sessions SET task_id = $1 WHERE id = $2";
+
+        let _ = sqlx::query(sql)
+            .bind(task_id)
+            .bind(session_id)
+            .execute(&self.db)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn set_session_length(
+        &self,
+        session_id: i64,
+        len: u16,
+    ) -> Result<(), Box<dyn Error>> {
+        let sql = "UPDATE sessions SET session_length = $1 WHERE id = $2";
+
+        let _ = sqlx::query(sql)
+            .bind(len)
+            .bind(session_id)
+            .execute(&self.db)
+            .await?;
+
+        Ok(())
+    }
+
     /*
      * ########################################################################
      *                      D E L E T E
@@ -132,7 +212,7 @@ impl SessionActions {
     pub async fn delete_session(&self, session_id: i64) -> Result<(), Box<dyn Error>> {
         let sql = "DELETE FROM sessions WHERE id = $1";
 
-        let res = sqlx::query(sql).bind(session_id).execute(&self.db).await?;
+        let _res = sqlx::query(sql).bind(session_id).execute(&self.db).await?;
 
         Ok(())
     }
