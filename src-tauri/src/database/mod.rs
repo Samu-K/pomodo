@@ -1,3 +1,4 @@
+pub mod category;
 pub mod session;
 
 use sqlx::{migrate::MigrateDatabase, sqlite::SqlitePoolOptions, Pool, Sqlite};
