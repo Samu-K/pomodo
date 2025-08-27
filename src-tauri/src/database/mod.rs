@@ -1,5 +1,6 @@
 pub mod category;
 pub mod session;
+pub mod task;
 
 use sqlx::{migrate::MigrateDatabase, sqlite::SqlitePoolOptions, Pool, Sqlite};
 use std::fs::create_dir_all;
