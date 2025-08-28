@@ -1,7 +1,7 @@
 use crate::database;
 use chrono::NaiveDate;
 use futures::TryStreamExt;
-use sqlx::FromRow;
+use sqlx::{query_builder, Execute, FromRow, QueryBuilder, Sqlite};
 use std::error::Error;
 
 #[derive(serde::Deserialize, serde::Serialize, FromRow, Debug)]
@@ -37,35 +37,44 @@ impl TaskActions {
             return Err("Task needs a name and type".into());
         };
 
-        let mut sql = String::from("INSERT INTO tasks (name, task_type");
-        let mut count = 2;
+        let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new("INSERT into tasks (");
+        query_builder.push("name, task_type");
+
         if task.description.is_some() {
-            count += 1;
-            sql += ", description";
+            query_builder.push(", description");
         }
         if task.deadline.is_some() {
-            count += 1;
-            sql += ", deadline";
+            query_builder.push(", deadline");
         }
         if task.parent_id.is_some() {
-            count += 1;
-            sql += ", parent_id";
+            query_builder.push(", parent_id");
         }
         if task.repeat_period.is_some() {
-            count += 1;
-            sql += ", repeat_period";
+            query_builder.push(", repeat_period");
         }
-        sql += ") VALUES ($1";
+        query_builder.push(") VALUES (");
+        let mut sep = query_builder.separated(", ");
+        sep.push_bind(task.name);
+        sep.push_bind(task.task_type);
 
-        for i in 1..count {
-            let num = i + 1;
-            sql += format!(", ${num}").as_str();
+        if task.description.is_some() {
+            sep.push_bind(task.description);
         }
+        if task.deadline.is_some() {
+            sep.push_bind(task.deadline);
+        }
+        if task.parent_id.is_some() {
+            sep.push_bind(task.parent_id);
+        }
+        if task.repeat_period.is_some() {
+            sep.push_bind(task.repeat_period);
+        }
+        sep.push_unseparated(")");
+        let query = query_builder.build();
+        println!("Sql to use {}", query.sql());
+        let res = query.execute(&self.db).await?;
 
-        sql += ")";
-        println!("Sql to use {sql}");
-
-        Ok(20)
+        Ok(res.last_insert_rowid())
     }
     /*
      * ########################################################################
@@ -83,4 +92,10 @@ impl TaskActions {
      *                       D E L E T E
      * ########################################################################
      */
+    pub async fn delete_task(&self, task_id: i64) -> Result<(), Box<dyn Error>> {
+        let sql = "DELETE FROM tasks WHERE id = $1";
+        let _res = sqlx::query(sql).bind(task_id).execute(&self.db).await?;
+
+        Ok(())
+    }
 }
