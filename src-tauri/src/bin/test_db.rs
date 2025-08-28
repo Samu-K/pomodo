@@ -31,9 +31,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         deadline: None,
         parent_id: Some(0),
         repeat_period: Some("daily".to_string()),
+        ..Default::default()
     };
-
-    let res = ta.add_task(ex_task).await?;
 
     Ok(())
 }

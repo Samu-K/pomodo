@@ -58,13 +58,15 @@ CREATE TABLE tasks (
   -- oneshot or recurring
   task_type TEXT NOT NULL,
   -- how many focus cycles task will take
-  estimated_cycles INTEGER,
-  completed_cycles INTEGER,
+  estimated_cycles INTEGER default 0,
+  completed_cycles INTEGER default 0,
+  completed boolean NOT NULL default FALSE,
   -- when the task should be started
   deadline TIMESTAMP,
   parent_id INTEGER,
   -- daily, weekly, monthly eg
   repeat_period TEXT,
+  deleted BOOLEAN default false,
 
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

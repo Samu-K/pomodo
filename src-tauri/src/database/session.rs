@@ -6,6 +6,11 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use std::error::Error;
 
+use database::{IdReturn, NoReturn};
+
+type SessionGet = Result<Session, Box<dyn Error>>;
+type SessionGetVec = Result<Vec<Session>, Box<dyn Error>>;
+
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Session {
     pub id: i64,
@@ -28,7 +33,7 @@ impl SessionActions {
      *                      C R E A T E
      * ########################################################################
      */
-    pub async fn add_session(&self, session: Session) -> Result<i64, Box<dyn Error>> {
+    pub async fn add_session(&self, session: Session) -> IdReturn {
         if session.session_length == 0 {
             return Err("Session length must be more than 0".into());
         };
@@ -73,7 +78,7 @@ impl SessionActions {
      *                       R E A D
      * ########################################################################
      */
-    pub async fn get_sessions(&self) -> Result<Vec<Session>, Box<dyn Error>> {
+    pub async fn get_sessions(&self) -> SessionGetVec {
         let sql = "SELECT * FROM sessions";
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
@@ -84,7 +89,7 @@ impl SessionActions {
         Ok(cats)
     }
 
-    pub async fn get_incomplete_sessions(&self) -> Result<Vec<Session>, Box<dyn Error>> {
+    pub async fn get_incomplete_sessions(&self) -> SessionGetVec {
         let sql = "SELECT * FROM sessions WHERE finished = false";
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
@@ -95,7 +100,7 @@ impl SessionActions {
         Ok(cats)
     }
 
-    pub async fn get_category_sessions(&self, cat_id: i64) -> Result<Vec<Session>, Box<dyn Error>> {
+    pub async fn get_category_sessions(&self, cat_id: i64) -> SessionGetVec {
         let sql = "SELECT * FROM sessions WHERE category_id = $1";
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
@@ -107,7 +112,7 @@ impl SessionActions {
         Ok(cats)
     }
 
-    pub async fn get_task_sessions(&self, task_id: i64) -> Result<Vec<Session>, Box<dyn Error>> {
+    pub async fn get_task_sessions(&self, task_id: i64) -> SessionGetVec {
         let sql = "SELECT * FROM sessions WHERE task_id = $1";
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
@@ -120,7 +125,7 @@ impl SessionActions {
     }
 
     // gets all sessions on given date
-    pub async fn get_date_sessions(&self, date: NaiveDate) -> Result<Vec<Session>, Box<dyn Error>> {
+    pub async fn get_date_sessions(&self, date: NaiveDate) -> SessionGetVec {
         let sql = "SELECT * FROM session WHERE created_at = $1";
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
@@ -138,7 +143,7 @@ impl SessionActions {
      * ########################################################################
      */
 
-    pub async fn set_session_incomplete(&self, id: i64) -> Result<(), Box<dyn Error>> {
+    pub async fn set_session_incomplete(&self, id: i64) -> NoReturn {
         let sql = "UPDATE sessions SET finished = false WHERE id = $1";
 
         let _ = sqlx::query(sql).bind(id).execute(&self.db).await?;
@@ -146,7 +151,7 @@ impl SessionActions {
         Ok(())
     }
 
-    pub async fn set_session_complete(&self, id: i64) -> Result<(), Box<dyn Error>> {
+    pub async fn set_session_complete(&self, id: i64) -> NoReturn {
         let sql = "UPDATE sessions SET finished = true WHERE id = $1";
 
         let _ = sqlx::query(sql).bind(id).execute(&self.db).await?;
@@ -155,11 +160,7 @@ impl SessionActions {
     }
 
     // link the session to a task
-    pub async fn set_session_task(
-        &self,
-        session_id: i64,
-        task_id: i64,
-    ) -> Result<(), Box<dyn Error>> {
+    pub async fn set_session_task(&self, session_id: i64, task_id: i64) -> NoReturn {
         let sql = "UPDATE sessions SET task_id = $1 WHERE id = $2";
 
         let _ = sqlx::query(sql)
@@ -172,11 +173,7 @@ impl SessionActions {
     }
 
     // link the session to a category
-    pub async fn set_session_category(
-        &self,
-        session_id: i64,
-        task_id: i64,
-    ) -> Result<(), Box<dyn Error>> {
+    pub async fn set_session_category(&self, session_id: i64, task_id: i64) -> NoReturn {
         let sql = "UPDATE sessions SET task_id = $1 WHERE id = $2";
 
         let _ = sqlx::query(sql)
@@ -188,11 +185,7 @@ impl SessionActions {
         Ok(())
     }
 
-    pub async fn set_session_length(
-        &self,
-        session_id: i64,
-        len: u16,
-    ) -> Result<(), Box<dyn Error>> {
+    pub async fn set_session_length(&self, session_id: i64, len: u16) -> NoReturn {
         let sql = "UPDATE sessions SET session_length = $1 WHERE id = $2";
 
         let _ = sqlx::query(sql)
@@ -209,7 +202,7 @@ impl SessionActions {
      *                      D E L E T E
      * ########################################################################
      */
-    pub async fn delete_session(&self, session_id: i64) -> Result<(), Box<dyn Error>> {
+    pub async fn delete_session(&self, session_id: i64) -> NoReturn {
         let sql = "DELETE FROM sessions WHERE id = $1";
 
         let _res = sqlx::query(sql).bind(session_id).execute(&self.db).await?;

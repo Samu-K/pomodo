@@ -1,8 +1,12 @@
 use crate::database;
 use std::error::Error;
 
+use database::{IdReturn, NoReturn};
 use futures::TryStreamExt;
 use sqlx::FromRow;
+
+type CategoryGet = Result<Category, Box<dyn Error>>;
+type CategoryGetVec = Result<Vec<Category>, Box<dyn Error>>;
 
 #[derive(serde::Deserialize, serde::Serialize, FromRow, Debug)]
 pub struct Category {
@@ -25,7 +29,7 @@ impl CategoryActions {
      *                      C R E A T E
      * ########################################################################
      */
-    pub async fn add_category(&self, cat: Category) -> Result<i64, Box<dyn Error>> {
+    pub async fn add_category(&self, cat: Category) -> IdReturn {
         if cat.name.is_empty() {
             return Err("Category needs to have a name".into());
         };
@@ -55,7 +59,7 @@ impl CategoryActions {
      * ########################################################################
      */
 
-    pub async fn get_categories(&self) -> Result<Vec<Category>, Box<dyn Error>> {
+    pub async fn get_categories(&self) -> CategoryGetVec {
         let sql = "SELECT * FROM categories";
 
         let cats: Vec<Category> = sqlx::query_as::<_, Category>(sql)
@@ -65,13 +69,22 @@ impl CategoryActions {
 
         Ok(cats)
     }
+    pub async fn get_category(&self, cat_id: i64) -> CategoryGet {
+        let sql = "SELECT * FROM categories WHERE id = $1";
+        let cat = sqlx::query_as::<_, Category>(sql)
+            .bind(cat_id)
+            .fetch_one(&self.db)
+            .await?;
+
+        Ok(cat)
+    }
 
     /*
      * ########################################################################
      *                       U P D A T E
      * ########################################################################
      */
-    pub async fn set_category_name(&self, name: String, cat_id: i64) -> Result<(), Box<dyn Error>> {
+    pub async fn set_category_name(&self, name: String, cat_id: i64) -> NoReturn {
         let sql = "UPDATE categories SET name = $1 WHERE id = $2";
 
         let _res = sqlx::query(sql)
@@ -83,11 +96,7 @@ impl CategoryActions {
         Ok(())
     }
 
-    pub async fn set_category_color(
-        &self,
-        color: String,
-        cat_id: i64,
-    ) -> Result<(), Box<dyn Error>> {
+    pub async fn set_category_color(&self, color: String, cat_id: i64) -> NoReturn {
         let sql = "UPDATE categories SET color = $1 WHERE id = $2";
         let _res = sqlx::query(sql)
             .bind(color)
@@ -103,7 +112,7 @@ impl CategoryActions {
      *                       D E L E T E
      * ########################################################################
      */
-    pub async fn delete_category(&self, cat_id: i64) -> Result<(), Box<dyn Error>> {
+    pub async fn delete_category(&self, cat_id: i64) -> NoReturn {
         let sql = "DELETE FROM categories WHERE id = $1";
 
         let _res = sqlx::query(sql).bind(cat_id).execute(&self.db).await?;
