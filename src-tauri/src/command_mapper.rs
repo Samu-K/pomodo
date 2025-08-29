@@ -1,5 +1,5 @@
 use crate::database::{
-    self, category::CategoryActions, decls, session::SessionActions, settings::SettingActions,
+    category::CategoryActions, decls, session::SessionActions, settings::SettingActions,
     task::TaskActions,
 };
 
@@ -30,7 +30,7 @@ macro_rules! tauri_commands {
     $($action:ident :: $method:ident($($param:ident: $param_type:ty),*) -> $ret:ty),*) => {
         $(
             paste! {
-                #[tauri::command]
+                #[tauri::command(rename_all="snake_case")]
                 pub async fn [<$action _ $method>]<'r>(
                     state: State<'r, $state_type>,
                     $($param: $param_type),*

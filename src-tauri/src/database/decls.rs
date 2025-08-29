@@ -1,7 +1,53 @@
 use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use sqlx::{Pool, Sqlite};
-use std::error::Error;
+use std::fmt;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AppError {
+    message: String,
+}
+
+impl AppError {
+    pub fn new(msg: impl Into<String>) -> Self {
+        Self {
+            message: msg.into(),
+        }
+    }
+}
+
+impl fmt::Display for AppError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for AppError {}
+
+impl From<sqlx::Error> for AppError {
+    fn from(err: sqlx::Error) -> Self {
+        Self::new(err.to_string())
+    }
+}
+
+impl From<&str> for AppError {
+    fn from(err: &str) -> Self {
+        Self::new(err)
+    }
+}
+
+impl From<String> for AppError {
+    fn from(err: String) -> Self {
+        Self::new(err)
+    }
+}
+
+impl From<Box<dyn std::error::Error>> for AppError {
+    fn from(err: Box<dyn std::error::Error>) -> Self {
+        Self::new(err.to_string())
+    }
+}
 
 #[derive(serde::Deserialize, serde::Serialize, FromRow, Debug)]
 pub struct Category {
@@ -42,17 +88,18 @@ pub struct Setting {
     pub data_type: String,
 }
 
-pub type NoReturn = Result<(), Box<dyn Error>>;
-pub type IdReturn = Result<i64, Box<dyn Error>>;
+pub type NoReturn = Result<(), AppError>;
+pub type IdReturn = Result<i64, AppError>;
+
 pub type Db = Pool<Sqlite>;
 
-pub type CategoryGet = Result<Category, Box<dyn Error>>;
-pub type CategoryGetVec = Result<Vec<Category>, Box<dyn Error>>;
+pub type CategoryGet = Result<Category, AppError>;
+pub type CategoryGetVec = Result<Vec<Category>, AppError>;
 
-pub type TaskGet = Result<Task, Box<dyn Error>>;
-pub type TaskGetVec = Result<Vec<Task>, Box<dyn Error>>;
+pub type TaskGet = Result<Task, AppError>;
+pub type TaskGetVec = Result<Vec<Task>, AppError>;
 
-pub type SessionGet = Result<Session, Box<dyn Error>>;
-pub type SessionGetVec = Result<Vec<Session>, Box<dyn Error>>;
+pub type SessionGet = Result<Session, AppError>;
+pub type SessionGetVec = Result<Vec<Session>, AppError>;
 
-pub type SettingGetVec = Result<Vec<Setting>, Box<dyn Error>>;
+pub type SettingGetVec = Result<Vec<Setting>, AppError>;
