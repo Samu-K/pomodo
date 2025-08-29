@@ -1,27 +1,17 @@
-use crate::database;
-use std::error::Error;
+use crate::database::{
+    self,
+    decls::{Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn},
+};
 
-use database::{IdReturn, NoReturn};
 use futures::TryStreamExt;
-use sqlx::FromRow;
 
-type CategoryGet = Result<Category, Box<dyn Error>>;
-type CategoryGetVec = Result<Vec<Category>, Box<dyn Error>>;
-
-#[derive(serde::Deserialize, serde::Serialize, FromRow, Debug)]
-pub struct Category {
-    pub id: i64,
-    pub name: String,
-    pub color: Option<String>,
+pub struct CategoryActions<'a> {
+    pub db: &'a database::Db,
 }
 
-pub struct CategoryActions {
-    pub db: database::Db,
-}
-
-impl CategoryActions {
-    pub fn new(db: database::Db) -> Self {
-        CategoryActions { db }
+impl<'a> CategoryActions<'a> {
+    pub fn new(db: &'a database::Db) -> Self {
+        Self { db }
     }
 
     /*
@@ -48,7 +38,7 @@ impl CategoryActions {
             query = query.bind(cat.color);
         };
 
-        let res = query.execute(&self.db).await?;
+        let res = query.execute(self.db).await?;
 
         Ok(res.last_insert_rowid())
     }
@@ -63,7 +53,7 @@ impl CategoryActions {
         let sql = "SELECT * FROM categories";
 
         let cats: Vec<Category> = sqlx::query_as::<_, Category>(sql)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
 
@@ -73,7 +63,7 @@ impl CategoryActions {
         let sql = "SELECT * FROM categories WHERE id = $1";
         let cat = sqlx::query_as::<_, Category>(sql)
             .bind(cat_id)
-            .fetch_one(&self.db)
+            .fetch_one(self.db)
             .await?;
 
         Ok(cat)
@@ -90,7 +80,7 @@ impl CategoryActions {
         let _res = sqlx::query(sql)
             .bind(name)
             .bind(cat_id)
-            .execute(&self.db)
+            .execute(self.db)
             .await?;
 
         Ok(())
@@ -101,7 +91,7 @@ impl CategoryActions {
         let _res = sqlx::query(sql)
             .bind(color)
             .bind(cat_id)
-            .execute(&self.db)
+            .execute(self.db)
             .await?;
 
         Ok(())
@@ -115,7 +105,7 @@ impl CategoryActions {
     pub async fn delete_category(&self, cat_id: i64) -> NoReturn {
         let sql = "DELETE FROM categories WHERE id = $1";
 
-        let _res = sqlx::query(sql).bind(cat_id).execute(&self.db).await?;
+        let _res = sqlx::query(sql).bind(cat_id).execute(self.db).await?;
 
         Ok(())
     }

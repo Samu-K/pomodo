@@ -19,9 +19,9 @@ pub struct Task {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let _db = database::create_database(None).await;
-    let ta = database::task::TaskActions::new(_db);
+    let ta = database::task::TaskActions::new(&_db);
 
-    let ex_task = database::task::Task {
+    let ex_task = database::decls::Task {
         id: 0,
         name: "Test".to_string(),
         description: Some("Test desct".to_string()),

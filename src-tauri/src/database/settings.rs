@@ -1,28 +1,20 @@
-use crate::database;
+use crate::database::{
+    self,
+    decls::{Setting, SettingGetVec},
+};
 
 use futures::TryStreamExt;
-use sqlx::{FromRow, QueryBuilder, Row, Sqlite};
+use sqlx::Row;
 use std::collections::HashMap;
 use std::error::Error;
 
-type SettingGetVec = Result<Vec<Setting>, Box<dyn Error>>;
-
-#[derive(serde::Deserialize, serde::Serialize, FromRow, Debug, Default)]
-pub struct Setting {
-    pub id: String,
-    pub key: String,
-    pub value: String,
-    pub data_type: String,
-}
-
-pub struct SettingActions {
-    pub db: database::Db,
-
+pub struct SettingActions<'a> {
+    pub db: &'a database::Db,
     default_settings: HashMap<String, String>,
 }
 
-impl SettingActions {
-    pub fn new(db: database::Db) -> Self {
+impl<'a> SettingActions<'a> {
+    pub fn new(db: &'a database::Db) -> Self {
         let default_settings = HashMap::from([
             ("default_category".to_string(), "general".to_string()),
             ("focus_time".to_string(), "25".to_string()),
@@ -50,14 +42,14 @@ impl SettingActions {
     pub async fn get_setting_value(&self, key: String) -> Result<String, Box<dyn Error>> {
         let sql = "SELECT value FROM user_settings WHERE key = $1";
 
-        let res = sqlx::query(sql).bind(key).fetch_one(&self.db).await?;
+        let res = sqlx::query(sql).bind(key).fetch_one(self.db).await?;
 
         Ok(res.get(0))
     }
     pub async fn get_all_settings(&self) -> SettingGetVec {
         let sql = "SELECT * FROM user_settings";
         let settings = sqlx::query_as::<_, Setting>(sql)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
 
@@ -80,7 +72,7 @@ impl SettingActions {
         let _res = sqlx::query(&sql)
             .bind(value)
             .bind(key)
-            .execute(&self.db)
+            .execute(self.db)
             .await?;
         Ok(())
     }
@@ -94,7 +86,7 @@ impl SettingActions {
         let _res = sqlx::query(sql)
             .bind(default_value)
             .bind(key)
-            .execute(&self.db)
+            .execute(self.db)
             .await?;
 
         Ok(())
@@ -109,7 +101,7 @@ impl SettingActions {
             let _res = sqlx::query(sql)
                 .bind(value)
                 .bind(key)
-                .execute(&self.db)
+                .execute(self.db)
                 .await?;
         }
 

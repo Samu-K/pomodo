@@ -1,16 +1,13 @@
 pub mod category;
+pub mod decls;
 pub mod session;
 pub mod settings;
 pub mod task;
 
-use sqlx::{migrate::MigrateDatabase, sqlite::SqlitePoolOptions, Pool, Sqlite};
-use std::error::Error;
+use decls::Db;
+use sqlx::{migrate::MigrateDatabase, sqlite::SqlitePoolOptions, Sqlite};
 use std::fs::create_dir_all;
 use tauri::{App, Manager as _};
-
-pub type NoReturn = Result<(), Box<dyn Error>>;
-pub type IdReturn = Result<i64, Box<dyn Error>>;
-pub type Db = Pool<Sqlite>;
 
 pub async fn create_database(app: Option<&App>) -> Db {
     let mut app_dir;

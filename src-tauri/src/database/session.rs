@@ -1,31 +1,17 @@
-use crate::database;
+use crate::database::{
+    self,
+    decls::{IdReturn, NoReturn, Session, SessionGetVec},
+};
 
 use chrono::NaiveDate;
 use futures::TryStreamExt;
-use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
-use std::error::Error;
 
-use database::{IdReturn, NoReturn};
-
-type SessionGet = Result<Session, Box<dyn Error>>;
-type SessionGetVec = Result<Vec<Session>, Box<dyn Error>>;
-
-#[derive(Debug, Serialize, Deserialize, FromRow)]
-pub struct Session {
-    pub id: i64,
-    pub session_length: i64,
-    pub finished: bool,
-    pub category_id: Option<i64>,
-    pub task_id: Option<i64>,
+pub struct SessionActions<'a> {
+    pub db: &'a database::Db,
 }
 
-pub struct SessionActions {
-    pub db: database::Db,
-}
-
-impl SessionActions {
-    pub fn new(db: database::Db) -> Self {
+impl<'a> SessionActions<'a> {
+    pub fn new(db: &'a database::Db) -> Self {
         SessionActions { db }
     }
     /*
@@ -67,7 +53,7 @@ impl SessionActions {
         }
 
         let res = query
-            .execute(&self.db)
+            .execute(self.db)
             .await
             .map_err(|e| format!("Failed to insert session: {e}"));
 
@@ -82,7 +68,7 @@ impl SessionActions {
         let sql = "SELECT * FROM sessions";
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
 
@@ -93,7 +79,7 @@ impl SessionActions {
         let sql = "SELECT * FROM sessions WHERE finished = false";
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
 
@@ -105,7 +91,7 @@ impl SessionActions {
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
             .bind(cat_id)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
 
@@ -117,7 +103,7 @@ impl SessionActions {
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
             .bind(task_id)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
 
@@ -130,7 +116,7 @@ impl SessionActions {
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
             .bind(date)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
 
@@ -146,7 +132,7 @@ impl SessionActions {
     pub async fn set_session_incomplete(&self, id: i64) -> NoReturn {
         let sql = "UPDATE sessions SET finished = false WHERE id = $1";
 
-        let _ = sqlx::query(sql).bind(id).execute(&self.db).await?;
+        let _ = sqlx::query(sql).bind(id).execute(self.db).await?;
 
         Ok(())
     }
@@ -154,7 +140,7 @@ impl SessionActions {
     pub async fn set_session_complete(&self, id: i64) -> NoReturn {
         let sql = "UPDATE sessions SET finished = true WHERE id = $1";
 
-        let _ = sqlx::query(sql).bind(id).execute(&self.db).await?;
+        let _ = sqlx::query(sql).bind(id).execute(self.db).await?;
 
         Ok(())
     }
@@ -166,7 +152,7 @@ impl SessionActions {
         let _ = sqlx::query(sql)
             .bind(task_id)
             .bind(session_id)
-            .execute(&self.db)
+            .execute(self.db)
             .await?;
 
         Ok(())
@@ -179,7 +165,7 @@ impl SessionActions {
         let _ = sqlx::query(sql)
             .bind(task_id)
             .bind(session_id)
-            .execute(&self.db)
+            .execute(self.db)
             .await?;
 
         Ok(())
@@ -191,7 +177,7 @@ impl SessionActions {
         let _ = sqlx::query(sql)
             .bind(len)
             .bind(session_id)
-            .execute(&self.db)
+            .execute(self.db)
             .await?;
 
         Ok(())
@@ -205,7 +191,7 @@ impl SessionActions {
     pub async fn delete_session(&self, session_id: i64) -> NoReturn {
         let sql = "DELETE FROM sessions WHERE id = $1";
 
-        let _res = sqlx::query(sql).bind(session_id).execute(&self.db).await?;
+        let _res = sqlx::query(sql).bind(session_id).execute(self.db).await?;
 
         Ok(())
     }

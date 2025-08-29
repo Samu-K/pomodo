@@ -1,36 +1,18 @@
-use crate::database;
+use crate::database::{
+    self,
+    decls::{IdReturn, NoReturn, Task, TaskGet, TaskGetVec},
+};
 use chrono::NaiveDate;
 use futures::TryStreamExt;
-use sqlx::{FromRow, QueryBuilder, Sqlite};
+use sqlx::{QueryBuilder, Sqlite};
 use std::error::Error;
 
-use database::{IdReturn, NoReturn};
-
-type TaskGet = Result<Task, Box<dyn Error>>;
-type TaskGetVec = Result<Vec<Task>, Box<dyn Error>>;
-
-#[derive(serde::Deserialize, serde::Serialize, FromRow, Debug, Default)]
-pub struct Task {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub task_type: String,
-    pub estimated_cycles: i64,
-    pub completed_cycles: i64,
-    pub completed: Option<bool>,
-    pub deadline: Option<NaiveDate>,
-
-    pub parent_id: Option<i64>,
-    pub repeat_period: Option<String>,
-    pub deleted: bool,
+pub struct TaskActions<'a> {
+    pub db: &'a database::Db,
 }
 
-pub struct TaskActions {
-    pub db: database::Db,
-}
-
-impl TaskActions {
-    pub fn new(db: database::Db) -> Self {
+impl<'a> TaskActions<'a> {
+    pub fn new(db: &'a database::Db) -> Self {
         TaskActions { db }
     }
 
@@ -102,7 +84,7 @@ impl TaskActions {
 
         let mut query_builder: QueryBuilder<Sqlite> = Self::build_query_from_task("insert", task)?;
         let query = query_builder.build();
-        let res = query.execute(&self.db).await?;
+        let res = query.execute(self.db).await?;
 
         Ok(res.last_insert_rowid())
     }
@@ -116,7 +98,7 @@ impl TaskActions {
         let sql = "SELECT * from tasks WHERE id = $1";
         let task: Task = sqlx::query_as::<_, Task>(sql)
             .bind(task_id)
-            .fetch_one(&self.db)
+            .fetch_one(self.db)
             .await?;
 
         Ok(task)
@@ -125,7 +107,7 @@ impl TaskActions {
     pub async fn get_tasks(&self) -> TaskGetVec {
         let sql = "SELECT * from tasks";
         let tasks: Vec<Task> = sqlx::query_as::<_, Task>(sql)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
 
@@ -135,7 +117,7 @@ impl TaskActions {
     pub async fn get_oneshot_tasks(&self) -> TaskGetVec {
         let sql = "SELECT * FROM tasks WHERE Task_type = 'oneshot'";
         let tasks: Vec<Task> = sqlx::query_as::<_, Task>(sql)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
 
@@ -145,7 +127,7 @@ impl TaskActions {
     pub async fn get_recurring_tasks(&self) -> TaskGetVec {
         let sql = "SELECT * FROM tasks WHERE task_type = 'recurring'";
         let tasks: Vec<Task> = sqlx::query_as::<_, Task>(sql)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
         Ok(tasks)
@@ -156,7 +138,7 @@ impl TaskActions {
         let sql = "SELECT * from tasks WHERE deadline = $1";
         let tasks: Vec<Task> = sqlx::query_as::<_, Task>(sql)
             .bind(date)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
 
@@ -172,7 +154,7 @@ impl TaskActions {
         let tasks: Vec<Task> = sqlx::query_as::<_, Task>(sql)
             .bind(start_date)
             .bind(end_date)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
 
@@ -183,7 +165,7 @@ impl TaskActions {
         let sql = "SELECT * from tasks WHERE parent_id = $1";
         let tasks: Vec<Task> = sqlx::query_as::<_, Task>(sql)
             .bind(parent_id)
-            .fetch(&self.db)
+            .fetch(self.db)
             .try_collect()
             .await?;
         Ok(tasks)
@@ -198,7 +180,7 @@ impl TaskActions {
             );";
         let parent_task: Task = sqlx::query_as::<_, Task>(sql)
             .bind(task_id)
-            .fetch_one(&self.db)
+            .fetch_one(self.db)
             .await?;
 
         Ok(parent_task)
@@ -214,19 +196,19 @@ impl TaskActions {
     pub async fn update_task(&self, task: Task) -> NoReturn {
         let mut query_builder: QueryBuilder<Sqlite> = Self::build_query_from_task("update", task)?;
         let query = query_builder.build();
-        let _res = query.execute(&self.db).await?;
+        let _res = query.execute(self.db).await?;
         Ok(())
     }
 
     pub async fn set_task_complete(&self, task_id: i64) -> NoReturn {
         let sql = "UPDATE tasks SET completed = true WHERE id = $1";
-        let _res = sqlx::query(sql).bind(task_id).execute(&self.db).await?;
+        let _res = sqlx::query(sql).bind(task_id).execute(self.db).await?;
 
         Ok(())
     }
     pub async fn set_task_incomplete(&self, task_id: i64) -> NoReturn {
         let sql = "UPDATE tasks SET completed = false WHERE id = $1";
-        let _res = sqlx::query(sql).bind(task_id).execute(&self.db).await?;
+        let _res = sqlx::query(sql).bind(task_id).execute(self.db).await?;
 
         Ok(())
     }
@@ -238,7 +220,7 @@ impl TaskActions {
         let _res = sqlx::query(&sql)
             .bind(value)
             .bind(task_id)
-            .execute(&self.db)
+            .execute(self.db)
             .await?;
         Ok(())
     }
@@ -249,7 +231,7 @@ impl TaskActions {
         let _res = sqlx::query(&sql)
             .bind(value)
             .bind(task_id)
-            .execute(&self.db)
+            .execute(self.db)
             .await?;
         Ok(())
     }
@@ -260,7 +242,7 @@ impl TaskActions {
         let _res = sqlx::query(&sql)
             .bind(value)
             .bind(task_id)
-            .execute(&self.db)
+            .execute(self.db)
             .await?;
         Ok(())
     }
@@ -272,49 +254,49 @@ impl TaskActions {
      */
     pub async fn delete_task(&self, task_id: i64) -> NoReturn {
         let sql = "UPDATE TASKS SET deleted = true WHERE id = $1";
-        let _res = sqlx::query(sql).bind(task_id).execute(&self.db).await?;
+        let _res = sqlx::query(sql).bind(task_id).execute(self.db).await?;
 
         Ok(())
     }
     pub async fn recover_task(&self, task_id: i64) -> NoReturn {
         let sql = "UPDATE TASKS SET deleted = false WHERE id = $1";
-        let _res = sqlx::query(sql).bind(task_id).execute(&self.db).await?;
+        let _res = sqlx::query(sql).bind(task_id).execute(self.db).await?;
 
         Ok(())
     }
     pub async fn delete_subtasks(&self, task_id: i64) -> NoReturn {
         let sql = "UPDATE TASKS SET deleted = true WHERE parent_id = $1";
-        let _res = sqlx::query(sql).bind(task_id).execute(&self.db).await?;
+        let _res = sqlx::query(sql).bind(task_id).execute(self.db).await?;
 
         Ok(())
     }
     pub async fn delete_tasks_in_category(&self, category_id: i64) -> NoReturn {
         let sql = "UPDATE TASKS SET deleted = true WHERE category_id = $1";
-        let _res = sqlx::query(sql).bind(category_id).execute(&self.db).await?;
+        let _res = sqlx::query(sql).bind(category_id).execute(self.db).await?;
 
         Ok(())
     }
     pub async fn clear_all_oneshot_tasks(&self) -> NoReturn {
         let sql = "UPDATE TASKS SET deleted = true WHERE task_type = 'oneshot'";
-        let _res = sqlx::query(sql).execute(&self.db).await?;
+        let _res = sqlx::query(sql).execute(self.db).await?;
 
         Ok(())
     }
     pub async fn clear_all_tasks_for_date(&self, date: NaiveDate) -> NoReturn {
         let sql = "UPDATE TASKS SET deleted = true WHERE deadline = '$1'";
-        let _res = sqlx::query(sql).bind(date).execute(&self.db).await?;
+        let _res = sqlx::query(sql).bind(date).execute(self.db).await?;
 
         Ok(())
     }
     pub async fn clear_all_tasks_for_and_after_date(&self, date: NaiveDate) -> NoReturn {
         let sql = "UPDATE TASKS SET deleted = true WHERE deadline >= '$1'";
-        let _res = sqlx::query(sql).bind(date).execute(&self.db).await?;
+        let _res = sqlx::query(sql).bind(date).execute(self.db).await?;
 
         Ok(())
     }
     pub async fn clear_complete_tasks(&self) -> NoReturn {
         let sql = "UPDATE TASKS SET deleted = true WHERE complete = true";
-        let _res = sqlx::query(sql).execute(&self.db).await?;
+        let _res = sqlx::query(sql).execute(self.db).await?;
 
         Ok(())
     }
