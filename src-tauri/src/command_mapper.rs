@@ -1,29 +1,3 @@
-use crate::database::{
-    category::CategoryActions, decls, session::SessionActions, settings::SettingActions,
-    task::TaskActions,
-};
-
-use paste::paste;
-use tauri::State;
-
-pub struct AppState<'a> {
-    pub categories: CategoryActions<'a>,
-    pub tasks: TaskActions<'a>,
-    pub session: SessionActions<'a>,
-    pub settings: SettingActions<'a>,
-}
-
-impl<'a> AppState<'a> {
-    pub async fn new(db: &'a decls::Db) -> Self {
-        Self {
-            categories: CategoryActions::new(db),
-            tasks: TaskActions::new(db),
-            session: SessionActions::new(db),
-            settings: SettingActions::new(db),
-        }
-    }
-}
-
 macro_rules! tauri_commands {
     (
         $state_type:ty,
@@ -43,10 +17,4 @@ macro_rules! tauri_commands {
             }
         )*
     };
-}
-
-tauri_commands! {
-    AppState<'_>,
-    categories::add_category(cat: decls::Category) -> decls::IdReturn,
-    categories::get_categories() -> decls::CategoryGetVec
 }
