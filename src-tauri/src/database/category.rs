@@ -3,13 +3,11 @@ use crate::database::{
     decls::{Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn},
 };
 use futures::TryStreamExt;
-use gencmd::map_tauri_commands;
 
 pub struct CategoryActions<'a> {
     pub db: &'a database::Db,
 }
 
-#[map_tauri_commands]
 impl<'a> CategoryActions<'a> {
     pub fn new(db: &'a database::Db) -> Self {
         Self { db }

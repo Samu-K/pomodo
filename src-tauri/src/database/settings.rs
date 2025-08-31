@@ -1,6 +1,6 @@
 use crate::database::{
     self,
-    decls::{Setting, SettingGetVec},
+    decls::{NoReturn, Setting, SettingGetVec},
 };
 
 use futures::TryStreamExt;
@@ -60,11 +60,7 @@ impl<'a> SettingActions<'a> {
      *                       U P D A T E
      * ########################################################################
      */
-    pub async fn set_setting_value(
-        &self,
-        value: String,
-        key: String,
-    ) -> Result<(), Box<dyn Error>> {
+    pub async fn set_setting_value(&self, value: String, key: String) -> NoReturn {
         let mut sql = String::from("UPDATE user_settings SET ");
         sql += key.as_str();
         sql += " = $1 WHERE key = $2";
@@ -77,7 +73,7 @@ impl<'a> SettingActions<'a> {
         Ok(())
     }
 
-    pub async fn reset_default_setting(&self, key: String) -> Result<(), Box<dyn Error>> {
+    pub async fn reset_default_setting(&self, key: String) -> NoReturn {
         let default_value = self.default_settings.get(&key);
         if default_value.is_none() {
             return Err("Setting not found".into());
@@ -92,7 +88,7 @@ impl<'a> SettingActions<'a> {
         Ok(())
     }
 
-    pub async fn reset_all_settings_default(&self) -> Result<(), Box<dyn Error>> {
+    pub async fn reset_all_settings_default(&self) -> NoReturn {
         let sql = "UPDATE user_settings SET value = $1 WHERE key = $2";
 
         let setting_clone = self.default_settings.clone();
