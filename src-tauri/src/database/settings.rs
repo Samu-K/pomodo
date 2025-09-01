@@ -1,12 +1,11 @@
 use crate::database::{
     self,
-    decls::{NoReturn, Setting, SettingGetVec},
+    decls::{NoReturn, Setting, SettingGetVec, StringReturn},
 };
 
 use futures::TryStreamExt;
 use sqlx::Row;
 use std::collections::HashMap;
-use std::error::Error;
 
 pub struct SettingActions<'a> {
     pub db: &'a database::Db,
@@ -39,7 +38,7 @@ impl<'a> SettingActions<'a> {
      *                      R E A D
      * ########################################################################
      */
-    pub async fn get_setting_value(&self, key: String) -> Result<String, Box<dyn Error>> {
+    pub async fn get_setting_value(&self, key: String) -> StringReturn {
         let sql = "SELECT value FROM user_settings WHERE key = $1";
 
         let res = sqlx::query(sql).bind(key).fetch_one(self.db).await?;

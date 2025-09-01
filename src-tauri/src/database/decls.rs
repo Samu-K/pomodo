@@ -103,3 +103,4 @@ pub type SessionGet = Result<Session, AppError>;
 pub type SessionGetVec = Result<Vec<Session>, AppError>;
 
 pub type SettingGetVec = Result<Vec<Setting>, AppError>;
+pub type StringReturn = Result<String, AppError>;

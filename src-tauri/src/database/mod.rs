@@ -21,7 +21,7 @@ pub async fn create_database(app: Option<&App>) -> Db {
     };
 
     create_dir_all(&app_dir).expect("failed to create dir");
-    println!("Creating db at {:?}", app_dir);
+    println!("Creating db at {app_dir:?}");
     app_dir.push("pomodo.sqlite");
 
     Sqlite::create_database(
