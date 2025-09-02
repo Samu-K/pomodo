@@ -6,9 +6,6 @@ const emit = defineEmits<{
 }>();
 
 // Sample data
-const startTime = 8;
-const endTime = 19;
-const timeBlockAmount = endTime - startTime;
 const blockHeight = 16;
 
 interface Task {
@@ -26,7 +23,7 @@ const tasks: Array<Task> = [
 		title: "Project Review",
 		category: "Work",
 		cycles: 4,
-		startTime: "0800",
+		startTime: "08:00",
 		gradient: "from-pomodo-orange to-pomodo-red",
 	},
 	{
@@ -34,7 +31,7 @@ const tasks: Array<Task> = [
 		title: "Email Responses",
 		category: "Work",
 		cycles: 2,
-		startTime: "0945",
+		startTime: "09:45",
 		gradient: "from-pomodo-red to-pomodo-gold",
 	},
 	{
@@ -42,7 +39,7 @@ const tasks: Array<Task> = [
 		title: "Algorithm Study",
 		category: "Study",
 		cycles: 4,
-		startTime: "1100",
+		startTime: "11:00",
 		gradient: "from-pomodo-gold to-pomodo-orange",
 	},
 	{
@@ -50,15 +47,44 @@ const tasks: Array<Task> = [
 		title: "Code Review",
 		category: "Work",
 		cycles: 2,
-		startTime: "1400",
+		startTime: "14:00",
 		gradient: "from-pomodo-orange to-pomodo-red",
 	},
 ];
 
+const startTime = Math.min(
+	...tasks.map((task) => Number(task.startTime.split(":")[0])),
+);
+
+function calculateEndTime(tasks: Array<Task>): number {
+	let latest_end_time = startTime + 1;
+	let last_task: Task;
+	if (tasks.length > 1) {
+		tasks.forEach((task) => {
+			const task_start_mins =
+				Number(task.startTime.split(":")[0]) * 60 +
+				Number(task.startTime.split(":")[1]);
+			const task_end_time = task_start_mins + task.cycles * 25;
+			if (task_end_time > latest_end_time) {
+				latest_end_time = task_end_time;
+				last_task = task;
+			}
+		});
+
+		return Number(last_task.startTime.split(":")[0]);
+	} else {
+		if (tasks.length === 1) {
+		}
+	}
+}
+
+const endTime = 22;
+const timeBlockAmount = endTime - startTime;
+
 function calculateTaskPos(time: string): number {
 	const adjuster = startTime - 1;
-	const time_h = Number(time.slice(0, 2));
-	const time_m = Number(time.slice(2));
+	const time_h = Number(time.split(":")[0]);
+	const time_m = Number(time.split(":")[1]);
 
 	// percentage of hour minutes represent
 	const pos_h = (time_h - adjuster) * (blockHeight * 4);
@@ -93,7 +119,7 @@ const currentTimePosition = 200;
     <div class="flex-1 overflow-auto">
       <div class="flex h-full">
         <!-- Time Column -->
-        <div class="w-16 flex-shrink-0 border-r border-dark-border">
+        <div class="w-16 flex-col ">
           <div 
             v-for="time in timeBlockAmount+3" 
             :key="time"
@@ -122,7 +148,7 @@ const currentTimePosition = 200;
             :class="`bg-gradient-to-br ${task.gradient}`"
             :style="`top: ${calculateTaskPos(task.startTime)}px; height: ${task.cycles*25}px;`"
           >
-            <h3 class="text-white font-semibold text-sm">{{ task.title }}</h3>
+            <h3 class="text-white font-semibold text-sm">{{ `${task.title} - ${task.startTime}` }}</h3>
             <p class="text-white/80 text-xs mt-1">{{ task.cycles }} pomodoros • {{ task.category }}</p>
             <div v-if="task.cycles > 2" class="flex gap-1 mt-2">
               <div 
