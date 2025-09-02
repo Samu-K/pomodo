@@ -1,20 +1,42 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { X, Plus, Minus, Check } from 'lucide-vue-next'
+import { Check, Minus, Plus, X } from "lucide-vue-next";
+import { ref } from "vue";
 
 const emit = defineEmits<{
-  close: []
-}>()
+	close: [];
+}>();
 
 // Form data
-const categoryName = ref('')
-const selectedColor = ref('#b8744f')
-const selectedIcon = ref('💼')
-const dailyGoal = ref(4)
-const trackStatistics = ref(true)
+const categoryName = ref("");
+const selectedColor = ref("#b8744f");
+const selectedIcon = ref("💼");
+const dailyGoal = ref(4);
+const trackStatistics = ref(true);
 
-const colorOptions = ['#b8744f', '#c75450', '#d4a373', '#8b5a3c', '#ff6b6b', '#4ecdc4', '#95e1d3', '#ffd700']
-const iconOptions = ['💼', '📚', '🏠', '🎯', '🎨', '💪', '🧘', '🎵', '🚀', '⚡', '🌟', '❤️']
+const colorOptions = [
+	"#b8744f",
+	"#c75450",
+	"#d4a373",
+	"#8b5a3c",
+	"#ff6b6b",
+	"#4ecdc4",
+	"#95e1d3",
+	"#ffd700",
+];
+const iconOptions = [
+	"💼",
+	"📚",
+	"🏠",
+	"🎯",
+	"🎨",
+	"💪",
+	"🧘",
+	"🎵",
+	"🚀",
+	"⚡",
+	"🌟",
+	"❤️",
+];
 </script>
 
 <template>

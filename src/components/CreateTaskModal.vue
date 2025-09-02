@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { X, Plus, Minus, Check } from 'lucide-vue-next'
+import { Check, Minus, Plus, X } from "lucide-vue-next";
+import { ref } from "vue";
 
 const emit = defineEmits<{
-  close: []
-}>()
+	close: [];
+}>();
 
 // Form data
-const taskName = ref('')
-const selectedCategory = ref('Work')
-const estimatedPomodoros = ref(4)
-const scheduleDate = ref('')
-const isRecurring = ref(true)
-const repeatOption = ref('Daily')
-const priority = ref<'Low' | 'Medium' | 'High'>('Medium')
+const taskName = ref("");
+const selectedCategory = ref("Work");
+const estimatedPomodoros = ref(4);
+const scheduleDate = ref("");
+const isRecurring = ref(true);
+const repeatOption = ref("Daily");
+const priority = ref<"Low" | "Medium" | "High">("Medium");
 
-const categories = ['Work', 'Study', 'Personal']
-const repeatOptions = ['Daily', 'Weekdays', 'Weekly', 'Custom']
+const categories = ["Work", "Study", "Personal"];
+const repeatOptions = ["Daily", "Weekdays", "Weekly", "Custom"];
 </script>
 
 <template>

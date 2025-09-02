@@ -1,42 +1,59 @@
 <script setup lang="ts">
-import { TrendingUp, Clock, Target, CheckCircle } from 'lucide-vue-next'
+import {
+	CheckCircle,
+	Clock,
+	Settings,
+	Target,
+	TrendingUp,
+} from "lucide-vue-next";
 
 // Sample data - you'll replace with real data
 const focusTimeData = [
-  { category: 'Work', color: 'bg-pomodo-orange', time: '3h 25m', percentage: 65 },
-  { category: 'Study', color: 'bg-pomodo-red', time: '1h 15m', percentage: 25 },
-  { category: 'Personal', color: 'bg-pomodo-gold', time: '30m', percentage: 10 }
-]
+	{
+		category: "Work",
+		color: "bg-pomodo-orange",
+		time: "3h 25m",
+		percentage: 65,
+	},
+	{ category: "Study", color: "bg-pomodo-red", time: "1h 15m", percentage: 25 },
+	{
+		category: "Personal",
+		color: "bg-pomodo-gold",
+		time: "30m",
+		percentage: 10,
+	},
+];
 
 const completedTasks = [
-  { id: 1, name: 'Review project proposal', duration: '2h' },
-  { id: 2, name: 'Email responses', duration: '45m' },
-  { id: 3, name: 'Study algorithms', duration: '1h 15m' }
-]
+	{ id: 1, name: "Review project proposal", duration: "2h" },
+	{ id: 2, name: "Email responses", duration: "45m" },
+	{ id: 3, name: "Study algorithms", duration: "1h 15m" },
+];
 
-const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-const weekData = [60, 80, 65, 90, 70, 30, 45] // Heights as percentages
+const weekDays = ["M", "T", "W", "T", "F", "S", "S"];
+const weekData = [60, 80, 65, 90, 70, 30, 45]; // Heights as percentages
 
 const emit = defineEmits<{
-  'settings-click': []
-}>()
+	"settings-click": [];
+}>();
 </script>
 
 <template>
   <div class="flex flex-col h-full bg-dark-bg">
     <div class="flex-1 overflow-y-auto px-6 py-6">
-      
-      <button 
-        @click="emit('settings-click')"
-        class="absolute right-6 w-8 h-8 flex items-center justify-center text-pomodo-orange hover:bg-dark-surface rounded-lg transition-colors"
-      >
-        <Settings :size="20" />
-      </button>
+      <div class="flex items-center justify-between mb-8">
+        <!-- Header -->
+        <h1 class="text-2xl font-semibold text-pomodo-orange">
+          Today's Summary
+        </h1>
 
-      <!-- Header -->
-      <h1 class="text-2xl font-semibold text-pomodo-orange mb-8">
-        Today's Summary
-      </h1>
+        <button 
+          @click="emit('settings-click')"
+          class="-mt-2 text-pomodo-orange hover:bg-dark-surface rounded-lg transition-colors"
+        >
+          <Settings :size="20" />
+        </button>
+      </div>
 
       <!-- Focus Time Section -->
       <section class="mb-10">

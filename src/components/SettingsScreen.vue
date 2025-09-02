@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { Minus, Plus } from 'lucide-vue-next'
+import { Minus, Plus } from "lucide-vue-next";
 
 // Sample settings data - you'll connect to real state
 const timerSettings = {
-  focusDuration: 25,
-  shortBreak: 5,
-  longBreak: 15
-}
+	focusDuration: 25,
+	shortBreak: 5,
+	longBreak: 15,
+};
 
 const automationSettings = {
-  autoStartBreaks: true,
-  autoStartFocus: false
-}
+	autoStartBreaks: true,
+	autoStartFocus: false,
+};
 
 const notificationSettings = {
-  soundAlerts: true,
-  vibration: true,
-  pushNotifications: false
-}
+	soundAlerts: true,
+	vibration: true,
+	pushNotifications: false,
+};
 
-const themeOptions = ['Dark', 'Light', 'Auto']
-const accentColors = ['#b8744f', '#c75450', '#d4a373', '#4ade80']
+const themeOptions = ["Dark", "Light", "Auto"];
+const accentColors = ["#b8744f", "#c75450", "#d4a373", "#4ade80"];
 </script>
 
 <template>

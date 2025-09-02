@@ -1,41 +1,48 @@
 <script setup lang="ts">
-import { Timer, Calendar, ListTodo, BarChart3, Settings, ChevronLeft } from 'lucide-vue-next'
+import {
+	BarChart3,
+	Calendar,
+	ChevronLeft,
+	ListTodo,
+	Timer,
+} from "lucide-vue-next";
 
 interface Props {
-  showHeader?: boolean
-  headerTitle?: string
-  showBackButton?: boolean
-  showSettingsButton?: boolean
-  activeTab?: 'timer' | 'timeline' | 'tasks' | 'stats'
+	showHeader?: boolean;
+	headerTitle?: string;
+	showBackButton?: boolean;
+	showSettingsButton?: boolean;
+	activeTab?: "timer" | "timeline" | "tasks" | "stats";
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  showHeader: true,
-  headerTitle: 'Pomodo',
-  showBackButton: false,
-  showSettingsButton: true,
-  activeTab: 'timer'
-})
+withDefaults(defineProps<Props>(), {
+	showHeader: true,
+	headerTitle: "Pomodo",
+	showBackButton: false,
+	showSettingsButton: true,
+	activeTab: "timer",
+});
 
 const emit = defineEmits<{
-  'nav-click': [tab: 'timer' | 'timeline' | 'tasks' | 'stats']
-  'settings-click': []
-  'back-click': []
-}>()
+	"nav-click": [tab: "timer" | "timeline" | "tasks" | "stats"];
+	"settings-click": [];
+	"back-click": [];
+}>();
 </script>
 
 <template>
   <div class="flex flex-col h-screen bg-dark-bg">
     <!-- Header -->
-    <header v-if="showHeader" class="h-8 flex items-center justify-center relative px-6 border-dark-border">
+    <header v-if="showBackButton" class="h-12 flex items-center justify-center relative px-6 border-dark-border">
       <button 
         v-if="showBackButton"
         @click="emit('back-click')"
-        class="absolute left-6 w-8 h-8 flex items-center justify-center text-pomodo-orange hover:bg-dark-surface rounded-lg transition-colors"
+        class="absolute left-4 w-10 h-10 flex items-center justify-center text-pomodo-orange hover:bg-dark-surface rounded-lg transition-colors"
       >
-        <ChevronLeft :size="20" />
+        <ChevronLeft :size="28" />
       </button>
       
+      <!--
       <button 
         v-if="showSettingsButton"
         @click="emit('settings-click')"
@@ -43,6 +50,7 @@ const emit = defineEmits<{
       >
         <Settings :size="20" />
       </button>
+      -->
     </header>
 
     <!-- Main Content -->

@@ -1,9 +1,9 @@
-import { createApp } from 'vue'
-import './style.css' // Your Tailwind CSS imports
-import App from './App.vue'
+import { createApp } from "vue";
+import "./style.css"; // Your Tailwind CSS imports
+import App from "./App.vue";
 
 // Create and mount the Vue app
-const app = createApp(App)
+const app = createApp(App);
 
 // You can add global properties, plugins, etc. here
 // For example, if you want to use Pinia for state management:
@@ -15,11 +15,11 @@ const app = createApp(App)
 // app.use(router)
 
 // Mount the app
-app.mount('#app')
+app.mount("#app");
 
 // For Tauri, you might want to add:
 // import { invoke } from '@tauri-apps/api/tauri'
-// 
+//
 // Window configuration for Tauri
 // document.addEventListener('DOMContentLoaded', () => {
 //   // Disable context menu in production

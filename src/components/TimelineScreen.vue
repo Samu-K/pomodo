@@ -1,71 +1,89 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, Plus } from "lucide-vue-next";
 
 const emit = defineEmits<{
-  'add-task': []
-}>()
+	"add-task": [];
+}>();
 
 // Sample data
-const timeSlots = ['9:00', '10:00', '11:00', '12:00', '1:00', '2:00', '3:00', '4:00', '5:00', '6:00']
+const startTime = 8;
+const endTime = 19;
+const timeBlockAmount = endTime - startTime;
+const blockHeight = 16;
 
-const tasks = [
-  {
-    id: 1,
-    title: 'Project Review',
-    category: 'Work',
-    pomodoros: 4,
-    startTime: 0,
-    duration: 115,
-    gradient: 'from-pomodo-orange to-pomodo-red'
-  },
-  {
-    id: 2,
-    title: 'Email Responses',
-    category: 'Work',
-    pomodoros: 2,
-    startTime: 130,
-    duration: 58,
-    gradient: 'from-pomodo-red to-pomodo-gold'
-  },
-  {
-    id: 3,
-    title: 'Algorithm Study',
-    category: 'Study',
-    pomodoros: 4,
-    startTime: 256,
-    duration: 115,
-    gradient: 'from-pomodo-gold to-pomodo-orange'
-  },
-  {
-    id: 4,
-    title: 'Code Review',
-    category: 'Work',
-    pomodoros: 2,
-    startTime: 386,
-    duration: 58,
-    gradient: 'from-pomodo-orange to-pomodo-red'
-  }
-]
+interface Task {
+	id: number;
+	title: string;
+	category: string;
+	cycles: number;
+	startTime: string;
+	gradient: string;
+}
+
+const tasks: Array<Task> = [
+	{
+		id: 1,
+		title: "Project Review",
+		category: "Work",
+		cycles: 4,
+		startTime: "0800",
+		gradient: "from-pomodo-orange to-pomodo-red",
+	},
+	{
+		id: 2,
+		title: "Email Responses",
+		category: "Work",
+		cycles: 2,
+		startTime: "0945",
+		gradient: "from-pomodo-red to-pomodo-gold",
+	},
+	{
+		id: 3,
+		title: "Algorithm Study",
+		category: "Study",
+		cycles: 4,
+		startTime: "1100",
+		gradient: "from-pomodo-gold to-pomodo-orange",
+	},
+	{
+		id: 4,
+		title: "Code Review",
+		category: "Work",
+		cycles: 2,
+		startTime: "1400",
+		gradient: "from-pomodo-orange to-pomodo-red",
+	},
+];
+
+function calculateTaskPos(time: string): number {
+	const adjuster = startTime - 1;
+	const time_h = Number(time.slice(0, 2));
+	const time_m = Number(time.slice(2));
+
+	// percentage of hour minutes represent
+	const pos_h = (time_h - adjuster) * (blockHeight * 4);
+	return pos_h + (time_m / 60) * blockHeight * 4;
+}
 
 // Current time indicator position (in pixels from top)
-const currentTimePosition = 200
+const currentTimePosition = 200;
 </script>
 
 <template>
   <div class="flex flex-col h-full bg-dark-bg relative">
     <!-- Header with Date Navigation -->
-    <div class="px-6 py-4 border-b border-dark-border">
+    <div class="px-6 py-4 border-b border-dark-border mb-2">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <button class="w-8 h-8 rounded-full border border-pomodo-orange text-pomodo-orange hover:bg-pomodo-orange hover:text-white transition-colors flex items-center justify-center">
             <ChevronLeft :size="16" />
           </button>
-          <span class="text-lg font-semibold text-pomodo-orange">Today, Sep 1</span>
+          <span class="mt-3 text-lg font-semibold text-pomodo-orange">Today, Sep 1</span>
           <button class="w-8 h-8 rounded-full border border-pomodo-orange text-pomodo-orange hover:bg-pomodo-orange hover:text-white transition-colors flex items-center justify-center">
             <ChevronRight :size="16" />
           </button>
         </div>
-        <button class="text-pomodo-orange hover:text-pomodo-gold transition-colors">
+        <button class="mt-3 text-pomodo-orange hover:text-pomodo-gold transition-colors">
           <span class="text-sm">Week View</span>
         </button>
       </div>
@@ -77,11 +95,12 @@ const currentTimePosition = 200
         <!-- Time Column -->
         <div class="w-16 flex-shrink-0 border-r border-dark-border">
           <div 
-            v-for="time in timeSlots" 
+            v-for="time in timeBlockAmount+3" 
             :key="time"
-            class="h-16 flex items-center justify-center text-xs text-text-muted border-b border-dark-border"
+            :class="`h-${blockHeight} flex items-center justify-center text-xs text-text-muted border-b border-dark-border`"
           >
-            {{ time }}
+            <span v-if="startTime+time-2 < 10" class="first">{{ `0${startTime+time-2}` }}</span>
+            <span v-else >{{ `${startTime+time-2}` }}</span>
           </div>
         </div>
 
@@ -89,10 +108,10 @@ const currentTimePosition = 200
         <div class="flex-1 relative">
           <!-- Grid Lines -->
           <div 
-            v-for="(_, index) in timeSlots" 
+            v-for="(_, index) in timeBlockAmount+3" 
             :key="index"
             class="absolute w-full h-16 border-b border-dark-border" 
-            :style="`top: ${index * 64}px`"
+            :style="`top: ${index * (blockHeight*4)}px`"
           ></div>
 
           <!-- Task Blocks -->
@@ -101,13 +120,13 @@ const currentTimePosition = 200
             :key="task.id"
             class="absolute left-4 right-4 rounded-lg p-3 cursor-pointer hover:scale-[1.02] transition-transform shadow-lg"
             :class="`bg-gradient-to-br ${task.gradient}`"
-            :style="`top: ${task.startTime}px; height: ${task.duration}px;`"
+            :style="`top: ${calculateTaskPos(task.startTime)}px; height: ${task.cycles*25}px;`"
           >
             <h3 class="text-white font-semibold text-sm">{{ task.title }}</h3>
-            <p class="text-white/80 text-xs mt-1">{{ task.pomodoros }} pomodoros • {{ task.category }}</p>
-            <div v-if="task.pomodoros > 2" class="flex gap-1 mt-2">
+            <p class="text-white/80 text-xs mt-1">{{ task.cycles }} pomodoros • {{ task.category }}</p>
+            <div v-if="task.cycles > 2" class="flex gap-1 mt-2">
               <div 
-                v-for="i in task.pomodoros" 
+                v-for="i in task.cycles" 
                 :key="i"
                 class="w-2 h-2 rounded-full bg-white/30"
               ></div>
@@ -129,7 +148,7 @@ const currentTimePosition = 200
     <!-- Floating Action Button -->
     <button 
       @click="emit('add-task')"
-      class="absolute bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-pomodo-orange to-pomodo-red rounded-full text-white shadow-fab hover:shadow-fab-hover hover:scale-110 transition-all flex items-center justify-center"
+      class="absolute bottom-18 right-6 w-14 h-14 bg-gradient-to-br from-pomodo-orange to-pomodo-red rounded-full text-white shadow-fab hover:shadow-fab-hover hover:scale-110 transition-all flex items-center justify-center"
     >
       <Plus :size="24" />
     </button>

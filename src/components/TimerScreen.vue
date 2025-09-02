@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import { Play, Pause, RotateCcw, SkipForward } from 'lucide-vue-next'
+import { Pause, Play, RotateCcw, SkipForward } from "lucide-vue-next";
 
 // Props (if needed)
 interface Props {
-  initialTime?: number
-  category?: string
+	initialTime?: number;
+	category?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  initialTime: 25 * 60,
-  category: 'Work'
-})
+	initialTime: 25 * 60,
+	category: "Work",
+});
 
 // Emit events (for parent communication)
 const emit = defineEmits<{
-  play: []
-  pause: []
-  reset: []
-  skip: []
-  categoryChange: [category: string]
-}>()
+	play: [];
+	pause: [];
+	reset: [];
+	skip: [];
+	categoryChange: [category: string];
+}>();
 
 // Format time for display (you'll implement this)
 const formatTime = (seconds: number) => {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-}
+	const mins = Math.floor(seconds / 60);
+	const secs = seconds % 60;
+	return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+};
 </script>
 
 <template>
