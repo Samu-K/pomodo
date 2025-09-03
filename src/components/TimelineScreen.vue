@@ -7,6 +7,7 @@ const emit = defineEmits<{
 
 // Sample data
 const blockHeight = 16;
+const cycleLen = 25;
 
 interface Task {
 	id: number;
@@ -19,11 +20,19 @@ interface Task {
 
 const tasks: Array<Task> = [
 	{
-		id: 1,
+		id: 12,
 		title: "Project Review",
 		category: "Work",
 		cycles: 4,
 		startTime: "08:00",
+		gradient: "from-pomodo-orange to-pomodo-red",
+	},
+	{
+		id: 11,
+		title: "Meet2 ",
+		category: "Work",
+		cycles: 2,
+		startTime: "17:00",
 		gradient: "from-pomodo-orange to-pomodo-red",
 	},
 	{
@@ -57,28 +66,30 @@ const startTime = Math.min(
 );
 
 function calculateEndTime(tasks: Array<Task>): number {
-	let latest_end_time = startTime + 1;
-	let last_task: Task;
-	if (tasks.length > 1) {
+	let latest_end_time = 0;
+	let last_task = tasks[1];
+	if (tasks.length === 0) {
+		return startTime + 4;
+	} else if (tasks.length > 1) {
 		tasks.forEach((task) => {
 			const task_start_mins =
 				Number(task.startTime.split(":")[0]) * 60 +
 				Number(task.startTime.split(":")[1]);
-			const task_end_time = task_start_mins + task.cycles * 25;
+			const task_end_time = task_start_mins + task.cycles * cycleLen;
 			if (task_end_time > latest_end_time) {
 				latest_end_time = task_end_time;
 				last_task = task;
 			}
 		});
-
-		return Number(last_task.startTime.split(":")[0]);
-	} else {
-		if (tasks.length === 1) {
-		}
 	}
+	let end_time =
+		Number(last_task.startTime.split(":")[0]) +
+		Math.ceil((last_task.cycles * cycleLen) / 60);
+
+	return end_time;
 }
 
-const endTime = 22;
+const endTime = calculateEndTime(tasks);
 const timeBlockAmount = endTime - startTime;
 
 function calculateTaskPos(time: string): number {
@@ -145,8 +156,8 @@ const currentTimePosition = 200;
             v-for="task in tasks"
             :key="task.id"
             class="absolute left-4 right-4 rounded-lg p-3 cursor-pointer hover:scale-[1.02] transition-transform shadow-lg"
-            :class="`bg-gradient-to-br ${task.gradient}`"
-            :style="`top: ${calculateTaskPos(task.startTime)}px; height: ${task.cycles*25}px;`"
+            :class="`z-${99-task.cycles} bg-gradient-to-br ${task.gradient}`"
+            :style="`top: ${calculateTaskPos(task.startTime)}px; height: ${task.cycles*cycleLen}px;`"
           >
             <h3 class="text-white font-semibold text-sm">{{ `${task.title} - ${task.startTime}` }}</h3>
             <p class="text-white/80 text-xs mt-1">{{ task.cycles }} pomodoros • {{ task.category }}</p>
@@ -154,7 +165,7 @@ const currentTimePosition = 200;
               <div 
                 v-for="i in task.cycles" 
                 :key="i"
-                class="w-2 h-2 rounded-full bg-white/30"
+                class="w-2 h-2 rounded-full bg-white/30 "
               ></div>
             </div>
           </div>
