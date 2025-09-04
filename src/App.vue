@@ -7,6 +7,7 @@ import SettingsScreen from "./components/SettingsScreen.vue";
 import StatsScreen from "./components/StatsScreen.vue";
 import TimelineScreen from "./components/TimelineScreen.vue";
 import TimerScreen from "./components/TimerScreen.vue";
+import TaskDetailsModal from "./components/TaskDetailsModal.vue";
 
 // Navigation state
 const activeTab = ref<"timer" | "timeline" | "tasks" | "stats">("timer");
@@ -15,6 +16,7 @@ const showSettings = ref(false);
 // Modal states
 const showCreateTask = ref(false);
 const showCreateCategory = ref(false);
+const showTaskDetails = ref(false);
 
 // Handle navigation
 const handleNavClick = (tab: typeof activeTab.value) => {
@@ -34,6 +36,10 @@ const handleBackClick = () => {
 const handleAddTask = () => {
 	showCreateTask.value = true;
 };
+
+const openTaskDetails = () => {
+	showTaskDetails.value = true;
+};
 </script>
 
 <template>
@@ -48,7 +54,7 @@ const handleAddTask = () => {
     <!-- Dynamic Screen Rendering -->
     <SettingsScreen v-if="showSettings" />
     <TimerScreen v-else-if="activeTab === 'timer'" />
-    <TimelineScreen v-else-if="activeTab === 'timeline'" @add-task="handleAddTask" />
+    <TimelineScreen v-else-if="activeTab === 'timeline'" @add-task="handleAddTask" @task-details="openTaskDetails"/>
     <StatsScreen v-else-if="activeTab === 'stats'"
     @settings-click="handleSettingsClick"
     />
@@ -65,5 +71,9 @@ const handleAddTask = () => {
   <CreateCategoryModal 
     v-if="showCreateCategory"
     @close="showCreateCategory = false"
+  />
+  <TaskDetailsModal
+    v-if="showTaskDetails"
+    @close="showTaskDetails = false"
   />
 </template>

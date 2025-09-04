@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-vue-next";
 
 const emit = defineEmits<{
 	"add-task": [];
+	"task-details": [];
 }>();
 
 // Sample data
@@ -152,11 +153,12 @@ const currentTimePosition = 200;
           ></div>
 
           <!-- Task Blocks -->
-          <div 
+          <button 
+            @click="emit('task-details')"
             v-for="task in tasks"
             :key="task.id"
-            class="absolute left-4 right-4 rounded-lg p-3 cursor-pointer hover:scale-[1.02] transition-transform shadow-lg"
-            :class="`z-${99-task.cycles} bg-gradient-to-br ${task.gradient}`"
+            class="absolute left-4 right-4 rounded-lg p-3 cursor-pointer hover:scale-[1.02] transition-transform shadow-lg text-left"
+            :class="`bg-gradient-to-br ${task.gradient}`"
             :style="`top: ${calculateTaskPos(task.startTime)}px; height: ${task.cycles*cycleLen}px;`"
           >
             <h3 class="text-white font-semibold text-sm">{{ `${task.title} - ${task.startTime}` }}</h3>
@@ -168,7 +170,7 @@ const currentTimePosition = 200;
                 class="w-2 h-2 rounded-full bg-white/30 "
               ></div>
             </div>
-          </div>
+          </button>
 
           <!-- Current Time Indicator -->
           <div 
