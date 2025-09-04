@@ -92,6 +92,12 @@ function calculateEndTime(tasks: Array<Task>): number {
 
 const endTime = calculateEndTime(tasks);
 const timeBlockAmount = endTime - startTime;
+const currentTime = new Date();
+// Current time indicator position (in pixels from top)
+const currentTimePosition =
+	(currentTime.getHours() - startTime + 1 + currentTime.getMinutes() / 60) *
+	blockHeight *
+	4;
 
 function calculateTaskPos(time: string): number {
 	const adjuster = startTime - 1;
@@ -102,9 +108,6 @@ function calculateTaskPos(time: string): number {
 	const pos_h = (time_h - adjuster) * (blockHeight * 4);
 	return pos_h + (time_m / 60) * blockHeight * 4;
 }
-
-// Current time indicator position (in pixels from top)
-const currentTimePosition = 200;
 </script>
 
 <template>

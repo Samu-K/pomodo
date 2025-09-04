@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Check, Minus, Plus } from "lucide-vue-next";
-import { ref } from "vue";
+import { ref, watch } from "vue";
+import { VDateInput } from "vuetify/labs/VDateInput";
+import { mdiClockOutline } from "@mdi/js";
 
 const emit = defineEmits<{
 	close: [];
@@ -15,28 +16,76 @@ interface Task {
 	gradient: string;
 }
 
-const ex_date: Date = new Date(2025, 12, 10, 18);
-const exTask: Task = {
+const ex_date: Date = new Date("2024/11/1, 18:00");
+const exTask = ref<Task>({
 	id: 0,
 	title: "ExTitle",
 	category: "work",
 	cycles: 2,
 	startTime: ex_date,
 	gradient: "no-matter",
+});
+
+const categories = ["work", "school", "other"];
+const showMenu = ref(false);
+// Create reactive date and time properties
+const selectedDate = ref<Date | null>(null);
+const selectedTime = ref<string>("");
+
+// Initialize date and time from existing startTime
+const initializeDateAndTime = () => {
+	const startTime = exTask.value.startTime;
+	if (startTime) {
+		const dateTime = new Date(startTime);
+		selectedDate.value = dateTime;
+		// Format time as HH:MM for v-time-picker
+		selectedTime.value = dateTime.toTimeString().slice(0, 5);
+	}
 };
 
-const exampleRef = ref(exTask);
-const categories = ["work", "school", "other"];
+// Watch for changes in exTask.startTime to update our local values
+watch(
+	() => exTask.value.startTime,
+	() => {
+		initializeDateAndTime();
+	},
+	{ immediate: true },
+);
+
+// Watch for changes in date or time and update startTime
+watch([selectedDate, selectedTime], ([newDate, newTime]) => {
+	if (newDate && newTime) {
+		// Combine date and time into ISO string
+		const dateStr = newDate.toISOString().split("T")[0]; // YYYY-MM-DD
+		const combinedDateTime = new Date(`${dateStr}T${newTime}:00`);
+
+		exTask.value.startTime = new Date(combinedDateTime.toISOString());
+	}
+});
+
+// Helper function to format date for display
+const formatDisplayDate = (dateString: string) => {
+	return new Date(dateString).toLocaleDateString();
+};
+
+// Helper function to format time for display
+const formatDisplayTime = (dateString: string) => {
+	return new Date(dateString).toLocaleTimeString([], {
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+};
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black bg-transparent flex items-center justify-center z-50 animate-fade-in">
-    <div class="w-[80%] h-[70%] flex items-start justify-between bg-gradient-to-br from-dark-bg to-dark-surface opacity-95">
-      <div class="ml-6 mt-6 flex-col text-text-primary">
+  <div class="fixed inset-0 bg-black bg-transparent flex items-center justify-center z-50 animate-fade-in ">
+    <div class="w-[90%] h-[70%] flex items-start justify-between bg-gradient-to-br from-dark-bg to-dark-surface opacity-100 overflow-scroll pb-8">
+      <div class="mx-6 mt-6 flex-col text-text-primary w-full">
       <div class="space-y-4">
         <h2
-          class="ml-2 mt-2 text-xl font-bold "
+          class="mt-2 text-xl font-bold text-center w-full"
           > Edit task </h2>
+        <h2>Details</h2>
         <!-- Task Name -->
         <div>
           <v-text-field
@@ -55,6 +104,7 @@ const categories = ["work", "school", "other"];
           </v-select>
         </div>
 
+        <h2>Duration</h2>
         <!-- Estimated Pomodoros -->
         <div>
           <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider">
@@ -68,15 +118,35 @@ const categories = ["work", "school", "other"];
           :hideInput="false"
           :inset="false"
           :model-value="exTask.cycles"
+          class="w-[50%]"
         ></v-number-input>
 
         <!-- Schedule For -->
-        <div class="w-full flex-col items-start justify-start">
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-            Schedule For
-          </label>
-          <v-input class="flex-1 w-42 h-42" label="Date input"></v-input>
+        <div>
+          <h2>Scheduling</h2>
         </div>
+        <v-date-input
+          v-model="selectedDate"
+          label="Date"
+          color="primary"
+        />
+        <v-text-field
+          v-model="selectedTime"
+          label="Time"
+          :prepend-icon="mdiClockOutline"
+          readonly
+        >
+        <v-menu
+          :close-on-content-click="false"
+          activator="parent"
+          min-width="0"
+        >
+          <v-time-picker
+            v-model="selectedTime"
+            hide-header
+          />
+        </v-menu>
+        </v-text-field>
       </div>
 
 
