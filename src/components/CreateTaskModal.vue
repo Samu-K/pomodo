@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Check, Minus, Plus, X } from "lucide-vue-next";
 import { ref } from "vue";
+import { Task } from "../interfaces/task.ts";
 
 const emit = defineEmits<{
 	close: [];
@@ -13,7 +14,16 @@ const estimatedPomodoros = ref(4);
 const scheduleDate = ref("");
 const isRecurring = ref(true);
 const repeatOption = ref("Daily");
-const priority = ref<"Low" | "Medium" | "High">("Medium");
+
+const newTask = ref<Task>({
+	id: 0,
+	title: "",
+	category: "",
+	cycles: 0,
+	startTime: new Date(),
+	gradient: "",
+	completed: false,
+});
 
 const categories = ["Work", "Study", "Personal"];
 const repeatOptions = ["Daily", "Weekdays", "Weekly", "Custom"];
@@ -123,48 +133,6 @@ const repeatOptions = ["Daily", "Weekdays", "Weekly", "Custom"];
               {{ option }}
             </option>
           </select>
-        </div>
-
-        <!-- Priority -->
-        <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-            Priority
-          </label>
-          <div class="flex gap-2">
-            <button 
-              @click="priority = 'Low'"
-              :class="[
-                'flex-1 py-2 px-3 rounded-lg transition-all',
-                priority === 'Low' 
-                  ? 'bg-green-500/20 border border-green-500 text-green-500' 
-                  : 'bg-dark-surface border border-dark-border text-text-muted hover:border-green-500 hover:text-green-500'
-              ]"
-            >
-              Low
-            </button>
-            <button 
-              @click="priority = 'Medium'"
-              :class="[
-                'flex-1 py-2 px-3 rounded-lg transition-all',
-                priority === 'Medium' 
-                  ? 'bg-pomodo-orange/20 border border-pomodo-orange text-pomodo-orange' 
-                  : 'bg-dark-surface border border-dark-border text-text-muted hover:border-pomodo-orange hover:text-pomodo-orange'
-              ]"
-            >
-              Medium
-            </button>
-            <button 
-              @click="priority = 'High'"
-              :class="[
-                'flex-1 py-2 px-3 rounded-lg transition-all',
-                priority === 'High' 
-                  ? 'bg-pomodo-red/20 border border-pomodo-red text-pomodo-red' 
-                  : 'bg-dark-surface border border-dark-border text-text-muted hover:border-pomodo-red hover:text-pomodo-red'
-              ]"
-            >
-              High
-            </button>
-          </div>
         </div>
       </div>
 

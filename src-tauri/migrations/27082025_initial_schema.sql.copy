@@ -1,0 +1,136 @@
+-- tracks focus sessions
+CREATE TABLE sessions (
+  id INTEGER PRIMARY KEY,
+  session_length INTEGER NOT NULL,
+  finished INTEGER NOT NULL DEFAULT FALSE,
+  category_id INTEGER,
+  task_id INTEGER,
+  task_instance_id INTEGER,
+
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL,
+  FOREIGN KEY (task_instance_id) REFERENCES task_instances(id) ON DELETE SET NULL
+);
+
+-- focus categories e.g studies, work
+CREATE TABLE categories (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  color TEXT NOT NULL DEFAULT 'gray',
+
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO categories (id, name) VALUES (0,'default');
+INSERT INTO categories (id, name) VALUES (1,'work');
+
+CREATE TABLE user_settings (
+    id INTEGER PRIMARY KEY,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    data_type TEXT NOT NULL,
+    
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO user_settings (key, value, data_type, updated_at) VALUES
+('default_category', 'general', 'string', CURRENT_TIMESTAMP);
+INSERT INTO user_settings (key, value, data_type, updated_at) VALUES
+('focus_time', '25', 'number', CURRENT_TIMESTAMP);
+INSERT INTO user_settings (key, value, data_type, updated_at) VALUES
+('short_break_time', '5', 'number', CURRENT_TIMESTAMP);
+INSERT INTO user_settings (key, value, data_type, updated_at) VALUES
+('long_break_time', '15', 'number', CURRENT_TIMESTAMP);
+INSERT INTO user_settings (key, value, data_type, updated_at) VALUES
+('long_break_interval', '4', 'number', CURRENT_TIMESTAMP);
+INSERT INTO user_settings (key, value, data_type, updated_at) VALUES
+('auto_start_break', 'false', 'boolean', CURRENT_TIMESTAMP);
+INSERT INTO user_settings (key, value, data_type, updated_at) VALUES
+('auto_start_focus', 'false', 'boolean', CURRENT_TIMESTAMP);
+
+-- Final revised schema (SQLite) per your constraints:
+--   - BOOLEAN and INTEGER usage allowed per your note
+--   - No updated_at trigger
+--   - No DB validation checks (API will validate)
+
+-- Tasks: templates / series
+CREATE TABLE tasks (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    category_id INTEGER,
+    -- how many pomodoro cycles task should take
+    estiamed_cycles INTEGER,        -- duration unit: seconds (documented convention)
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP, -- ISO8601 UTC
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    is_recurring BOOLEAN DEFAULT 0,    -- 0/1 boolean (stored as INTEGER affinity in SQLite)
+    series_id INTEGER,                 -- optional grouping (helpful when splitting series)
+    FOREIGN KEY (category_id) REFERENCES categories(id)
+);
+
+-- Task details (one-to-one)
+CREATE TABLE task_details (
+    task_id INTEGER PRIMARY KEY,
+    description TEXT,
+    priority INTEGER DEFAULT 1,
+    deadline TEXT, -- ISO8601 UTC
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+);
+
+-- Recurrence rules (iCal RRULE stored)
+CREATE TABLE recurrence_rules (
+    id INTEGER PRIMARY KEY ,
+    task_id INTEGER NOT NULL,
+    rrule TEXT NOT NULL,       -- full iCal RRULE string
+    dtstart TEXT NOT NULL,     -- ISO8601 local datetime or UTC with timezone info; server should interpret using timezone column
+    until TEXT,                -- optional ISO8601 end boundary for this rule
+    timezone TEXT DEFAULT 'UTC',-- IANA timezone name (e.g. "Europe/Helsinki")
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+);
+
+-- Normalize EXDATEs (one row per excluded date)
+CREATE TABLE recurrence_exdates (
+    id INTEGER PRIMARY KEY ,
+    recurrence_rule_id INTEGER NOT NULL,
+    exdate TEXT NOT NULL, -- ISO8601 UTC
+    FOREIGN KEY (recurrence_rule_id) REFERENCES recurrence_rules(id) ON DELETE CASCADE
+);
+
+-- Normalize RDATEs (one row per extra included date)
+CREATE TABLE recurrence_rdates (
+    id INTEGER PRIMARY KEY,
+    recurrence_rule_id INTEGER NOT NULL,
+    rdate TEXT NOT NULL, -- ISO8601 UTC
+    FOREIGN KEY (recurrence_rule_id) REFERENCES recurrence_rules(id) ON DELETE CASCADE
+);
+
+-- Materialized task instances (occurrences); supports exceptions/overrides
+CREATE TABLE task_instances (
+    id INTEGER PRIMARY KEY,
+    task_id INTEGER NOT NULL,                -- series/template that produced this instance
+    recurrence_rule_id INTEGER,              -- optional FK to the rule used to generate it
+    recurrence_id TEXT,                      -- iCal RECURRENCE-ID (ISO8601) if applicable
+    instance_date TEXT NOT NULL,             -- concrete occurrence time stored in UTC ISO8601
+    status TEXT DEFAULT 'pending',           -- API will manage allowed values
+    completed_at TEXT,
+    is_exception BOOLEAN DEFAULT 0,          -- 0/1 if this row is an exception (modified occurrence)
+    override_of_instance_id INTEGER,         -- optional FK to task_instances.id if this row replaces another
+    modified_title TEXT,
+    modified_description TEXT,
+    modified_duration INTEGER,               -- seconds
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (recurrence_rule_id) REFERENCES recurrence_rules(id) ON DELETE SET NULL,
+    FOREIGN KEY (override_of_instance_id) REFERENCES task_instances(id) ON DELETE SET NULL
+);
+
+-- Indexes
+CREATE INDEX idx_task_instances_date ON task_instances(instance_date);
+CREATE INDEX idx_task_instances_task ON task_instances(task_id);
+CREATE INDEX idx_recurrence_rules_task ON recurrence_rules(task_id);
+CREATE INDEX idx_sessions_task ON sessions(task_id);
+CREATE INDEX idx_sessions_time ON sessions(start_time);
+CREATE INDEX idx_recurrence_exdates_rule ON recurrence_exdates(recurrence_rule_id);
+CREATE INDEX idx_recurrence_rdates_rule ON recurrence_rdates(recurrence_rule_id);
+
