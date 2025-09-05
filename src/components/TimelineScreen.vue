@@ -1,23 +1,16 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Plus } from "lucide-vue-next";
+import { Task } from "../interfaces/task.ts";
+import { ref, computed } from "vue";
 
 const emit = defineEmits<{
 	"add-task": [];
-	"task-details": [];
+	"task-details": [task: Task];
 }>();
 
 // Sample data
 const blockHeight = 16;
 const cycleLen = 25;
-
-interface Task {
-	id: number;
-	title: string;
-	category: string;
-	cycles: number;
-	startTime: string;
-	gradient: string;
-}
 
 const tasks: Array<Task> = [
 	{
@@ -25,46 +18,100 @@ const tasks: Array<Task> = [
 		title: "Project Review",
 		category: "Work",
 		cycles: 4,
-		startTime: "08:00",
+		startTime: new Date("2025/09/04, 18:00"),
 		gradient: "from-pomodo-orange to-pomodo-red",
+		completed: false,
+	},
+	{
+		id: 13,
+		title: "Project Review",
+		category: "Work",
+		cycles: 4,
+		startTime: new Date("2025/09/05, 18:00"),
+		gradient: "from-pomodo-orange to-pomodo-red",
+		completed: true,
+	},
+	{
+		id: 13,
+		title: "Relax",
+		category: "School",
+		cycles: 2,
+		startTime: new Date("2025/09/05, 20:30"),
+		gradient: "from-pomodo-orange to-pomodo-red",
+		completed: false,
 	},
 	{
 		id: 11,
 		title: "Meet2 ",
 		category: "Work",
 		cycles: 2,
-		startTime: "17:00",
+		startTime: new Date("2025/09/04, 17:00"),
 		gradient: "from-pomodo-orange to-pomodo-red",
+		completed: false,
 	},
 	{
 		id: 2,
 		title: "Email Responses",
 		category: "Work",
 		cycles: 2,
-		startTime: "09:45",
+		startTime: new Date("2025/09/04, 09:45"),
 		gradient: "from-pomodo-red to-pomodo-gold",
+		completed: true,
 	},
 	{
 		id: 3,
 		title: "Algorithm Study",
 		category: "Study",
 		cycles: 4,
-		startTime: "11:00",
+		startTime: new Date("2025/09/04, 11:00"),
 		gradient: "from-pomodo-gold to-pomodo-orange",
+		completed: true,
 	},
 	{
 		id: 4,
 		title: "Code Review",
 		category: "Work",
 		cycles: 2,
-		startTime: "14:00",
+		startTime: new Date("2025/04/09, 14:00"),
 		gradient: "from-pomodo-orange to-pomodo-red",
+		completed: false,
 	},
 ];
 
-const startTime = Math.min(
-	...tasks.map((task) => Number(task.startTime.split(":")[0])),
-);
+const tasksForSelectedDate = computed(() => {
+	console.log("Filtering tasks");
+	if (!selectedDate.value) return [];
+
+	const filtTasks = tasks.filter(
+		(task) =>
+			task.startTime.toDateString() === selectedDate.value.toDateString(),
+	);
+	console.log(filtTasks);
+	return filtTasks;
+});
+
+const startTime = Math.min(...tasks.map((task) => task.startTime.getHours()));
+const isDateToday = (): boolean => {
+	const res = selectedDate.value.toDateString() === new Date().toDateString();
+
+	return res;
+};
+
+const formatTime = (decimalHours: number): string => {
+	const hours = Math.floor(decimalHours);
+	const minutes = Math.round((decimalHours - hours) * 60);
+
+	if (hours === 0) return `${minutes}m`;
+	if (minutes === 0) return `${hours}h`;
+	return `${hours}h ${minutes}m`;
+};
+
+const tasksLen = (tasks: Array<Task>): string => {
+	const totalTime = tasks.reduce((total, task) => {
+		return total + (task.cycles * cycleLen) / 60;
+	}, 0);
+	return formatTime(totalTime);
+};
 
 function calculateEndTime(tasks: Array<Task>): number {
 	let latest_end_time = 0;
@@ -74,8 +121,7 @@ function calculateEndTime(tasks: Array<Task>): number {
 	} else if (tasks.length > 1) {
 		tasks.forEach((task) => {
 			const task_start_mins =
-				Number(task.startTime.split(":")[0]) * 60 +
-				Number(task.startTime.split(":")[1]);
+				task.startTime.getMinutes() + task.startTime.getHours() * 60;
 			const task_end_time = task_start_mins + task.cycles * cycleLen;
 			if (task_end_time > latest_end_time) {
 				latest_end_time = task_end_time;
@@ -84,7 +130,7 @@ function calculateEndTime(tasks: Array<Task>): number {
 		});
 	}
 	let end_time =
-		Number(last_task.startTime.split(":")[0]) +
+		last_task.startTime.getHours() +
 		Math.ceil((last_task.cycles * cycleLen) / 60);
 
 	return end_time;
@@ -92,22 +138,35 @@ function calculateEndTime(tasks: Array<Task>): number {
 
 const endTime = calculateEndTime(tasks);
 const timeBlockAmount = endTime - startTime;
-const currentTime = new Date();
+const selectedDate = ref<Date>(new Date());
+
 // Current time indicator position (in pixels from top)
 const currentTimePosition =
-	(currentTime.getHours() - startTime + 1 + currentTime.getMinutes() / 60) *
+	(selectedDate.value.getHours() -
+		startTime +
+		1 +
+		selectedDate.value.getMinutes() / 60) *
 	blockHeight *
 	4;
 
-function calculateTaskPos(time: string): number {
+function calculateTaskPos(time: Date): number {
 	const adjuster = startTime - 1;
-	const time_h = Number(time.split(":")[0]);
-	const time_m = Number(time.split(":")[1]);
 
 	// percentage of hour minutes represent
-	const pos_h = (time_h - adjuster) * (blockHeight * 4);
-	return pos_h + (time_m / 60) * blockHeight * 4;
+	const pos_h = (time.getHours() - adjuster) * (blockHeight * 4);
+	return pos_h + (time.getMinutes() / 60) * blockHeight * 4;
 }
+
+const goToPrevDate = () => {
+	const newDate = new Date();
+	newDate.setDate(selectedDate.value.getDate() - 1);
+	selectedDate.value = newDate;
+};
+const goToNextDate = () => {
+	const newDate = new Date();
+	newDate.setDate(selectedDate.value.getDate() + 1);
+	selectedDate.value = newDate;
+};
 </script>
 
 <template>
@@ -116,16 +175,33 @@ function calculateTaskPos(time: string): number {
     <div class="px-6 py-4 border-b border-dark-border mb-2">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <button class="w-8 h-8 rounded-full border border-pomodo-orange text-pomodo-orange hover:bg-pomodo-orange hover:text-white transition-colors flex items-center justify-center">
+          <button class="w-8 h-8 rounded-full border border-pomodo-orange text-pomodo-orange hover:bg-pomodo-orange hover:text-white transition-colors flex items-center justify-center"
+            @click="goToPrevDate"
+          >
             <ChevronLeft :size="16" />
           </button>
-          <span class="mt-3 text-lg font-semibold text-pomodo-orange">Today, Sep 1</span>
-          <button class="w-8 h-8 rounded-full border border-pomodo-orange text-pomodo-orange hover:bg-pomodo-orange hover:text-white transition-colors flex items-center justify-center">
+          <span class="mt-3 text-lg font-semibold text-pomodo-orange">
+            <div class="flex">
+              <p v-if="isDateToday()">
+                Today
+              </p>
+              <p
+                v-else
+              >
+                {{ selectedDate.toLocaleString().split(",")[0]}}
+              </p>
+            </div>
+          </span>
+          <button class="w-8 h-8 rounded-full border border-pomodo-orange text-pomodo-orange hover:bg-pomodo-orange hover:text-white transition-colors flex items-center justify-center"
+            @click="goToNextDate"
+          >
             <ChevronRight :size="16" />
           </button>
         </div>
-        <button class="mt-3 text-pomodo-orange hover:text-pomodo-gold transition-colors">
-          <span class="text-sm">Week View</span>
+        <button class="mt-3 text-pomodo-orange hover:text-pomodo-gold transition-colors"
+          @click='selectedDate = new Date()'
+        >
+          <span class="text-sm">Today</span>
         </button>
       </div>
     </div>
@@ -156,15 +232,19 @@ function calculateTaskPos(time: string): number {
           ></div>
 
           <!-- Task Blocks -->
-          <button 
-            @click="emit('task-details')"
-            v-for="task in tasks"
+          <button
+            @click="emit('task-details', task)"
+            :disabled="task.completed"
+            v-for="task in tasksForSelectedDate"
             :key="task.id"
             class="absolute left-4 right-4 rounded-lg p-3 cursor-pointer hover:scale-[1.02] transition-transform shadow-lg text-left"
-            :class="`bg-gradient-to-br ${task.gradient}`"
+            :class="[
+              `bg-gradient-to-br ${task.gradient}`,
+              { 'opacity-50': task.completed }
+            ]"
             :style="`top: ${calculateTaskPos(task.startTime)}px; height: ${task.cycles*cycleLen}px;`"
           >
-            <h3 class="text-white font-semibold text-sm">{{ `${task.title} - ${task.startTime}` }}</h3>
+            <h3 class="text-white font-semibold text-sm">{{ `${task.title} - ${task.startTime.toTimeString().slice(0, 5)}`}}</h3>
             <p class="text-white/80 text-xs mt-1">{{ task.cycles }} pomodoros • {{ task.category }}</p>
             <div v-if="task.cycles > 2" class="flex gap-1 mt-2">
               <div 
@@ -200,15 +280,15 @@ function calculateTaskPos(time: string): number {
       <div class="flex justify-around text-xs">
         <div class="text-center">
           <span class="text-text-muted block">Scheduled</span>
-          <span class="text-pomodo-orange font-semibold">12 tasks</span>
+          <span class="text-pomodo-orange font-semibold">{{tasksForSelectedDate.length}}</span>
         </div>
         <div class="text-center">
           <span class="text-text-muted block">Total Time</span>
-          <span class="text-pomodo-red font-semibold">7h 30m</span>
+          <span class="text-pomodo-red font-semibold">{{tasksLen(tasksForSelectedDate)}}</span>
         </div>
         <div class="text-center">
           <span class="text-text-muted block">Completed</span>
-          <span class="text-green-500 font-semibold">5/12</span>
+          <span class="text-green-500 font-semibold">{{tasksForSelectedDate.filter((task) => {return task.completed;}).length}}</span>
         </div>
       </div>
     </div>

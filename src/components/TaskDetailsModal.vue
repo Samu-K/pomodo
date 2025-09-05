@@ -1,85 +1,74 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, computed } from "vue";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { mdiClockOutline } from "@mdi/js";
+import { Task } from "../interfaces/task.ts";
 
 const emit = defineEmits<{
 	close: [];
+	"update:modelValue": [value: boolean];
 }>();
 
-interface Task {
-	id: number;
-	title: string;
-	category: string;
-	cycles: number;
-	startTime: Date;
-	gradient: string;
-}
-
-const ex_date: Date = new Date("2024/11/1, 18:00");
-const exTask = ref<Task>({
-	id: 0,
-	title: "ExTitle",
-	category: "work",
-	cycles: 2,
-	startTime: ex_date,
-	gradient: "no-matter",
-});
+const props = defineProps<{
+	selTask: Task;
+}>();
 
 const categories = ["work", "school", "other"];
-const showMenu = ref(false);
 // Create reactive date and time properties
-const selectedDate = ref<Date | null>(null);
-const selectedTime = ref<string>("");
-
-// Initialize date and time from existing startTime
-const initializeDateAndTime = () => {
-	const startTime = exTask.value.startTime;
-	if (startTime) {
-		const dateTime = new Date(startTime);
-		selectedDate.value = dateTime;
-		// Format time as HH:MM for v-time-picker
-		selectedTime.value = dateTime.toTimeString().slice(0, 5);
-	}
-};
-
-// Watch for changes in exTask.startTime to update our local values
-watch(
-	() => exTask.value.startTime,
-	() => {
-		initializeDateAndTime();
+// Computed properties for two-way binding
+const selectedDate = computed({
+	get: () => {
+		return props.selTask.startTime ? new Date(props.selTask.startTime) : null;
 	},
-	{ immediate: true },
-);
-
-// Watch for changes in date or time and update startTime
-watch([selectedDate, selectedTime], ([newDate, newTime]) => {
-	if (newDate && newTime) {
-		// Combine date and time into ISO string
-		const dateStr = newDate.toISOString().split("T")[0]; // YYYY-MM-DD
-		const combinedDateTime = new Date(`${dateStr}T${newTime}:00`);
-
-		exTask.value.startTime = new Date(combinedDateTime.toISOString());
-	}
+	set: (value: Date | null) => {
+		if (value && selectedTime.value) {
+			const dateStr = value.toLocaleString().split(",")[0];
+			const combinedDateTime = new Date(`${dateStr}, ${selectedTime.value}:00`);
+			console.log(`Setting time ${combinedDateTime}`);
+			props.selTask.startTime = combinedDateTime;
+		}
+	},
 });
 
-// Helper function to format date for display
-const formatDisplayDate = (dateString: string) => {
-	return new Date(dateString).toLocaleDateString();
+const selectedTime = computed({
+	get: () => {
+		return props.selTask.startTime
+			? new Date(props.selTask.startTime).toTimeString().slice(0, 5)
+			: "";
+	},
+	set: (value: string) => {
+		if (value && selectedDate.value) {
+			const dateStr = selectedDate.value.toLocaleString().split(",")[0];
+			const combinedDateTime = new Date(`${dateStr}, ${value}:00`);
+			console.log(`Setting time ${combinedDateTime}`);
+			props.selTask.startTime = combinedDateTime;
+		}
+	},
+});
+
+const showTimeMenu = ref(false);
+const onMinuteSelected = () => {
+	setTimeout(() => {
+		showTimeMenu.value = false;
+	}, 100);
 };
 
-// Helper function to format time for display
-const formatDisplayTime = (dateString: string) => {
-	return new Date(dateString).toLocaleTimeString([], {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+const saveAndExit = () => {
+	emit("close");
+};
+
+const exitWithoutSave = () => {
+	emit("close");
 };
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black bg-transparent flex items-center justify-center z-50 animate-fade-in ">
-    <div class="w-[90%] h-[70%] flex items-start justify-between bg-gradient-to-br from-dark-bg to-dark-surface opacity-100 overflow-scroll pb-8">
+  <button class="fixed inset-0 bg-black bg-transparent flex items-center justify-center z-50 animate-fade-in cursor-default"
+   @click="emit('close')" 
+  >
+    <div class="w-[90%] h-[70%] flex items-start justify-between bg-gradient-to-br from-dark-bg to-dark-surface opacity-100 overflow-scroll pb-8"
+      @click.stop
+    >
       <div class="mx-6 mt-6 flex-col text-text-primary w-full">
       <div class="space-y-4">
         <h2
@@ -90,7 +79,7 @@ const formatDisplayTime = (dateString: string) => {
         <div>
           <v-text-field
             label="Task name"
-            :model-value="exTask.title"
+            v-model="props.selTask.title"
           ></v-text-field>
         </div>
 
@@ -98,7 +87,7 @@ const formatDisplayTime = (dateString: string) => {
         <div>
           <v-select 
             label="Category"
-            :model-value="exTask.category"
+            v-model="props.selTask.category"
             :items="categories"
           >
           </v-select>
@@ -117,7 +106,7 @@ const formatDisplayTime = (dateString: string) => {
           controlVariant="split"
           :hideInput="false"
           :inset="false"
-          :model-value="exTask.cycles"
+          v-model="props.selTask.cycles"
           class="w-[50%]"
         ></v-number-input>
 
@@ -125,25 +114,28 @@ const formatDisplayTime = (dateString: string) => {
         <div>
           <h2>Scheduling</h2>
         </div>
+        <!-- Date -->
         <v-date-input
           v-model="selectedDate"
-          label="Date"
           color="primary"
         />
+        <!-- Time -->
         <v-text-field
           v-model="selectedTime"
           label="Time"
           :prepend-icon="mdiClockOutline"
-          readonly
         >
         <v-menu
+          v-model="showTimeMenu"
           :close-on-content-click="false"
           activator="parent"
           min-width="0"
         >
           <v-time-picker
             v-model="selectedTime"
+            format="24hr"
             hide-header
+            @update:minute="onMinuteSelected"
           />
         </v-menu>
         </v-text-field>
@@ -152,16 +144,19 @@ const formatDisplayTime = (dateString: string) => {
 
       <div class="flex gap-3 mt-8 ">
         <button 
-          @click="emit('close')"
+          @click="exitWithoutSave"
           class="flex-1 py-2 bg-dark-surface border border-dark-border rounded-lg text-text-secondary font-semibold hover:bg-dark-border transition-colors"
         >
           Close 
         </button>
-        <button class="flex-1 py-2 bg-gradient-to-r from-pomodo-orange to-pomodo-red rounded-lg text-white font-semibold hover:opacity-90 transition-opacity">
+        <button 
+            class="flex-1 py-2 bg-gradient-to-r from-pomodo-orange to-pomodo-red rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
+            @click="saveAndExit"
+        >
           Save  
         </button>
       </div>
       </div>
     </div>
-  </div> 
+  </button> 
 </template>

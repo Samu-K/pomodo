@@ -8,6 +8,7 @@ import StatsScreen from "./components/StatsScreen.vue";
 import TimelineScreen from "./components/TimelineScreen.vue";
 import TimerScreen from "./components/TimerScreen.vue";
 import TaskDetailsModal from "./components/TaskDetailsModal.vue";
+import { Task } from "./interfaces/task.ts";
 
 // Navigation state
 const activeTab = ref<"timer" | "timeline" | "tasks" | "stats">("timer");
@@ -17,6 +18,15 @@ const showSettings = ref(false);
 const showCreateTask = ref(false);
 const showCreateCategory = ref(false);
 const showTaskDetails = ref(false);
+const selectedTask = ref<Task>({
+	id: 0,
+	title: "",
+	category: "",
+	cycles: 0,
+	startTime: new Date(),
+	gradient: "",
+	completed: false,
+});
 
 // Handle navigation
 const handleNavClick = (tab: typeof activeTab.value) => {
@@ -37,8 +47,9 @@ const handleAddTask = () => {
 	showCreateTask.value = true;
 };
 
-const openTaskDetails = () => {
+const openTaskDetails = (task: Task) => {
 	showTaskDetails.value = true;
+	selectedTask.value = task;
 };
 </script>
 
@@ -74,6 +85,7 @@ const openTaskDetails = () => {
   />
   <TaskDetailsModal
     v-if="showTaskDetails"
+    :selTask="selectedTask"
     @close="showTaskDetails = false"
   />
 </template>
