@@ -1,14 +1,17 @@
 pub mod database;
 
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
 use paste::paste;
+use std::error::Error;
 use tauri::State;
 
 use crate::database::{
     category::CategoryActions,
     decls::{
-        self, Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, Session, SessionGetVec,
-        SettingGetVec, StringReturn, Task, TaskGet, TaskGetVec,
+        self, Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, RecurrenceExdate,
+        RecurrenceExdateGetVec, RecurrenceRdate, RecurrenceRdateGetVec, RecurrenceRule,
+        RecurrenceRuleGetVec, Session, SessionGetVec, SettingGetVec, StringReturn, Task, TaskGet,
+        TaskGetVec,
     },
     session::SessionActions,
     settings::SettingActions,
@@ -17,7 +20,7 @@ use crate::database::{
 
 pub struct AppState<'a> {
     pub categories: CategoryActions<'a>,
-    pub tasks: TaskActions<'a>,
+    pub task: TaskActions<'a>,
     pub session: SessionActions<'a>,
     pub settings: SettingActions<'a>,
 }
@@ -26,7 +29,7 @@ impl<'a> AppState<'a> {
     pub async fn new(db: &'a decls::Db) -> Self {
         Self {
             categories: CategoryActions::new(db),
-            tasks: TaskActions::new(db),
+            task: TaskActions::new(db),
             session: SessionActions::new(db),
             settings: SettingActions::new(db),
         }
@@ -79,29 +82,50 @@ tauri_commands! {
     settings::set_setting_value(value: String, key: String) -> NoReturn,
     settings::reset_default_setting(key: String) -> NoReturn,
     settings::reset_all_settings_default() -> NoReturn,
-    tasks::add_task(task: Task) -> IdReturn,
-    tasks::get_task_by_id(task_id: i64) -> TaskGet,
-    tasks::get_tasks() -> TaskGetVec,
-    tasks::get_oneshot_tasks() -> TaskGetVec,
-    tasks::get_recurring_tasks() -> TaskGetVec,
-    tasks::get_date_tasks(date: NaiveDate) -> TaskGetVec,
-    tasks::get_date_range_tasks(start_date: NaiveDate, end_date: NaiveDate) -> TaskGetVec,
-    tasks::get_subtasks(parent_id: i64) -> TaskGetVec,
-    tasks::get_parent_task(task_id: i64) -> TaskGet,
-    tasks::update_task(task: Task) -> NoReturn,
-    tasks::set_task_complete(task_id: i64) -> NoReturn,
-    tasks::set_task_incomplete(task_id: i64) -> NoReturn,
-    tasks::update_task_string(task_id: i64, field: &str, value: String) -> NoReturn,
-    tasks::update_task_numerical(task_id: i64, field: &str, value: i64) -> NoReturn,
-    tasks::update_task_boolean(task_id: i64, field: &str, value: bool) -> NoReturn,
-    tasks::delete_task(task_id: i64) -> NoReturn,
-    tasks::recover_task(task_id: i64) -> NoReturn,
-    tasks::delete_subtasks(task_id: i64) -> NoReturn,
-    tasks::delete_tasks_in_category(category_id: i64) -> NoReturn,
-    tasks::clear_all_oneshot_tasks() -> NoReturn,
-    tasks::clear_all_tasks_for_date(date: NaiveDate) -> NoReturn,
-    tasks::clear_all_tasks_for_and_after_date(date: NaiveDate) -> NoReturn,
-    tasks::clear_complete_tasks() -> NoReturn
+    task::add_task(task: Task) -> IdReturn,
+    task::get_task_by_id(task_id: i64) -> TaskGet,
+    task::get_tasks() -> TaskGetVec,
+    task::get_oneshot_tasks() -> TaskGetVec,
+    task::get_recurring_tasks() -> TaskGetVec,
+    task::get_date_tasks(date: NaiveDate) -> TaskGetVec,
+    task::get_date_range_tasks(start_date: NaiveDate, end_date: NaiveDate) -> TaskGetVec,
+    task::update_task(task: Task) -> NoReturn,
+    task::set_task_complete(task_id: i64) -> NoReturn,
+    task::set_task_incomplete(task_id: i64) -> NoReturn,
+    task::update_task_string(task_id: i64, field: &str, value: String) -> NoReturn,
+    task::update_task_numerical(task_id: i64, field: &str, value: i64) -> NoReturn,
+    task::update_task_boolean(task_id:  i64, field: &str, value: bool) -> NoReturn,
+    task::delete_task( task_id: i64) -> NoReturn,
+    task::delete_tasks_in_category( category_id: i64) -> NoReturn,
+    task::clear_all_oneshot_tasks() -> NoReturn,
+    task::clear_all_tasks_for_date( date: NaiveDate) -> NoReturn,
+    task::clear_all_tasks_for_and_after_date( date: NaiveDate) -> NoReturn,
+    task::clear_complete_tasks() -> NoReturn,
+    task::add_rule(
+        task_id: i64,
+        rrule: String,
+        dtstart: NaiveDateTime,
+        until: Option<NaiveDateTime>,
+        timezone: Option<String>
+    ) -> IdReturn,
+    task::update_rule(
+        rule_id: i64,
+        rrule: Option<String>,
+        dtstart: Option<NaiveDateTime>,
+        until: Option<NaiveDateTime>,
+        timezone: Option<String>
+    ) -> NoReturn,
+    task::get_rules_for_task(task_id: i64) -> RecurrenceRuleGetVec,
+    task::add_exdate(
+        recurrence_rule_id: i64,
+        exdate: NaiveDateTime
+    ) -> IdReturn,
+    task::add_rdate(
+        recurrence_rule_id: i64,
+        rdate: NaiveDateTime
+    ) -> IdReturn,
+    task::get_exdates_for_rule(recurrence_rule_id: i64) -> RecurrenceExdateGetVec,
+    task::get_rdates_for_rule(recurrence_rule_id: i64) -> RecurrenceRdateGetVec
 }
 
 pub fn run() {
@@ -131,29 +155,32 @@ pub fn run() {
             settings_set_setting_value,
             settings_reset_default_setting,
             settings_reset_all_settings_default,
-            tasks_add_task,
-            tasks_get_task_by_id,
-            tasks_get_tasks,
-            tasks_get_oneshot_tasks,
-            tasks_get_recurring_tasks,
-            tasks_get_date_tasks,
-            tasks_get_date_range_tasks,
-            tasks_get_subtasks,
-            tasks_get_parent_task,
-            tasks_update_task,
-            tasks_set_task_complete,
-            tasks_set_task_incomplete,
-            tasks_update_task_string,
-            tasks_update_task_numerical,
-            tasks_update_task_boolean,
-            tasks_delete_task,
-            tasks_recover_task,
-            tasks_delete_subtasks,
-            tasks_delete_tasks_in_category,
-            tasks_clear_all_oneshot_tasks,
-            tasks_clear_all_tasks_for_date,
-            tasks_clear_all_tasks_for_and_after_date,
-            tasks_clear_complete_tasks
+            task_add_task,
+            task_get_task_by_id,
+            task_get_tasks,
+            task_get_oneshot_tasks,
+            task_get_recurring_tasks,
+            task_get_date_tasks,
+            task_get_date_range_tasks,
+            task_update_task,
+            task_set_task_complete,
+            task_set_task_incomplete,
+            task_update_task_string,
+            task_update_task_numerical,
+            task_update_task_boolean,
+            task_delete_task,
+            task_delete_tasks_in_category,
+            task_clear_all_oneshot_tasks,
+            task_clear_all_tasks_for_date,
+            task_clear_all_tasks_for_and_after_date,
+            task_clear_complete_tasks,
+            task_add_rule,
+            task_update_rule,
+            task_get_rules_for_task,
+            task_add_exdate,
+            task_add_rdate,
+            task_get_exdates_for_rule,
+            task_get_rdates_for_rule
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

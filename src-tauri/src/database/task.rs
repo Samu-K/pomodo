@@ -248,14 +248,6 @@ impl<'a> TaskActions<'a> {
         Ok(tasks)
     }
 
-    pub async fn get_subtasks(&self, _parent_id: i64) -> TaskGetVec {
-        Err("subtasks/parent_id not supported; add parent_id to tasks if required".into())
-    }
-
-    pub async fn get_parent_task(&self, _task_id: i64) -> TaskGet {
-        Err("parent lookup not supported; add parent_id to tasks if required".into())
-    }
-
     /*
      * ########################################################################
      *                       UPDATE
@@ -430,7 +422,7 @@ impl<'a> TaskActions<'a> {
      */
 
     /// A: Count sessions for a given task_id
-    pub async fn count_sessions_for_task(&self, task_id: i64) -> Result<i64, Box<dyn Error>> {
+    pub async fn count_sessions_for_task(&self, task_id: i64) -> IdReturn {
         let sql = "SELECT COUNT(1) as cnt FROM sessions WHERE task_id = $1";
         let row = sqlx::query(sql).bind(task_id).fetch_one(self.db).await?;
         let cnt: i64 = row.try_get("cnt")?;
@@ -450,7 +442,7 @@ impl<'a> TaskActions<'a> {
         dtstart: NaiveDateTime,
         until: Option<NaiveDateTime>,
         timezone: Option<String>,
-    ) -> Result<i64, Box<dyn Error>> {
+    ) -> IdReturn {
         let sql = "INSERT INTO recurrence_rules (task_id, rrule, dtstart, until, timezone) VALUES ($1, $2, $3, $4, $5)";
         let res = sqlx::query(sql)
             .bind(task_id)
@@ -514,11 +506,7 @@ impl<'a> TaskActions<'a> {
         Ok(rules)
     }
 
-    pub async fn add_exdate(
-        &self,
-        recurrence_rule_id: i64,
-        exdate: NaiveDateTime,
-    ) -> Result<i64, Box<dyn Error>> {
+    pub async fn add_exdate(&self, recurrence_rule_id: i64, exdate: NaiveDateTime) -> IdReturn {
         let sql = "INSERT INTO recurrence_exdates (recurrence_rule_id, exdate) VALUES ($1, $2)";
         let res = sqlx::query(sql)
             .bind(recurrence_rule_id)
@@ -528,11 +516,7 @@ impl<'a> TaskActions<'a> {
         Ok(res.last_insert_rowid())
     }
 
-    pub async fn add_rdate(
-        &self,
-        recurrence_rule_id: i64,
-        rdate: NaiveDateTime,
-    ) -> Result<i64, Box<dyn Error>> {
+    pub async fn add_rdate(&self, recurrence_rule_id: i64, rdate: NaiveDateTime) -> IdReturn {
         let sql = "INSERT INTO recurrence_rdates (recurrence_rule_id, rdate) VALUES ($1, $2)";
         let res = sqlx::query(sql)
             .bind(recurrence_rule_id)
