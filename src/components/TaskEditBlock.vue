@@ -1,69 +1,20 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { Task } from "../interfaces/task.ts";
-import { VDateInput } from "vuetify/labs/VDateInput";
 import { mdiClockOutline } from "@mdi/js";
+import { computed, ref } from "vue";
+import { VDateInput } from "vuetify/labs/VDateInput";
+import {
+	customRecurranceOpts,
+	days,
+	monthlyCustomTypes,
+	recurranceOpts,
+} from "../defines/task_defines.ts";
+import { Task } from "../interfaces/task.ts";
 
 const props = defineProps<{
 	selTask: Task;
 }>();
 
-interface Day {
-	id: string;
-	label: string;
-}
-
-interface CustomRecurrance {
-	repeat_every_x: number;
-	repeat_type: string;
-
-	repeat_on_days: Array<string>;
-	repeat_monthly_type: string | undefined;
-
-	repeat_until_type: string;
-	repeat_until_date: Date | undefined;
-	repeat_until_times: number | undefined;
-}
-
-// Array of days to be rendered.
-// Finnish days: M(aanantai), T(iistai), K(eskiviikko), T(orstai), P(erjantai), L(auantai), S(unnuntai)
-const days: Day[] = [
-	{ id: "sunday", label: "S" },
-	{ id: "monday", label: "M" },
-	{ id: "tuesday", label: "T" },
-	{ id: "wednesday", label: "W" },
-	{ id: "thursday", label: "T" },
-	{ id: "friday", label: "F" },
-	{ id: "saturday", label: "S" },
-];
-
-const recurranceOpts = [
-	"No repeat",
-	"Daily",
-	"Weekly",
-	"Monthly",
-	"Yearly",
-	"Weekdays",
-	"Custom",
-];
-const monthlyCustomTypes = [
-	"This day each month",
-	"first weekday of each month",
-];
-const customRecurranceOpts = ["day", "week", "month", "year"];
 const categories = ["work", "study", "personal"];
-
-const newCustomRecurrance = ref<CustomRecurrance>({
-	repeat_every_x: 1,
-	repeat_type: "week",
-
-	repeat_on_days: [days[props.selTask.startTime.getDay()].id],
-	repeat_monthly_type: monthlyCustomTypes[0],
-
-	repeat_until_type: "one",
-	repeat_until_date: undefined,
-	repeat_until_times: 1,
-});
 
 const recurranceMode = ref(recurranceOpts[0]);
 
@@ -73,7 +24,7 @@ const recurranceMode = ref(recurranceOpts[0]);
  * @returns boolean
  */
 const isSelected = (dayId: string): boolean => {
-	return newCustomRecurrance.value.repeat_on_days.includes(dayId);
+	return props.selTask.recurrance.repeat_on_days.includes(dayId);
 };
 
 /**
@@ -81,16 +32,16 @@ const isSelected = (dayId: string): boolean => {
  * @param dayId - The unique identifier for the day to toggle.
  */
 const toggleDay = (dayId: string): void => {
-	const index = newCustomRecurrance.value.repeat_on_days.indexOf(dayId);
+	const index = props.selTask.recurrance.repeat_on_days.indexOf(dayId);
 	if (index === -1) {
 		// If not selected, add it to the array
-		newCustomRecurrance.value.repeat_on_days.push(dayId);
+		props.selTask.recurrance.repeat_on_days.push(dayId);
 	} else {
 		// If already selected, remove it
-		newCustomRecurrance.value.repeat_on_days.splice(index, 1);
+		props.selTask.recurrance.repeat_on_days.splice(index, 1);
 	}
-	if (newCustomRecurrance.value.repeat_on_days.length === 0) {
-		newCustomRecurrance.value.repeat_on_days.push(
+	if (props.selTask.recurrance.repeat_on_days.length === 0) {
+		props.selTask.recurrance.repeat_on_days.push(
 			days[props.selTask.startTime.getDay()].id,
 		);
 	}
@@ -231,17 +182,17 @@ const onMinuteSelected = () => {
                 label=""
                 :hideInput="false"
                 :inset="false"
-                v-model="newCustomRecurrance.repeat_every_x"
+                v-model="props.selTask.recurrance.repeat_every_x"
                 :min="1"
               ></v-number-input>
               <v-select 
-                v-model="newCustomRecurrance.repeat_type"
+                v-model="props.selTask.recurrance.repeat_type"
                 :items="customRecurranceOpts"
               >
               </v-select>
             </div>
             <div
-              v-if="newCustomRecurrance.repeat_type === 'week'"
+              v-if="props.selTask.recurrance.repeat_type === 'week'"
             >
               <div class="rounded-lg">
                   
@@ -269,10 +220,10 @@ const onMinuteSelected = () => {
             </div>
       
             <div
-              v-else-if="newCustomRecurrance.repeat_type === 'month'"
+              v-else-if="props.selTask.recurrance.repeat_type === 'month'"
             >
               <v-select
-                v-model="newCustomRecurrance.repeat_monthly_type"
+                v-model="props.selTask.recurrance.repeat_monthly_type"
                 :items="monthlyCustomTypes"
               >
               </v-select>
@@ -282,13 +233,13 @@ const onMinuteSelected = () => {
               <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 pt-8">
                 Repeat until 
               </label>
-              <v-radio-group v-model="newCustomRecurrance.repeat_until_type">
+              <v-radio-group v-model="props.selTask.recurrance.repeat_until_type">
                 <v-radio label="Repeat forever" value="one"></v-radio>
                 <div class="flex items-center justify-center gap-1">
                   <v-radio label="Until" value="two"></v-radio>
                   <v-date-input
-                    v-model="newCustomRecurrance.repeat_until_date" 
-                    :disabled="newCustomRecurrance.repeat_until_type !== 'two'"
+                    v-model="props.selTask.recurrance.repeat_until_date" 
+                    :disabled="props.selTask.recurrance.repeat_until_type !== 'two'"
                   </v-date-input>
                 </div>
                 <div class="flex items-center justify-center gap-1">
@@ -299,10 +250,10 @@ const onMinuteSelected = () => {
                     label=""
                     :hideInput="false"
                     :inset="false"
-                    v-model="newCustomRecurrance.repeat_until_times"
+                    v-model="props.selTask.recurrance.repeat_until_times"
                     width="4"
                     :min="1"
-                    :disabled="newCustomRecurrance.repeat_until_type !== 'three'"
+                    :disabled="props.selTask.recurrance.repeat_until_type !== 'three'"
                   ></v-number-input>
                 </div>
               </v-radio-group>

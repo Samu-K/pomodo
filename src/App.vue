@@ -5,9 +5,9 @@ import CreateCategoryModal from "./components/CreateCategoryModal.vue";
 import CreateTaskModal from "./components/CreateTaskModal.vue";
 import SettingsScreen from "./components/SettingsScreen.vue";
 import StatsScreen from "./components/StatsScreen.vue";
+import TaskDetailsModal from "./components/TaskDetailsModal.vue";
 import TimelineScreen from "./components/TimelineScreen.vue";
 import TimerScreen from "./components/TimerScreen.vue";
-import TaskDetailsModal from "./components/TaskDetailsModal.vue";
 import { Task } from "./interfaces/task.ts";
 
 // Navigation state
