@@ -1,19 +1,13 @@
 <script setup lang="ts">
 import { Check, Minus, Plus, X } from "lucide-vue-next";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { Task } from "../interfaces/task.ts";
+import { VDateInput } from "vuetify/labs/VDateInput";
+import { mdiClockOutline } from "@mdi/js";
 
 const emit = defineEmits<{
 	close: [];
 }>();
-
-// Form data
-const taskName = ref("");
-const selectedCategory = ref("Work");
-const estimatedPomodoros = ref(4);
-const scheduleDate = ref("");
-const isRecurring = ref(true);
-const repeatOption = ref("Daily");
 
 const newTask = ref<Task>({
 	id: 0,
@@ -25,13 +19,108 @@ const newTask = ref<Task>({
 	completed: false,
 });
 
-const categories = ["Work", "Study", "Personal"];
-const repeatOptions = ["Daily", "Weekdays", "Weekly", "Custom"];
+const recurranceOpts = [
+	"No repeat",
+	"Daily",
+	"Weekly",
+	"Monthly",
+	"Yearly",
+	"Weekdays",
+	"Custom",
+];
+const customRecurranceOpts = ["day", "week", "month", "year"];
+const selectedCustomRecurrance = ref(customRecurranceOpts[1]);
+const customRecurranceRepeat = ref(1);
+
+interface Day {
+	id: string;
+	label: string;
+}
+
+// Array of days to be rendered.
+// Finnish days: M(aanantai), T(iistai), K(eskiviikko), T(orstai), P(erjantai), L(auantai), S(unnuntai)
+const days: Day[] = [
+	{ id: "monday", label: "M" },
+	{ id: "tuesday", label: "T" },
+	{ id: "wednesday", label: "K" },
+	{ id: "thursday", label: "T" },
+	{ id: "friday", label: "P" },
+	{ id: "saturday", label: "L" },
+	{ id: "sunday", label: "S" },
+];
+
+// Reactive array to store the IDs of selected days.
+// Initialized with 'sat' (L) to match the screenshot.
+const selectedDays = ref<string[]>([]);
+
+/**
+ * Checks if a given day ID is in the selectedDays array.
+ * @param dayId - The unique identifier for the day.
+ * @returns boolean
+ */
+const isSelected = (dayId: string): boolean => {
+	return selectedDays.value.includes(dayId);
+};
+
+/**
+ * Adds or removes a day from the selectedDays array.
+ * @param dayId - The unique identifier for the day to toggle.
+ */
+const toggleDay = (dayId: string): void => {
+	const index = selectedDays.value.indexOf(dayId);
+	if (index === -1) {
+		// If not selected, add it to the array
+		selectedDays.value.push(dayId);
+	} else {
+		// If already selected, remove it
+		selectedDays.value.splice(index, 1);
+	}
+};
+
+const recurranceMode = ref(recurranceOpts[0]);
+const categories = ["work", "study", "personal"];
+
+const selectedDate = computed({
+	get: () => {
+		return newTask.value.startTime ? new Date(newTask.value.startTime) : null;
+	},
+	set: (value: Date | null) => {
+		if (value && selectedTime.value) {
+			const dateStr = value.toLocaleString().split(",")[0];
+			const combinedDateTime = new Date(`${dateStr}, ${selectedTime.value}:00`);
+			console.log(`Setting time ${combinedDateTime}`);
+			newTask.value.startTime = combinedDateTime;
+		}
+	},
+});
+
+const selectedTime = computed({
+	get: () => {
+		return newTask.value.startTime
+			? new Date(newTask.value.startTime).toTimeString().slice(0, 5)
+			: "";
+	},
+	set: (value: string) => {
+		if (value && selectedDate.value) {
+			const dateStr = selectedDate.value.toLocaleString().split(",")[0];
+			const combinedDateTime = new Date(`${dateStr}, ${value}:00`);
+			console.log(`Setting time ${combinedDateTime}`);
+			newTask.value.startTime = combinedDateTime;
+		}
+	},
+});
+
+const showTimeMenu = ref(false);
+const onMinuteSelected = () => {
+	setTimeout(() => {
+		showTimeMenu.value = false;
+	}, 100);
+};
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in">
-    <div class="bg-dark-bg rounded-2xl p-6 w-full max-w-md mx-4 animate-scale-in border border-dark-border">
+  <div class="fixed inset-0 bg-black/80 flex items-center justify-center  animate-fade-in overflow-auto">
+    <div class="bg-dark-bg rounded-2xl p-6 w-full max-w-md mx-4 animate-scale-in max-h-[85%] border border-dark-border overflow-scroll">
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-semibold text-pomodo-orange">Create New Task</h2>
@@ -44,18 +133,17 @@ const repeatOptions = ["Daily", "Weekdays", "Weekly", "Custom"];
       </div>
 
       <!-- Form -->
-      <div class="space-y-5">
+      <div class="space-y-3">
         <!-- Task Name -->
         <div>
           <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-            Task Name
+            Task Name *
           </label>
-          <input 
-            v-model="taskName"
-            type="text"
+          <v-text-field
+            label="Task name"
             placeholder="Enter task name"
-            class="w-full px-4 py-3 bg-dark-surface border border-dark-border rounded-lg text-white placeholder-text-muted focus:border-pomodo-orange focus:outline-none transition-colors"
-          />
+            v-model="newTask.title"
+          ></v-text-field>
         </div>
 
         <!-- Category -->
@@ -63,76 +151,126 @@ const repeatOptions = ["Daily", "Weekdays", "Weekly", "Custom"];
           <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
             Category
           </label>
-          <select 
-            v-model="selectedCategory"
-            class="w-full px-4 py-3 bg-dark-surface border border-dark-border rounded-lg text-white focus:border-pomodo-orange focus:outline-none transition-colors appearance-none cursor-pointer"
+          <v-select 
+            label="Category"
+            v-model="newTask.category"
+            :items="categories"
           >
-            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-            <option value="new">+ Add New Category</option>
-          </select>
+          </v-select>
         </div>
 
-        <!-- Estimated Pomodoros -->
         <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider">
             Estimated Pomodoros
           </label>
-          <div class="flex items-center gap-4 bg-dark-surface rounded-lg px-3 py-2 w-fit">
-            <button 
-              @click="estimatedPomodoros = Math.max(1, estimatedPomodoros - 1)"
-              class="w-8 h-8 flex items-center justify-center text-pomodo-orange hover:bg-dark-border rounded transition-colors"
-            >
-              <Minus :size="16" />
-            </button>
-            <span class="text-white min-w-[40px] text-center font-medium">{{ estimatedPomodoros }}</span>
-            <button 
-              @click="estimatedPomodoros++"
-              class="w-8 h-8 flex items-center justify-center text-pomodo-orange hover:bg-dark-border rounded transition-colors"
-            >
-              <Plus :size="16" />
-            </button>
-          </div>
         </div>
+          <v-number-input
+          :reverse="false"
+          :min=0
+          controlVariant="split"
+          :hideInput="false"
+          :inset="false"
+          v-model="newTask.cycles"
+          class="w-[50%]"
+        ></v-number-input>
 
         <!-- Schedule For -->
         <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-            Schedule For
-          </label>
-          <input 
-            v-model="scheduleDate"
-            type="datetime-local"
-            class="w-full px-4 py-3 bg-dark-surface border border-dark-border rounded-lg text-white focus:border-pomodo-orange focus:outline-none transition-colors"
+          <h2>Scheduling</h2>
+        </div>
+        <!-- Date -->
+        <v-date-input
+          v-model="selectedDate"
+          color="primary"
+        />
+
+        <!-- Time -->
+        <v-text-field
+          v-model="selectedTime"
+          label="Time"
+          :prepend-icon="mdiClockOutline"
+        >
+        <v-menu
+          v-model="showTimeMenu"
+          :close-on-content-click="false"
+          activator="parent"
+          min-width="0"
+        >
+          <v-time-picker
+            v-model="selectedTime"
+            format="24hr"
+            hide-header
+            @update:minute="onMinuteSelected"
           />
-        </div>
+        </v-menu>
+        </v-text-field>
 
-        <!-- Recurring Task -->
-        <div class="flex items-center gap-3">
-          <button 
-            @click="isRecurring = !isRecurring"
-            class="w-5 h-5 border-2 border-pomodo-orange rounded flex items-center justify-center"
-            :class="isRecurring ? 'bg-pomodo-orange' : ''"
-          >
-            <Check v-if="isRecurring" :size="12" class="text-white" />
-          </button>
-          <label class="text-white cursor-pointer" @click="isRecurring = !isRecurring">
-            Recurring Task
-          </label>
-        </div>
-
-        <!-- Repeat Options (shown when recurring is checked) -->
-        <div v-if="isRecurring">
+        <!-- Recurrance -->
+        <div>
           <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-            Repeat
+            Repeat 
           </label>
-          <select 
-            v-model="repeatOption"
-            class="w-full px-4 py-3 bg-dark-surface border border-dark-border rounded-lg text-white focus:border-pomodo-orange focus:outline-none transition-colors appearance-none cursor-pointer"
+          <v-select 
+            v-model="recurranceMode"
+            :items="recurranceOpts"
           >
-            <option v-for="option in repeatOptions" :key="option" :value="option">
-              {{ option }}
-            </option>
-          </select>
+          </v-select>
+        </div>
+
+        <div
+          v-if="recurranceMode.toLowerCase() === 'custom'"
+        >
+            <div class="flex gap-1 items-center justify-start">
+              <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                Repeat every
+              </label>
+              <v-number-input
+                :reverse="false"
+                controlVariant="stacked"
+                label=""
+                :hideInput="false"
+                :inset="false"
+                v-model="customRecurranceRepeat"
+              ></v-number-input>
+              <v-select 
+                v-model="selectedCustomRecurrance"
+                :items="customRecurranceOpts"
+              >
+              </v-select>
+            </div>
+            <div
+              v-if="selectedCustomRecurrance === 'week'"
+            >
+              <div class="rounded-lg">
+                  
+                  <h2 class="mb-4">
+                    Repeat on 
+                  </h2>
+                  
+                  <div class="flex items-start justify-start space-x-2">
+                    <button
+                      v-for="day in days"
+                      :key="day.id"
+                      @click="toggleDay(day.id)"
+                      :class="[
+                        'w-10 h-10 flex items-center justify-center rounded-full font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-400',
+                        isSelected(day.id) 
+                          ? 'bg-blue-300 text-gray-900' 
+                          : 'bg-white/10 text-blue-300 hover:bg-white/20'
+                      ]"
+                    >
+                      {{ day.label }}
+                    </button>
+
+                  </div>
+                </div>
+            </div>
+      
+            <div
+              v-else-if="selectedCustomRecurrance === 'month'"
+            >
+              <h2> MONTH SELECTED </h2>  
+            </div>
         </div>
       </div>
 
