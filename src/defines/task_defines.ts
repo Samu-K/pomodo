@@ -1,7 +1,10 @@
-import type { Day } from "../interfaces/helpers.ts";
+export interface Day {
+	id: string;
+	label: string;
+}
 
 // Array of days to be rendered.
-const days: Day[] = [
+export const days: Day[] = [
 	{ id: "sunday", label: "S" },
 	{ id: "monday", label: "M" },
 	{ id: "tuesday", label: "T" },
@@ -10,20 +13,3 @@ const days: Day[] = [
 	{ id: "friday", label: "F" },
 	{ id: "saturday", label: "S" },
 ];
-
-const recurranceOpts = [
-	"No repeat",
-	"Daily",
-	"Weekly",
-	"Monthly",
-	"Yearly",
-	"Weekdays",
-	"Custom",
-];
-const monthlyCustomTypes = [
-	"This day each month",
-	"first weekday of each month",
-];
-const customRecurranceOpts = ["day", "week", "month", "year"];
-
-export { days, recurranceOpts, monthlyCustomTypes, customRecurranceOpts };

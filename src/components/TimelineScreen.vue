@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Plus } from "lucide-vue-next";
 import { computed, ref } from "vue";
-import { NoRecurrance } from "../interfaces/helpers.ts";
+import { RecurrenceType } from "../defines/recurrence_modes.ts";
 import { Task } from "../interfaces/task.ts";
 
 const emit = defineEmits<{
@@ -21,7 +21,9 @@ const tasks: Array<Task> = [
 		cycles: 4,
 		startTime: new Date("2025/09/04, 18:00"),
 		gradient: "from-pomodo-orange to-pomodo-red",
-		recurrance: NoRecurrance,
+		recurrence: {
+			type: RecurrenceType.NONE,
+		},
 		completed: false,
 	},
 	{
@@ -32,7 +34,9 @@ const tasks: Array<Task> = [
 		startTime: new Date("2025/09/05, 18:00"),
 		gradient: "from-pomodo-orange to-pomodo-red",
 		completed: true,
-		recurrance: NoRecurrance,
+		recurrence: {
+			type: RecurrenceType.NONE,
+		},
 	},
 	{
 		id: 13,
@@ -42,7 +46,9 @@ const tasks: Array<Task> = [
 		startTime: new Date("2025/09/05, 20:30"),
 		gradient: "from-pomodo-orange to-pomodo-red",
 		completed: false,
-		recurrance: NoRecurrance,
+		recurrence: {
+			type: RecurrenceType.NONE,
+		},
 	},
 	{
 		id: 11,
@@ -52,7 +58,9 @@ const tasks: Array<Task> = [
 		startTime: new Date("2025/09/04, 17:00"),
 		gradient: "from-pomodo-orange to-pomodo-red",
 		completed: false,
-		recurrance: NoRecurrance,
+		recurrence: {
+			type: RecurrenceType.NONE,
+		},
 	},
 	{
 		id: 2,
@@ -62,7 +70,9 @@ const tasks: Array<Task> = [
 		startTime: new Date("2025/09/04, 09:45"),
 		gradient: "from-pomodo-red to-pomodo-gold",
 		completed: true,
-		recurrance: NoRecurrance,
+		recurrence: {
+			type: RecurrenceType.NONE,
+		},
 	},
 	{
 		id: 3,
@@ -72,7 +82,9 @@ const tasks: Array<Task> = [
 		startTime: new Date("2025/09/04, 11:00"),
 		gradient: "from-pomodo-gold to-pomodo-orange",
 		completed: true,
-		recurrance: NoRecurrance,
+		recurrence: {
+			type: RecurrenceType.NONE,
+		},
 	},
 	{
 		id: 4,
@@ -82,7 +94,9 @@ const tasks: Array<Task> = [
 		startTime: new Date("2025/04/09, 14:00"),
 		gradient: "from-pomodo-orange to-pomodo-red",
 		completed: false,
-		recurrance: NoRecurrance,
+		recurrence: {
+			type: RecurrenceType.NONE,
+		},
 	},
 ];
 

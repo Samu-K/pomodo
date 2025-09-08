@@ -1,22 +1,49 @@
 <script setup lang="ts">
 import { mdiClockOutline } from "@mdi/js";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import {
-	customRecurranceOpts,
-	days,
-	monthlyCustomTypes,
-	recurranceOpts,
-} from "../defines/task_defines.ts";
+	CustomRecurrenceType,
+	MonthlyRepeatType,
+	Recurrence,
+	RecurrenceType,
+	RepeatUntilType,
+} from "../defines/recurrence_modes.ts";
+import { days } from "../defines/task_defines.ts";
 import { Task } from "../interfaces/task.ts";
 
 const props = defineProps<{
 	selTask: Task;
 }>();
 
-const categories = ["work", "study", "personal"];
+watch(
+	() => props.selTask.recurrence.type,
+	async (newType) => {
+		if (newType === RecurrenceType.CUSTOM) {
+			const customRecurrence: Recurrence = {
+				type: RecurrenceType.CUSTOM,
+				customType: CustomRecurrenceType.WEEKLY,
+				repeatOnDays: [days[props.selTask.startTime.getDay()]],
+				repeatEveryX: 1,
+				repeatUntilType: RepeatUntilType.REPEAT_FOREVER,
+				repeatUntilTimes: 3,
+			};
+			console.log("Setting custom recurrance");
+			props.selTask.recurrence = customRecurrence;
+		}
+	},
+);
 
-const recurranceMode = ref(recurranceOpts[0]);
+watch(
+	() => props.selTask.recurrence.customType,
+	async (newType) => {
+		if (newType === CustomRecurrenceType.MONTHLY) {
+			props.selTask.recurrence.monthlyType = MonthlyRepeatType.ON_TASK_DATE;
+		}
+	},
+);
+
+const categories = ["work", "study", "personal"];
 
 /**
  * Checks if a given day ID is in the selectedDays array.
@@ -24,7 +51,11 @@ const recurranceMode = ref(recurranceOpts[0]);
  * @returns boolean
  */
 const isSelected = (dayId: string): boolean => {
-	return props.selTask.recurrance.repeat_on_days.includes(dayId);
+	if (props.selTask.recurrence.repeatOnDays) {
+		const day = days.filter((day) => day.id === dayId)[0];
+		return props.selTask.recurrence.repeatOnDays.includes(day);
+	}
+	return false;
 };
 
 /**
@@ -32,18 +63,21 @@ const isSelected = (dayId: string): boolean => {
  * @param dayId - The unique identifier for the day to toggle.
  */
 const toggleDay = (dayId: string): void => {
-	const index = props.selTask.recurrance.repeat_on_days.indexOf(dayId);
-	if (index === -1) {
-		// If not selected, add it to the array
-		props.selTask.recurrance.repeat_on_days.push(dayId);
-	} else {
-		// If already selected, remove it
-		props.selTask.recurrance.repeat_on_days.splice(index, 1);
-	}
-	if (props.selTask.recurrance.repeat_on_days.length === 0) {
-		props.selTask.recurrance.repeat_on_days.push(
-			days[props.selTask.startTime.getDay()].id,
-		);
+	if (props.selTask.recurrence.repeatOnDays) {
+		const day = days.filter((day) => day.id === dayId)[0];
+		const index = props.selTask.recurrence.repeatOnDays.indexOf(day);
+		if (index === -1) {
+			// If not selected, add it to the array
+			props.selTask.recurrence.repeatOnDays.push(day);
+		} else {
+			// If already selected, remove it
+			props.selTask.recurrence.repeatOnDays.splice(index, 1);
+		}
+		if (props.selTask.recurrence.repeatOnDays.length === 0) {
+			props.selTask.recurrence.repeatOnDays.push(
+				days[props.selTask.startTime.getDay()],
+			);
+		}
 	}
 };
 
@@ -118,7 +152,7 @@ const onMinuteSelected = () => {
         </div>
           <v-number-input
           :reverse="false"
-          :min=0
+          :min=1
           controlVariant="split"
           :hideInput="false"
           :inset="false"
@@ -157,20 +191,20 @@ const onMinuteSelected = () => {
         </v-menu>
         </v-text-field>
 
-        <!-- Recurrance -->
+        <!-- recurrence -->
         <div>
           <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
             Repeat 
           </label>
           <v-select 
-            v-model="recurranceMode"
-            :items="recurranceOpts"
+            v-model="props.selTask.recurrence.type"
+            :items="Object.values(RecurrenceType)"
           >
           </v-select>
         </div>
 
         <div
-          v-if="recurranceMode.toLowerCase() === 'custom'"
+          v-if="selTask.recurrence.type === RecurrenceType.CUSTOM"
         >
             <div class="flex gap-1 items-center justify-start">
               <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
@@ -182,17 +216,17 @@ const onMinuteSelected = () => {
                 label=""
                 :hideInput="false"
                 :inset="false"
-                v-model="props.selTask.recurrance.repeat_every_x"
+                v-model="props.selTask.recurrence.repeatEveryX"
                 :min="1"
               ></v-number-input>
               <v-select 
-                v-model="props.selTask.recurrance.repeat_type"
-                :items="customRecurranceOpts"
+                v-model="props.selTask.recurrence.customType"
+                :items="Object.values(CustomRecurrenceType)"
               >
               </v-select>
             </div>
             <div
-              v-if="props.selTask.recurrance.repeat_type === 'week'"
+              v-if="props.selTask.recurrence.customType === 'week'"
             >
               <div class="rounded-lg">
                   
@@ -220,11 +254,11 @@ const onMinuteSelected = () => {
             </div>
       
             <div
-              v-else-if="props.selTask.recurrance.repeat_type === 'month'"
+              v-else-if="props.selTask.recurrence.customType === 'month'"
             >
               <v-select
-                v-model="props.selTask.recurrance.repeat_monthly_type"
-                :items="monthlyCustomTypes"
+                v-model="props.selTask.recurrence.monthlyType"
+                :items="Object.values(MonthlyRepeatType).filter(value => typeof value === 'string')"
               >
               </v-select>
             </div>
@@ -233,13 +267,13 @@ const onMinuteSelected = () => {
               <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 pt-8">
                 Repeat until 
               </label>
-              <v-radio-group v-model="props.selTask.recurrance.repeat_until_type">
+              <v-radio-group v-model="props.selTask.recurrence.repeatUntilType" >
                 <v-radio label="Repeat forever" value="one"></v-radio>
                 <div class="flex items-center justify-center gap-1">
                   <v-radio label="Until" value="two"></v-radio>
                   <v-date-input
-                    v-model="props.selTask.recurrance.repeat_until_date" 
-                    :disabled="props.selTask.recurrance.repeat_until_type !== 'two'"
+                    v-model="props.selTask.recurrence.repeatUntilDate" 
+                    :disabled="props.selTask.recurrence.repeatUntilType!== 'two'"
                   </v-date-input>
                 </div>
                 <div class="flex items-center justify-center gap-1">
@@ -250,10 +284,10 @@ const onMinuteSelected = () => {
                     label=""
                     :hideInput="false"
                     :inset="false"
-                    v-model="props.selTask.recurrance.repeat_until_times"
+                    v-model="props.selTask.recurrence.repeatUntilTimes"
                     width="4"
                     :min="1"
-                    :disabled="props.selTask.recurrance.repeat_until_type !== 'three'"
+                    :disabled="props.selTask.recurrence.repeatUntilType !== 'three'"
                   ></v-number-input>
                 </div>
               </v-radio-group>

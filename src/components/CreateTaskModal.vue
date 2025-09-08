@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { X } from "lucide-vue-next";
 import { ref } from "vue";
-import { days, monthlyCustomTypes } from "../defines/task_defines.ts";
+import { RecurrenceType } from "../defines/recurrence_modes.ts";
 import { Task } from "../interfaces/task.ts";
 import TaskEditBlock from "./TaskEditBlock.vue";
 
@@ -11,25 +11,15 @@ const emit = defineEmits<{
 
 const curDate = ref<Date>(new Date());
 
-const newCustomRecurrance = {
-	repeat_every_x: 1,
-	repeat_type: "week",
-
-	repeat_on_days: [days[curDate.value.getDay()].id],
-	repeat_monthly_type: monthlyCustomTypes[0],
-
-	repeat_until_type: "one",
-	repeat_until_date: undefined,
-	repeat_until_times: 1,
-};
-
 const newTask = ref<Task>({
 	id: 0,
 	title: "",
 	category: "",
 	cycles: 0,
 	startTime: curDate.value,
-	recurrance: newCustomRecurrance,
+	recurrence: {
+		type: RecurrenceType.NONE,
+	},
 	gradient: "",
 	completed: false,
 });
