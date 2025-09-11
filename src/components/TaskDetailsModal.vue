@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Task } from "../interfaces/task.ts";
 import TaskEditBlock from "./TaskEditBlock.vue";
+import { watch, ref } from "vue";
+import { updateTask } from "../defines/task_funcs.ts";
 
 const emit = defineEmits<{
 	close: [];
-	"update:modelValue": [value: boolean];
 }>();
 
 const props = defineProps<{
@@ -12,12 +13,21 @@ const props = defineProps<{
 }>();
 
 const saveAndExit = () => {
+	updateTask(props.selTask, recurrenceChanged.value);
 	emit("close");
 };
 
 const exitWithoutSave = () => {
 	emit("close");
 };
+
+const recurrenceChanged = ref(false);
+watch(
+	() => props.selTask.recurrence,
+	(_oldValue, _newValue) => {
+		recurrenceChanged.value = true;
+	}
+);
 </script>
 
 <template>

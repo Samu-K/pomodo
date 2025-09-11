@@ -98,6 +98,7 @@ tauri_commands! {
         until: Option<NaiveDateTime>,
         timezone: Option<String>
     ) -> IdReturn,
+    task::delete_rule(rule_id: i64) -> NoReturn,
     task::update_rule(
         rule_id: i64,
         rrule: Option<String>,
@@ -166,6 +167,7 @@ pub fn run() {
             task_clear_all_tasks_for_and_after_date,
             task_clear_complete_tasks,
             task_add_rule,
+            task_delete_rule,
             task_update_rule,
             task_get_rules_for_task,
             task_add_exdate,

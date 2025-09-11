@@ -458,6 +458,12 @@ impl TaskActions {
         Ok(res.last_insert_rowid())
     }
 
+    pub async fn delete_rule(&self, rule_id: i64) -> NoReturn {
+        let sql = "DELETE FROM recurrence_rules WHERE id = $1";
+        let _res = sqlx::query(sql).bind(rule_id).execute(&*self.db).await?;
+        Ok(())
+    }
+
     pub async fn update_rule(
         &self,
         rule_id: i64,

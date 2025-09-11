@@ -12,7 +12,7 @@ import type { Task } from "../interfaces/task.ts";
 
 const cycleLen = 25;
 
-interface DatabaseCategory {
+export interface DatabaseCategory {
 	id: number;
 	name: string;
 	color?: string;
@@ -21,7 +21,7 @@ interface DatabaseCategory {
 /** Build RRULE + optional UNTIL ISO using strict switch style.
  *  Backend should interpret dtstartIso + timezone together.
  */
-function buildRRuleAndUntil(
+export function buildRRuleAndUntil(
 	recurrence: Exclude<Recurrence, NoRecurrence>,
 	startTime: Date
 ): { rrule: string; untilIso?: string | null } {
@@ -190,12 +190,11 @@ export async function createTaskWithRecurrence(
 	};
 
 	let task_id = 0;
-	await invoke("task_add_task", { task: taskPayload })
-		.then((new_task_id) => {
-			console.log(new_task_id);
-			task_id = Number(new_task_id);
-		})
-		.catch((error) => console.log(error));
+	try {
+		task_id = await invoke("task_add_task", { task: taskPayload });
+	} catch (error) {
+		console.log(error);
+	}
 
 	// 3) Strict switch: handle recurrence types explicitly
 	switch (task.recurrence.type) {
@@ -271,4 +270,159 @@ export async function createTaskWithRecurrence(
 	}
 
 	return { task_id, rule_id };
+}
+
+export async function updateTask(
+	task: Task,
+	recurrenceChanged: boolean
+): Promise<boolean> {
+	// Validate essential task fields
+	if (!task.title || task.title.trim() === "")
+		throw new Error("Task title required");
+	if (!task.category || task.category.trim() === "")
+		throw new Error("Task category required");
+	if (!task.cycles || task.cycles <= 0)
+		throw new Error("Task cycles must be > 0");
+
+	let categoryId: number = -99;
+	try {
+		const cat: DatabaseCategory = await invoke(
+			"categories_get_category_by_name",
+			{
+				cat_name: task.category
+			}
+		);
+		categoryId = cat.id;
+	} catch (_error) {
+		console.log("No category found, creating new one..");
+		const newCat: DatabaseCategory = {
+			id: 0,
+			name: task.category
+		};
+		const cat_id: number = await invoke("categories_add_category", {
+			cat: newCat
+		});
+		categoryId = cat_id;
+	}
+
+	if (categoryId === -99) {
+		console.error("Category id not set");
+		return false;
+	}
+
+	const taskDuration = task.cycles * cycleLen;
+	const deadline = new Date(
+		task.startTime.setTime(task.startTime.getTime() + taskDuration * 60 * 1000)
+	);
+
+	// 2) Build task payload for Rust
+	const taskPayload = {
+		title: task.title,
+		category_id: categoryId,
+		estimated_cycles: task.cycles,
+		estimated_duration_seconds: null,
+		is_recurring: task.recurrence.type !== RecurrenceType.NONE,
+		series_id: null,
+		completed: task.completed,
+		description: task.description ?? null,
+		// cut out timezone
+		deadline: deadline.toISOString().slice(0, 19),
+		created_at: null,
+		updated_at: null
+	};
+
+	let task_id = 0;
+	try {
+		task_id = await invoke("task_update_task", { task: taskPayload });
+	} catch (error) {
+		console.log(error);
+	}
+
+	if (recurrenceChanged) {
+		const old_rule_id = await invoke("task_get_rules_for_task", {
+			task_id: task_id
+		});
+		// 3) Strict switch: handle recurrence types explicitly
+		switch (task.recurrence.type) {
+			case RecurrenceType.NONE:
+				try {
+					// delete old rule
+					await invoke("task_delete_rule", {
+						rule_id: old_rule_id
+					});
+					console.log("deleted rule ", old_rule_id);
+				} catch (error) {
+					console.log(error);
+				}
+				return true;
+			case RecurrenceType.DAILY:
+			case RecurrenceType.WEEKDAYS:
+			case RecurrenceType.WEEKLY:
+			case RecurrenceType.MONTHLY:
+			case RecurrenceType.YEARLY:
+				// For the built-in recurrence types we rely on buildRRuleAndUntil to create correct RRULE.
+				// No additional client-side validation required here (but you can add if desired).
+				break;
+
+			case RecurrenceType.CUSTOM: {
+				// Validate required custom fields in an explicit, type-safe way
+				const r = task.recurrence as CustomRecurrence;
+
+				switch (r.customType) {
+					case CustomRecurrenceType.DAILY:
+					case CustomRecurrenceType.MONTHLY:
+					case CustomRecurrenceType.YEARLY:
+						// require repeatEveryX > 0
+						if (!r.repeatEveryX || r.repeatEveryX < 1) {
+							throw new Error(
+								"repeatEveryX must be >= 1 for custom recurrence"
+							);
+						}
+						break;
+					case CustomRecurrenceType.WEEKLY:
+						// either repeatOnDays present OR we will fallback to startTime's weekday;
+						// choose whether to enforce presence or allow fallback; below we allow fallback.
+						if (r.repeatEveryX !== undefined && r.repeatEveryX < 1) {
+							throw new Error(
+								"repeatEveryX must be >= 1 for weekly custom recurrence"
+							);
+						}
+						break;
+					default:
+						throw new Error("Unsupported custom recurrence type");
+				}
+				break;
+			}
+
+			default:
+				throw new Error("Unhandled recurrence type");
+		}
+		// Build RRULE + until
+		const { rrule, untilIso } = buildRRuleAndUntil(
+			task.recurrence,
+			task.startTime
+		);
+		if (!rrule || rrule.trim() === "") {
+			throw new Error("Failed to build RRULE");
+		}
+
+		// timezone string from client
+		const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC";
+		const dtstartIso = new Date(task.startTime).toISOString();
+
+		try {
+			await invoke("task_update__rule", {
+				rule_id: old_rule_id,
+				rrule: rrule,
+				dtstart: dtstartIso.slice(0, 19),
+				until: untilIso ? untilIso.slice(0, 19) : null,
+				timezone: timezone
+			});
+		} catch (error) {
+			console.log("Error with adding rule");
+			console.log(error);
+		}
+	}
+
+	return true;
 }
