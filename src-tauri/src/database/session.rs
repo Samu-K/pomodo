@@ -6,14 +6,15 @@ use crate::database::{
 
 use chrono::NaiveDate;
 use futures::TryStreamExt;
+use std::sync::Arc;
 
 /// CRUD operations for sessions (pomodoro cycles)
-pub struct SessionActions<'a> {
-    pub db: &'a database::Db,
+pub struct SessionActions {
+    pub db: Arc<database::Db>,
 }
 
-impl<'a> SessionActions<'a> {
-    pub fn new(db: &'a database::Db) -> Self {
+impl SessionActions {
+    pub fn new(db: Arc<database::Db>) -> Self {
         SessionActions { db }
     }
 
@@ -78,7 +79,7 @@ impl<'a> SessionActions<'a> {
         }
 
         let res = query
-            .execute(self.db)
+            .execute(&*self.db)
             .await
             .map_err(|e| format!("Failed to insert session: {e}"))?;
 
@@ -94,7 +95,7 @@ impl<'a> SessionActions<'a> {
         let sql = "SELECT * FROM sessions";
 
         let rows: Vec<Session> = sqlx::query_as::<_, Session>(sql)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
 
@@ -106,7 +107,7 @@ impl<'a> SessionActions<'a> {
         let sql = "SELECT * FROM sessions WHERE finished = 0";
 
         let rows: Vec<Session> = sqlx::query_as::<_, Session>(sql)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
 
@@ -118,7 +119,7 @@ impl<'a> SessionActions<'a> {
 
         let rows: Vec<Session> = sqlx::query_as::<_, Session>(sql)
             .bind(cat_id)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
 
@@ -130,7 +131,7 @@ impl<'a> SessionActions<'a> {
 
         let rows: Vec<Session> = sqlx::query_as::<_, Session>(sql)
             .bind(task_id)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
 
@@ -143,7 +144,7 @@ impl<'a> SessionActions<'a> {
 
         let rows: Vec<Session> = sqlx::query_as::<_, Session>(sql)
             .bind(date)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
 
@@ -159,7 +160,7 @@ impl<'a> SessionActions<'a> {
     pub async fn set_session_incomplete(&self, id: i64) -> NoReturn {
         let sql = "UPDATE sessions SET finished = 0 WHERE id = $1";
 
-        sqlx::query(sql).bind(id).execute(self.db).await?;
+        sqlx::query(sql).bind(id).execute(&*self.db).await?;
 
         Ok(())
     }
@@ -167,7 +168,7 @@ impl<'a> SessionActions<'a> {
     pub async fn set_session_complete(&self, id: i64) -> NoReturn {
         let sql = "UPDATE sessions SET finished = 1 WHERE id = $1";
 
-        sqlx::query(sql).bind(id).execute(self.db).await?;
+        sqlx::query(sql).bind(id).execute(&*self.db).await?;
 
         Ok(())
     }
@@ -179,7 +180,7 @@ impl<'a> SessionActions<'a> {
         sqlx::query(sql)
             .bind(task_id)
             .bind(session_id)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
 
         Ok(())
@@ -192,7 +193,7 @@ impl<'a> SessionActions<'a> {
         sqlx::query(sql)
             .bind(category_id)
             .bind(session_id)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
 
         Ok(())
@@ -204,7 +205,7 @@ impl<'a> SessionActions<'a> {
         sqlx::query(sql)
             .bind(len as i64)
             .bind(session_id)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
 
         Ok(())
@@ -218,7 +219,7 @@ impl<'a> SessionActions<'a> {
     pub async fn delete_session(&self, session_id: i64) -> NoReturn {
         let sql = "DELETE FROM sessions WHERE id = $1";
 
-        sqlx::query(sql).bind(session_id).execute(self.db).await?;
+        sqlx::query(sql).bind(session_id).execute(&*self.db).await?;
 
         Ok(())
     }

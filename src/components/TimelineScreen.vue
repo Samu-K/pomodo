@@ -22,9 +22,9 @@ const tasks: Array<Task> = [
 		startTime: new Date("2025/09/04, 18:00"),
 		gradient: "from-pomodo-orange to-pomodo-red",
 		recurrence: {
-			type: RecurrenceType.NONE,
+			type: RecurrenceType.NONE
 		},
-		completed: false,
+		completed: false
 	},
 	{
 		id: 13,
@@ -35,8 +35,8 @@ const tasks: Array<Task> = [
 		gradient: "from-pomodo-orange to-pomodo-red",
 		completed: true,
 		recurrence: {
-			type: RecurrenceType.NONE,
-		},
+			type: RecurrenceType.NONE
+		}
 	},
 	{
 		id: 13,
@@ -47,8 +47,8 @@ const tasks: Array<Task> = [
 		gradient: "from-pomodo-orange to-pomodo-red",
 		completed: false,
 		recurrence: {
-			type: RecurrenceType.NONE,
-		},
+			type: RecurrenceType.NONE
+		}
 	},
 	{
 		id: 11,
@@ -59,8 +59,8 @@ const tasks: Array<Task> = [
 		gradient: "from-pomodo-orange to-pomodo-red",
 		completed: false,
 		recurrence: {
-			type: RecurrenceType.NONE,
-		},
+			type: RecurrenceType.NONE
+		}
 	},
 	{
 		id: 2,
@@ -71,8 +71,8 @@ const tasks: Array<Task> = [
 		gradient: "from-pomodo-red to-pomodo-gold",
 		completed: true,
 		recurrence: {
-			type: RecurrenceType.NONE,
-		},
+			type: RecurrenceType.NONE
+		}
 	},
 	{
 		id: 3,
@@ -83,8 +83,8 @@ const tasks: Array<Task> = [
 		gradient: "from-pomodo-gold to-pomodo-orange",
 		completed: true,
 		recurrence: {
-			type: RecurrenceType.NONE,
-		},
+			type: RecurrenceType.NONE
+		}
 	},
 	{
 		id: 4,
@@ -95,9 +95,9 @@ const tasks: Array<Task> = [
 		gradient: "from-pomodo-orange to-pomodo-red",
 		completed: false,
 		recurrence: {
-			type: RecurrenceType.NONE,
-		},
-	},
+			type: RecurrenceType.NONE
+		}
+	}
 ];
 
 const tasksForSelectedDate = computed(() => {
@@ -106,7 +106,7 @@ const tasksForSelectedDate = computed(() => {
 
 	const filtTasks = tasks.filter(
 		(task) =>
-			task.startTime.toDateString() === selectedDate.value.toDateString(),
+			task.startTime.toDateString() === selectedDate.value.toDateString()
 	);
 	console.log(filtTasks);
 	return filtTasks;

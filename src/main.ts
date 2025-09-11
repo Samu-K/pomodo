@@ -10,12 +10,12 @@ const vuetify = createVuetify({
 		defaultSet: "mdi",
 		aliases,
 		sets: {
-			mdi,
-		},
+			mdi
+		}
 	},
 	theme: {
-		defaultTheme: "dark",
-	},
+		defaultTheme: "dark"
+	}
 });
 
 // Create and mount the Vue app

@@ -21,7 +21,7 @@ const colorOptions = [
 	"#ff6b6b",
 	"#4ecdc4",
 	"#95e1d3",
-	"#ffd700",
+	"#ffd700"
 ];
 const iconOptions = [
 	"💼",
@@ -35,7 +35,7 @@ const iconOptions = [
 	"🚀",
 	"⚡",
 	"🌟",
-	"❤️",
+	"❤️"
 ];
 </script>
 

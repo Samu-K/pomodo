@@ -2,43 +2,32 @@ pub mod database;
 
 use chrono::{NaiveDate, NaiveDateTime};
 use paste::paste;
-use std::error::Error;
+use std::sync::Arc;
+use tauri::Manager as _;
 use tauri::State;
 
 use crate::database::{
     category::CategoryActions,
     decls::{
-        self, Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, RecurrenceExdate,
-        RecurrenceExdateGetVec, RecurrenceRdate, RecurrenceRdateGetVec, RecurrenceRule,
-        RecurrenceRuleGetVec, Session, SessionGetVec, SettingGetVec, StringReturn, Task, TaskGet,
-        TaskGetVec,
+        Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, RecurrenceExdateGetVec,
+        RecurrenceRdateGetVec, RecurrenceRuleGetVec, Session, SessionGetVec, SettingGetVec,
+        StringReturn, Task, TaskGet, TaskGetVec,
     },
     session::SessionActions,
     settings::SettingActions,
     task::TaskActions,
 };
 
-pub struct AppState<'a> {
-    pub categories: CategoryActions<'a>,
-    pub task: TaskActions<'a>,
-    pub session: SessionActions<'a>,
-    pub settings: SettingActions<'a>,
-}
-
-impl<'a> AppState<'a> {
-    pub async fn new(db: &'a decls::Db) -> Self {
-        Self {
-            categories: CategoryActions::new(db),
-            task: TaskActions::new(db),
-            session: SessionActions::new(db),
-            settings: SettingActions::new(db),
-        }
-    }
+pub struct AppState {
+    pub categories: CategoryActions,
+    pub task: TaskActions,
+    pub session: SessionActions,
+    pub settings: SettingActions,
 }
 
 macro_rules! tauri_commands {
     (
-        $state_type:ty,
+    $state_type:ty,
     $($action:ident :: $method:ident($($param:ident: $param_type:ty),*) -> $ret:ty),*) => {
         $(
             paste! {
@@ -58,9 +47,10 @@ macro_rules! tauri_commands {
 }
 
 tauri_commands! {
-    AppState<'_>,
+    AppState,
     categories::add_category(cat:Category) -> IdReturn,
     categories::get_categories() -> CategoryGetVec,
+    categories::get_category_by_name(cat_name: String) -> CategoryGet,
     categories::get_category(cat_id: i64) -> CategoryGet,
     categories::set_category_name(name: String, cat_id: i64) -> NoReturn,
     categories::set_category_color(color: String, cat_id: i64) -> NoReturn,
@@ -134,6 +124,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             categories_add_category,
             categories_get_categories,
+            categories_get_category_by_name,
             categories_get_category,
             categories_set_category_name,
             categories_set_category_color,
@@ -182,6 +173,22 @@ pub fn run() {
             task_get_exdates_for_rule,
             task_get_rdates_for_rule
         ])
+        .setup(|app| {
+            tauri::async_runtime::block_on(async move {
+                let db = Arc::new(database::create_database(Some(app)).await);
+                let ta = TaskActions::new(db.clone());
+                let sa = SessionActions::new(db.clone());
+                let sta = SettingActions::new(db.clone());
+                let ca = CategoryActions::new(db.clone());
+                app.manage(AppState {
+                    categories: ca,
+                    task: ta,
+                    session: sa,
+                    settings: sta,
+                })
+            });
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

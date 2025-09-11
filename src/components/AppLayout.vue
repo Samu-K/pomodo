@@ -4,7 +4,7 @@ import {
 	Calendar,
 	ChevronLeft,
 	ListTodo,
-	Timer,
+	Timer
 } from "lucide-vue-next";
 
 interface Props {
@@ -20,7 +20,7 @@ withDefaults(defineProps<Props>(), {
 	headerTitle: "Pomodo",
 	showBackButton: false,
 	showSettingsButton: true,
-	activeTab: "timer",
+	activeTab: "timer"
 });
 
 const emit = defineEmits<{

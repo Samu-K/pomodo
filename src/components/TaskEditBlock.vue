@@ -3,11 +3,12 @@ import { mdiClockOutline } from "@mdi/js";
 import { computed, ref, watch } from "vue";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import {
+	CustomRecurrence,
 	CustomRecurrenceType,
 	MonthlyRepeatType,
 	Recurrence,
 	RecurrenceType,
-	RepeatUntilType,
+	RepeatUntilType
 } from "../defines/recurrence_modes.ts";
 import { days } from "../defines/task_defines.ts";
 import { Task } from "../interfaces/task.ts";
@@ -19,6 +20,13 @@ const props = defineProps<{
 watch(
 	() => props.selTask.recurrence.type,
 	async (newType) => {
+		if (newType !== RecurrenceType.NONE) {
+			props.selTask.recurrence = {
+				type: newType,
+				repeatUntilType: RepeatUntilType.REPEAT_FOREVER,
+				repeatUntilTimes: 3
+			} as Recurrence;
+		}
 		if (newType === RecurrenceType.CUSTOM) {
 			const customRecurrence: Recurrence = {
 				type: RecurrenceType.CUSTOM,
@@ -26,21 +34,22 @@ watch(
 				repeatOnDays: [days[props.selTask.startTime.getDay()]],
 				repeatEveryX: 1,
 				repeatUntilType: RepeatUntilType.REPEAT_FOREVER,
-				repeatUntilTimes: 3,
+				repeatUntilTimes: 3
 			};
 			console.log("Setting custom recurrance");
 			props.selTask.recurrence = customRecurrence;
 		}
-	},
+	}
 );
 
 watch(
-	() => props.selTask.recurrence.customType,
+	() => (props.selTask.recurrence as CustomRecurrence).customType,
 	async (newType) => {
 		if (newType === CustomRecurrenceType.MONTHLY) {
-			props.selTask.recurrence.monthlyType = MonthlyRepeatType.ON_TASK_DATE;
+			(props.selTask.recurrence as CustomRecurrence).monthlyType =
+				MonthlyRepeatType.ON_TASK_DATE;
 		}
-	},
+	}
 );
 
 const categories = ["work", "study", "personal"];
@@ -51,9 +60,14 @@ const categories = ["work", "study", "personal"];
  * @returns boolean
  */
 const isSelected = (dayId: string): boolean => {
-	if (props.selTask.recurrence.repeatOnDays) {
+	if (props.selTask.recurrence as CustomRecurrence) {
+		return false;
+	}
+	let repeatOnDays = (props.selTask.recurrence as CustomRecurrence)
+		.repeatOnDays;
+	if (repeatOnDays) {
 		const day = days.filter((day) => day.id === dayId)[0];
-		return props.selTask.recurrence.repeatOnDays.includes(day);
+		return repeatOnDays.includes(day);
 	}
 	return false;
 };
@@ -63,21 +77,22 @@ const isSelected = (dayId: string): boolean => {
  * @param dayId - The unique identifier for the day to toggle.
  */
 const toggleDay = (dayId: string): void => {
-	if (props.selTask.recurrence.repeatOnDays) {
+	let repeatOnDays = (props.selTask.recurrence as CustomRecurrence)
+		.repeatOnDays;
+	if (repeatOnDays) {
 		const day = days.filter((day) => day.id === dayId)[0];
-		const index = props.selTask.recurrence.repeatOnDays.indexOf(day);
+		const index = repeatOnDays.indexOf(day);
 		if (index === -1) {
 			// If not selected, add it to the array
-			props.selTask.recurrence.repeatOnDays.push(day);
+			repeatOnDays.push(day);
 		} else {
 			// If already selected, remove it
-			props.selTask.recurrence.repeatOnDays.splice(index, 1);
+			repeatOnDays.splice(index, 1);
 		}
-		if (props.selTask.recurrence.repeatOnDays.length === 0) {
-			props.selTask.recurrence.repeatOnDays.push(
-				days[props.selTask.startTime.getDay()],
-			);
+		if (repeatOnDays.length === 0) {
+			repeatOnDays.push(days[props.selTask.startTime.getDay()]);
 		}
+		(props.selTask.recurrence as CustomRecurrence).repeatOnDays = repeatOnDays;
 	}
 };
 
@@ -91,7 +106,7 @@ const selectedDate = computed({
 			const combinedDateTime = new Date(`${dateStr}, ${selectedTime.value}:00`);
 			props.selTask.startTime = combinedDateTime;
 		}
-	},
+	}
 });
 
 const selectedTime = computed({
@@ -106,7 +121,7 @@ const selectedTime = computed({
 			const combinedDateTime = new Date(`${dateStr}, ${value}:00`);
 			props.selTask.startTime = combinedDateTime;
 		}
-	},
+	}
 });
 
 const showTimeMenu = ref(false);
@@ -216,17 +231,17 @@ const onMinuteSelected = () => {
                 label=""
                 :hideInput="false"
                 :inset="false"
-                v-model="props.selTask.recurrence.repeatEveryX"
+                v-model="(props.selTask.recurrence as CustomRecurrence).repeatEveryX"
                 :min="1"
               ></v-number-input>
               <v-select 
-                v-model="props.selTask.recurrence.customType"
+                v-model="(props.selTask.recurrence as CustomRecurrence).customType"
                 :items="Object.values(CustomRecurrenceType)"
               >
               </v-select>
             </div>
             <div
-              v-if="props.selTask.recurrence.customType === 'week'"
+              v-if="(props.selTask.recurrence as CustomRecurrence).customType === 'week'"
             >
               <div class="rounded-lg">
                   
@@ -254,44 +269,44 @@ const onMinuteSelected = () => {
             </div>
       
             <div
-              v-else-if="props.selTask.recurrence.customType === 'month'"
+              v-else-if="(props.selTask.recurrence as CustomRecurrence).customType === 'month'"
             >
               <v-select
-                v-model="props.selTask.recurrence.monthlyType"
+                v-model="(props.selTask.recurrence as CustomRecurrence).monthlyType"
                 :items="Object.values(MonthlyRepeatType).filter(value => typeof value === 'string')"
               >
               </v-select>
             </div>
 
-            <div>
-              <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 pt-8">
-                Repeat until 
-              </label>
-              <v-radio-group v-model="props.selTask.recurrence.repeatUntilType" >
-                <v-radio label="Repeat forever" value="one"></v-radio>
-                <div class="flex items-center justify-center gap-1">
-                  <v-radio label="Until" value="two"></v-radio>
-                  <v-date-input
-                    v-model="props.selTask.recurrence.repeatUntilDate" 
-                    :disabled="props.selTask.recurrence.repeatUntilType!== 'two'"
-                  </v-date-input>
-                </div>
-                <div class="flex items-center justify-center gap-1">
-                  <v-radio label="Once repeated" value="three"></v-radio>
-                  <v-number-input
-                    :reverse="false"
-                    controlVariant="stacked"
-                    label=""
-                    :hideInput="false"
-                    :inset="false"
-                    v-model="props.selTask.recurrence.repeatUntilTimes"
-                    width="4"
-                    :min="1"
-                    :disabled="props.selTask.recurrence.repeatUntilType !== 'three'"
-                  ></v-number-input>
-                </div>
-              </v-radio-group>
+        </div>
+        <div v-if="selTask.recurrence.type !== RecurrenceType.NONE">
+          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 pt-8">
+            Repeat until 
+          </label>
+          <v-radio-group v-model="(props.selTask.recurrence as CustomRecurrence).repeatUntilType" >
+            <v-radio label="Repeat forever" value="one"></v-radio>
+            <div class="flex items-center justify-center gap-1">
+              <v-radio label="Until" value="two"></v-radio>
+              <v-date-input
+                v-model="(props.selTask.recurrence as CustomRecurrence).repeatUntilDate" 
+                :disabled="(props.selTask.recurrence as CustomRecurrence).repeatUntilType!== 'two'"
+              </v-date-input>
             </div>
+            <div class="flex items-center justify-center gap-1">
+              <v-radio label="Once repeated" value="three"></v-radio>
+              <v-number-input
+                :reverse="false"
+                controlVariant="stacked"
+                label=""
+                :hideInput="false"
+                :inset="false"
+                v-model="(props.selTask.recurrence as CustomRecurrence).repeatUntilTimes"
+                width="4"
+                :min="1"
+                :disabled="(props.selTask.recurrence as CustomRecurrence).repeatUntilType !== 'three'"
+              ></v-number-input>
+            </div>
+          </v-radio-group>
         </div>
       </div>
 </template>

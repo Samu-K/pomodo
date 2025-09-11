@@ -4,7 +4,7 @@ import {
 	Clock,
 	Settings,
 	Target,
-	TrendingUp,
+	TrendingUp
 } from "lucide-vue-next";
 
 // Sample data - you'll replace with real data
@@ -13,21 +13,21 @@ const focusTimeData = [
 		category: "Work",
 		color: "bg-pomodo-orange",
 		time: "3h 25m",
-		percentage: 65,
+		percentage: 65
 	},
 	{ category: "Study", color: "bg-pomodo-red", time: "1h 15m", percentage: 25 },
 	{
 		category: "Personal",
 		color: "bg-pomodo-gold",
 		time: "30m",
-		percentage: 10,
-	},
+		percentage: 10
+	}
 ];
 
 const completedTasks = [
 	{ id: 1, name: "Review project proposal", duration: "2h" },
 	{ id: 2, name: "Email responses", duration: "45m" },
-	{ id: 3, name: "Study algorithms", duration: "1h 15m" },
+	{ id: 3, name: "Study algorithms", duration: "1h 15m" }
 ];
 
 const weekDays = ["M", "T", "W", "T", "F", "S", "S"];

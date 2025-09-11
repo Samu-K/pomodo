@@ -8,15 +8,15 @@ use crate::database::{
 };
 use chrono::{NaiveDate, NaiveDateTime};
 use futures::TryStreamExt;
-use sqlx::{Row, Sqlite};
-use std::error::Error;
+use sqlx::Row;
+use std::sync::Arc;
 
-pub struct TaskActions<'a> {
-    pub db: &'a database::Db, // Pool<Sqlite>
+pub struct TaskActions {
+    pub db: Arc<database::Db>, // Pool<Sqlite>
 }
 
-impl<'a> TaskActions<'a> {
-    pub fn new(db: &'a database::Db) -> Self {
+impl TaskActions {
+    pub fn new(db: Arc<database::Db>) -> Self {
         TaskActions { db }
     }
 
@@ -48,7 +48,7 @@ impl<'a> TaskActions<'a> {
             .bind(task.is_recurring)
             .bind(task.series_id)
             .bind(task.completed)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
 
         let task_id = res.last_insert_rowid();
@@ -61,7 +61,7 @@ impl<'a> TaskActions<'a> {
             .bind(task_id)
             .bind(task.description.clone())
             .bind(task.deadline)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
         }
 
@@ -97,7 +97,7 @@ impl<'a> TaskActions<'a> {
 
         let task: Task = sqlx::query_as::<_, Task>(sql)
             .bind(task_id)
-            .fetch_one(self.db)
+            .fetch_one(&*self.db)
             .await?;
 
         Ok(task)
@@ -124,7 +124,7 @@ impl<'a> TaskActions<'a> {
         "#;
 
         let tasks: Vec<Task> = sqlx::query_as::<_, Task>(sql)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
 
@@ -153,7 +153,7 @@ impl<'a> TaskActions<'a> {
         "#;
 
         let tasks: Vec<Task> = sqlx::query_as::<_, Task>(sql)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
         Ok(tasks)
@@ -181,7 +181,7 @@ impl<'a> TaskActions<'a> {
         "#;
 
         let tasks: Vec<Task> = sqlx::query_as::<_, Task>(sql)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
         Ok(tasks)
@@ -209,7 +209,7 @@ impl<'a> TaskActions<'a> {
         "#;
         let tasks: Vec<Task> = sqlx::query_as::<_, Task>(sql)
             .bind(date)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
         Ok(tasks)
@@ -242,7 +242,7 @@ impl<'a> TaskActions<'a> {
         let tasks: Vec<Task> = sqlx::query_as::<_, Task>(sql)
             .bind(start_date)
             .bind(end_date)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
         Ok(tasks)
@@ -280,7 +280,7 @@ impl<'a> TaskActions<'a> {
             .bind(task.series_id)
             .bind(task.completed)
             .bind(task_id)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
 
         // update/insert task_details if provided
@@ -291,7 +291,7 @@ impl<'a> TaskActions<'a> {
             .bind(task_id)
             .bind(task.description.clone())
             .bind(task.deadline)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
         }
 
@@ -300,12 +300,12 @@ impl<'a> TaskActions<'a> {
 
     pub async fn set_task_complete(&self, task_id: i64) -> NoReturn {
         let sql = "UPDATE tasks SET completed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = $1";
-        sqlx::query(sql).bind(task_id).execute(self.db).await?;
+        sqlx::query(sql).bind(task_id).execute(&*self.db).await?;
         Ok(())
     }
     pub async fn set_task_incomplete(&self, task_id: i64) -> NoReturn {
         let sql = "UPDATE tasks SET completed = 0, updated_at = CURRENT_TIMESTAMP WHERE id = $1";
-        sqlx::query(sql).bind(task_id).execute(self.db).await?;
+        sqlx::query(sql).bind(task_id).execute(&*self.db).await?;
         Ok(())
     }
 
@@ -321,7 +321,7 @@ impl<'a> TaskActions<'a> {
         sqlx::query(&sql)
             .bind(value)
             .bind(task_id)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
         Ok(())
     }
@@ -343,7 +343,7 @@ impl<'a> TaskActions<'a> {
         sqlx::query(&sql)
             .bind(value)
             .bind(task_id)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
         Ok(())
     }
@@ -360,7 +360,7 @@ impl<'a> TaskActions<'a> {
         sqlx::query(&sql)
             .bind(value)
             .bind(task_id)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
         Ok(())
     }
@@ -373,7 +373,7 @@ impl<'a> TaskActions<'a> {
 
     pub async fn delete_task(&self, task_id: i64) -> NoReturn {
         let sql = "DELETE FROM tasks WHERE id = $1";
-        sqlx::query(sql).bind(task_id).execute(self.db).await?;
+        sqlx::query(sql).bind(task_id).execute(&*self.db).await?;
         Ok(())
     }
 
@@ -387,31 +387,34 @@ impl<'a> TaskActions<'a> {
 
     pub async fn delete_tasks_in_category(&self, category_id: i64) -> NoReturn {
         let sql = "DELETE FROM tasks WHERE category_id = $1";
-        sqlx::query(sql).bind(category_id).execute(self.db).await?;
+        sqlx::query(sql)
+            .bind(category_id)
+            .execute(&*self.db)
+            .await?;
         Ok(())
     }
 
     pub async fn clear_all_oneshot_tasks(&self) -> NoReturn {
         let sql = "DELETE FROM tasks WHERE is_recurring = 0";
-        sqlx::query(sql).execute(self.db).await?;
+        sqlx::query(sql).execute(&*self.db).await?;
         Ok(())
     }
 
     pub async fn clear_all_tasks_for_date(&self, date: NaiveDate) -> NoReturn {
         let sql = "DELETE FROM tasks WHERE id IN (SELECT task_id FROM task_details WHERE date(deadline) = $1)";
-        sqlx::query(sql).bind(date).execute(self.db).await?;
+        sqlx::query(sql).bind(date).execute(&*self.db).await?;
         Ok(())
     }
 
     pub async fn clear_all_tasks_for_and_after_date(&self, date: NaiveDate) -> NoReturn {
         let sql = "DELETE FROM tasks WHERE id IN (SELECT task_id FROM task_details WHERE date(deadline) >= $1)";
-        sqlx::query(sql).bind(date).execute(self.db).await?;
+        sqlx::query(sql).bind(date).execute(&*self.db).await?;
         Ok(())
     }
 
     pub async fn clear_complete_tasks(&self) -> NoReturn {
         let sql = "DELETE FROM tasks WHERE completed = 1";
-        sqlx::query(sql).execute(self.db).await?;
+        sqlx::query(sql).execute(&*self.db).await?;
         Ok(())
     }
 
@@ -424,7 +427,7 @@ impl<'a> TaskActions<'a> {
     /// A: Count sessions for a given task_id
     pub async fn count_sessions_for_task(&self, task_id: i64) -> IdReturn {
         let sql = "SELECT COUNT(1) as cnt FROM sessions WHERE task_id = $1";
-        let row = sqlx::query(sql).bind(task_id).fetch_one(self.db).await?;
+        let row = sqlx::query(sql).bind(task_id).fetch_one(&*self.db).await?;
         let cnt: i64 = row.try_get("cnt")?;
         Ok(cnt)
     }
@@ -450,7 +453,7 @@ impl<'a> TaskActions<'a> {
             .bind(dtstart)
             .bind(until)
             .bind(timezone)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
         Ok(res.last_insert_rowid())
     }
@@ -469,28 +472,28 @@ impl<'a> TaskActions<'a> {
             sqlx::query("UPDATE recurrence_rules SET rrule = $1 WHERE id = $2")
                 .bind(rr)
                 .bind(rule_id)
-                .execute(self.db)
+                .execute(&*self.db)
                 .await?;
         }
         if let Some(ds) = dtstart {
             sqlx::query("UPDATE recurrence_rules SET dtstart = $1 WHERE id = $2")
                 .bind(ds)
                 .bind(rule_id)
-                .execute(self.db)
+                .execute(&*self.db)
                 .await?;
         }
         if until.is_some() {
             sqlx::query("UPDATE recurrence_rules SET until = $1 WHERE id = $2")
                 .bind(until)
                 .bind(rule_id)
-                .execute(self.db)
+                .execute(&*self.db)
                 .await?;
         }
         if let Some(tz) = timezone {
             sqlx::query("UPDATE recurrence_rules SET timezone = $1 WHERE id = $2")
                 .bind(tz)
                 .bind(rule_id)
-                .execute(self.db)
+                .execute(&*self.db)
                 .await?;
         }
         Ok(())
@@ -500,7 +503,7 @@ impl<'a> TaskActions<'a> {
         let sql = "SELECT * FROM recurrence_rules WHERE task_id = $1";
         let rules: Vec<RecurrenceRule> = sqlx::query_as::<_, RecurrenceRule>(sql)
             .bind(task_id)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
         Ok(rules)
@@ -511,7 +514,7 @@ impl<'a> TaskActions<'a> {
         let res = sqlx::query(sql)
             .bind(recurrence_rule_id)
             .bind(exdate)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
         Ok(res.last_insert_rowid())
     }
@@ -521,7 +524,7 @@ impl<'a> TaskActions<'a> {
         let res = sqlx::query(sql)
             .bind(recurrence_rule_id)
             .bind(rdate)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
         Ok(res.last_insert_rowid())
     }
@@ -530,7 +533,7 @@ impl<'a> TaskActions<'a> {
         let sql = "SELECT * FROM recurrence_exdates WHERE recurrence_rule_id = $1";
         let rows: Vec<RecurrenceExdate> = sqlx::query_as::<_, RecurrenceExdate>(sql)
             .bind(recurrence_rule_id)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
         Ok(rows)
@@ -540,7 +543,7 @@ impl<'a> TaskActions<'a> {
         let sql = "SELECT * FROM recurrence_rdates WHERE recurrence_rule_id = $1";
         let rows: Vec<RecurrenceRdate> = sqlx::query_as::<_, RecurrenceRdate>(sql)
             .bind(recurrence_rule_id)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
         Ok(rows)

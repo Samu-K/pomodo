@@ -25,7 +25,7 @@ const selectedTask = ref<Task>({
 	cycles: 0,
 	startTime: new Date(),
 	gradient: "",
-	completed: false,
+	completed: false
 });
 
 // Handle navigation

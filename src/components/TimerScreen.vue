@@ -9,7 +9,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
 	initialTime: 25 * 60,
-	category: "Work",
+	category: "Work"
 });
 
 // Emit events (for parent communication)

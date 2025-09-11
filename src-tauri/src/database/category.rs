@@ -3,13 +3,14 @@ use crate::database::{
     decls::{Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn},
 };
 use futures::TryStreamExt;
+use std::sync::Arc;
 
-pub struct CategoryActions<'a> {
-    pub db: &'a database::Db,
+pub struct CategoryActions {
+    pub db: Arc<database::Db>,
 }
 
-impl<'a> CategoryActions<'a> {
-    pub fn new(db: &'a database::Db) -> Self {
+impl CategoryActions {
+    pub fn new(db: Arc<database::Db>) -> Self {
         Self { db }
     }
 
@@ -23,10 +24,10 @@ impl<'a> CategoryActions<'a> {
             return Err("Category needs to have a name".into());
         };
 
-        let mut sql = String::from("INSERT INTO categories (name, ");
+        let mut sql = String::from("INSERT INTO categories (name ");
 
         if cat.color.is_some() {
-            sql += "color) VALUES ($1,$2)";
+            sql += ", color) VALUES ($1,$2)";
         } else {
             sql += ") VALUES ($1)";
         };
@@ -37,7 +38,7 @@ impl<'a> CategoryActions<'a> {
             query = query.bind(cat.color);
         };
 
-        let res = query.execute(self.db).await?;
+        let res = query.execute(&*self.db).await?;
 
         Ok(res.last_insert_rowid())
     }
@@ -52,7 +53,7 @@ impl<'a> CategoryActions<'a> {
         let sql = "SELECT * FROM categories";
 
         let cats: Vec<Category> = sqlx::query_as::<_, Category>(sql)
-            .fetch(self.db)
+            .fetch(&*self.db)
             .try_collect()
             .await?;
 
@@ -62,9 +63,17 @@ impl<'a> CategoryActions<'a> {
         let sql = "SELECT * FROM categories WHERE id = $1";
         let cat = sqlx::query_as::<_, Category>(sql)
             .bind(cat_id)
-            .fetch_one(self.db)
+            .fetch_one(&*self.db)
             .await?;
 
+        Ok(cat)
+    }
+    pub async fn get_category_by_name(&self, cat_name: String) -> CategoryGet {
+        let sql = "SELECT * FROM categories WHERE name = $1";
+        let cat = sqlx::query_as::<_, Category>(sql)
+            .bind(cat_name)
+            .fetch_one(&*self.db)
+            .await?;
         Ok(cat)
     }
 
@@ -79,7 +88,7 @@ impl<'a> CategoryActions<'a> {
         let _res = sqlx::query(sql)
             .bind(name)
             .bind(cat_id)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
 
         Ok(())
@@ -90,7 +99,7 @@ impl<'a> CategoryActions<'a> {
         let _res = sqlx::query(sql)
             .bind(color)
             .bind(cat_id)
-            .execute(self.db)
+            .execute(&*self.db)
             .await?;
 
         Ok(())
@@ -104,7 +113,7 @@ impl<'a> CategoryActions<'a> {
     pub async fn delete_category(&self, cat_id: i64) -> NoReturn {
         let sql = "DELETE FROM categories WHERE id = $1";
 
-        let _res = sqlx::query(sql).bind(cat_id).execute(self.db).await?;
+        let _res = sqlx::query(sql).bind(cat_id).execute(&*self.db).await?;
 
         Ok(())
     }

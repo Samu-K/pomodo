@@ -5,18 +5,18 @@ import { Minus, Plus } from "lucide-vue-next";
 const timerSettings = {
 	focusDuration: 25,
 	shortBreak: 5,
-	longBreak: 15,
+	longBreak: 15
 };
 
 const automationSettings = {
 	autoStartBreaks: true,
-	autoStartFocus: false,
+	autoStartFocus: false
 };
 
 const notificationSettings = {
 	soundAlerts: true,
 	vibration: true,
-	pushNotifications: false,
+	pushNotifications: false
 };
 
 const themeOptions = ["Dark", "Light", "Auto"];

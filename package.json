@@ -1,40 +1,40 @@
 {
-	"name": "pomodo",
-	"private": true,
-	"version": "0.1.0",
-	"type": "module",
-	"scripts": {
-		"fmt": "biome format --write",
-		"lint": "biome check",
-		"lint:fix": "biome check --write",
-		"dev": "vite",
-		"build": "vue-tsc --noEmit && vite build",
-		"preview": "vite preview",
-		"tauri": "WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri"
-	},
-	"dependencies": {
-		"@date-io/date-fns": "^3.2.1",
-		"@mdi/js": "^7.4.47",
-		"@tauri-apps/api": "^2",
-		"@tauri-apps/plugin-opener": "^2",
-		"date-fns": "^4.1.0",
-		"lucide-vue-next": "^0.542.0",
-		"vue": "^3.5.13",
-		"vuetify": "^3.9.7"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "2.2.2",
-		"@mdi/font": "^7.4.47",
-		"@tauri-apps/cli": "^2",
-		"@vitejs/plugin-vue": "^5.2.1",
-		"@vitejs/plugin-vue-jsx": "^5.1.1",
-		"autoprefixer": "^10.4.21",
-		"material-design-icons-iconfont": "^6.7.0",
-		"postcss": "^8.5.6",
-		"tailwindcss": "^3.4.17",
-		"typescript": "~5.6.2",
-		"vite": "^6.0.3",
-		"vite-plugin-vuetify": "^2.1.2",
-		"vue-tsc": "^2.1.10"
-	}
+  "name": "pomodo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "fmt": "biome format --write",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri"
+  },
+  "dependencies": {
+    "@date-io/date-fns": "^3.2.1",
+    "@mdi/js": "^7.4.47",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-opener": "^2",
+    "date-fns": "^4.1.0",
+    "lucide-vue-next": "^0.542.0",
+    "vue": "^3.5.13",
+    "vuetify": "^3.9.7"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.2",
+    "@mdi/font": "^7.4.47",
+    "@tauri-apps/cli": "^2",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue-jsx": "^5.1.1",
+    "autoprefixer": "^10.4.21",
+    "material-design-icons-iconfont": "^6.7.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3",
+    "vite-plugin-vuetify": "^2.1.2",
+    "vue-tsc": "^2.1.10"
+  }
 }

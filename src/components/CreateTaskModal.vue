@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { invoke } from "@tauri-apps/api/core";
 import { X } from "lucide-vue-next";
 import { ref } from "vue";
 import { RecurrenceType } from "../defines/recurrence_modes.ts";
+import { createTaskWithRecurrence } from "../defines/task_funcs.ts";
 import { Task } from "../interfaces/task.ts";
 import TaskEditBlock from "./TaskEditBlock.vue";
 
@@ -18,11 +20,22 @@ const newTask = ref<Task>({
 	cycles: 0,
 	startTime: curDate.value,
 	recurrence: {
-		type: RecurrenceType.NONE,
+		type: RecurrenceType.NONE
 	},
 	gradient: "",
-	completed: false,
+	completed: false
 });
+
+const saveTask = async () => {
+	let ret = await createTaskWithRecurrence(newTask.value);
+	await invoke("task_get_tasks")
+		.then((tasks) => console.log(tasks))
+		.catch((error) => console.error(error));
+	await invoke("task_get_rules_for_task", { task_id: ret.task_id })
+		.then((rules) => console.log(rules))
+		.catch((error) => console.error(error));
+	emit("close");
+};
 </script>
 
 <template>
@@ -49,7 +62,9 @@ const newTask = ref<Task>({
         >
           Cancel
         </button>
-        <button class="flex-1 py-3 bg-gradient-to-r from-pomodo-orange to-pomodo-red rounded-lg text-white font-semibold hover:opacity-90 transition-opacity">
+        <button class="flex-1 py-3 bg-gradient-to-r from-pomodo-orange to-pomodo-red rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
+          @click="saveTask"
+        >
           Create Task
         </button>
       </div>
