@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Plus } from "lucide-vue-next";
 import { computed, ref } from "vue";
-import { RecurrenceType } from "../defines/recurrence_modes.ts";
-import { Task } from "../interfaces/task.ts";
+import { RecurrenceType } from "../../defines/recur.ts";
+import { Task } from "../../defines/task.ts";
 
 const emit = defineEmits<{
 	"add-task": [];

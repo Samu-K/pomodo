@@ -2,7 +2,6 @@ pub mod category;
 pub mod decls;
 pub mod session;
 pub mod settings;
-pub mod task;
 
 use decls::Db;
 use sqlx::{migrate::MigrateDatabase, sqlite::SqlitePoolOptions, Sqlite};

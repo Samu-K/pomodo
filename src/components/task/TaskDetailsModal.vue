@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Task } from "../interfaces/task.ts";
+import { ref, watch } from "vue";
+import { Task } from "../../defines/task.ts";
+import { updateTask } from "../../funcs/task.ts";
 import TaskEditBlock from "./TaskEditBlock.vue";
-import { watch, ref } from "vue";
-import { updateTask } from "../defines/task_funcs.ts";
 
 const emit = defineEmits<{
 	close: [];

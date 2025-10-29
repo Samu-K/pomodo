@@ -5,13 +5,13 @@ import { VDateInput } from "vuetify/labs/VDateInput";
 import {
 	CustomRecurrence,
 	CustomRecurrenceType,
+	days,
 	MonthlyRepeatType,
 	Recurrence,
 	RecurrenceType,
 	RepeatUntilType
-} from "../defines/recurrence_modes.ts";
-import { days } from "../defines/task_defines.ts";
-import { Task } from "../interfaces/task.ts";
+} from "../../defines/recur.ts";
+import { Task } from "../../defines/task.ts";
 
 const props = defineProps<{
 	selTask: Task;

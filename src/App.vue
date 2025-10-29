@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import AppLayout from "./components/AppLayout.vue";
-import CreateCategoryModal from "./components/CreateCategoryModal.vue";
-import CreateTaskModal from "./components/CreateTaskModal.vue";
-import SettingsScreen from "./components/SettingsScreen.vue";
-import StatsScreen from "./components/StatsScreen.vue";
-import TaskDetailsModal from "./components/TaskDetailsModal.vue";
-import TimelineScreen from "./components/TimelineScreen.vue";
-import TimerScreen from "./components/TimerScreen.vue";
-import { Task } from "./interfaces/task.ts";
+import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
+import CreateTaskModal from "./components/task/CreateTaskModal.vue";
+import TaskDetailsModal from "./components/task/TaskDetailsModal.vue";
+import { RecurrenceType } from "./defines/recur.ts";
+import { Task } from "./defines/task.ts";
+import TimerScreen from "./pages/landing/TimerScreen.vue";
+import SettingsScreen from "./pages/settings/SettingsScreen.vue";
+import StatsScreen from "./pages/stats/StatsScreen.vue";
+import TimelineScreen from "./pages/timeline/TimelineScreen.vue";
 
 // Navigation state
 const activeTab = ref<"timer" | "timeline" | "tasks" | "stats">("timer");
@@ -25,7 +26,10 @@ const selectedTask = ref<Task>({
 	cycles: 0,
 	startTime: new Date(),
 	gradient: "",
-	completed: false
+	completed: false,
+	recurrence: {
+		type: RecurrenceType.NONE
+	}
 });
 
 // Handle navigation

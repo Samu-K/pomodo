@@ -2,9 +2,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { X } from "lucide-vue-next";
 import { ref } from "vue";
-import { RecurrenceType } from "../defines/recurrence_modes.ts";
-import { createTaskWithRecurrence } from "../defines/task_funcs.ts";
-import { Task } from "../interfaces/task.ts";
+import { RecurrenceType } from "../../defines/recur.ts";
+import { Task } from "../../defines/task.ts";
+import { createTaskWithRecurrence } from "../../funcs/task.ts";
 import TaskEditBlock from "./TaskEditBlock.vue";
 
 const emit = defineEmits<{
