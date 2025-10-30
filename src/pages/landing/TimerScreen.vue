@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { Pause, Play, RotateCcw, SkipForward } from "lucide-vue-next";
-import { ref, computed, onUnmounted } from "vue";
+import { ref, computed, onUnmounted, reactive } from "vue";
 
-const initialTimeInSeconds = 25 * 60;
-
+const initialTimeInSeconds = 60;
 const remainingTime = ref(initialTimeInSeconds);
 const isRunning = ref(false);
 let timerId: number | undefined;
@@ -29,6 +28,9 @@ const formatTime = (totalSeconds: number): string => {
 	}
 };
 
+const percentCompleted = computed(
+	() => (remainingTime.value / initialTimeInSeconds) * 100
+);
 const formattedTime = computed(() => formatTime(remainingTime.value));
 
 const tick = () => {
@@ -93,8 +95,9 @@ onUnmounted(() => {
   <div class="flex flex-col h-full bg-dark-bg">
     <!-- Main Timer Container -->
     <div class="flex-1 flex flex-col items-center justify-center px-6 gap-10">
-      
       <!-- Progress Ring -->
+      <v-progress-circular :model-value="percentCompleted" color="pomodo-orange" :size="160" width="10"></v-progress-circular>
+      <!--
       <div class="relative w-52 h-52">
         <svg class="transform -rotate-90 w-52 h-52">
           <circle
@@ -121,6 +124,7 @@ onUnmounted(() => {
           <div class="w-10 h-10 bg-pomodo-orange rounded-full"></div>
         </div>
       </div>
+      -->
 
       <!-- Timer Display -->
       <div class="text-timer text-pomodo-red">
