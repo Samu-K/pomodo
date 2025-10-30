@@ -1,18 +1,81 @@
 <script setup lang="ts">
 import { Pause, Play, RotateCcw, SkipForward } from "lucide-vue-next";
+import { ref, computed, onUnmounted } from "vue";
 
-// Props (if needed)
-interface Props {
-	initialTime?: number;
-	category?: string;
-}
+const initialTimeInSeconds = 25 * 60;
 
-const props = withDefaults(defineProps<Props>(), {
-	initialTime: 25 * 60,
-	category: "Work"
-});
+const remainingTime = ref(initialTimeInSeconds);
+const isRunning = ref(false);
+let timerId: number | undefined;
 
-// Emit events (for parent communication)
+const formatTime = (totalSeconds: number): string => {
+	if (totalSeconds < 0) {
+		totalSeconds = 0;
+	}
+
+	const hours = Math.floor(totalSeconds / 3600);
+	const minutes = Math.floor((totalSeconds % 3600) / 60);
+	const seconds = totalSeconds % 60;
+
+	const pad = (num: number) => num.toString().padStart(2, "0");
+
+	const formattedMinutes = pad(minutes);
+	const formattedSeconds = pad(seconds);
+
+	if (hours > 0) {
+		return `${pad(hours)}:${formattedMinutes}:${formattedSeconds}`;
+	} else {
+		return `${formattedMinutes}:${formattedSeconds}`;
+	}
+};
+
+const formattedTime = computed(() => formatTime(remainingTime.value));
+
+const tick = () => {
+	if (remainingTime.value > 0) {
+		remainingTime.value--;
+	} else {
+		pauseTimer();
+	}
+};
+
+const startTimer = () => {
+	if (!isRunning.value && remainingTime.value > 0) {
+		isRunning.value = true;
+		timerId = window.setInterval(tick, 1000);
+	}
+};
+
+const pauseTimer = () => {
+	isRunning.value = false;
+	if (timerId) {
+		clearInterval(timerId);
+		timerId = undefined;
+	}
+};
+
+const toggleTimer = () => {
+	if (isRunning.value) {
+		pauseTimer();
+	} else {
+		startTimer();
+	}
+};
+
+const resetTimer = () => {
+	pauseTimer();
+	remainingTime.value = initialTimeInSeconds;
+};
+
+const categories = ref<Array<string>>([
+	"work",
+	"school",
+	"project",
+	"cleaning"
+]);
+
+const selected_category = ref<string>(categories.value[0]);
+
 const emit = defineEmits<{
 	play: [];
 	pause: [];
@@ -21,12 +84,9 @@ const emit = defineEmits<{
 	categoryChange: [category: string];
 }>();
 
-// Format time for display (you'll implement this)
-const formatTime = (seconds: number) => {
-	const mins = Math.floor(seconds / 60);
-	const secs = seconds % 60;
-	return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-};
+onUnmounted(() => {
+	pauseTimer();
+});
 </script>
 
 <template>
@@ -64,38 +124,47 @@ const formatTime = (seconds: number) => {
 
       <!-- Timer Display -->
       <div class="text-timer text-pomodo-red">
-        {{ formatTime(initialTime) }}
+        {{ formattedTime }}
       </div>
 
-      <!-- Category Selector -->
-      <button class="relative w-64 px-5 py-4 bg-dark-surface border border-dark-border rounded-xl text-white text-center group hover:border-pomodo-orange/50 transition-colors">
-        <span>{{ category }}</span>
-        <svg class="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-hover:text-pomodo-orange transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+      <div class="w-64 h-22">
+        <!-- Category Selector -->
+        <v-select
+          v-model="selected_category"
+          :items="categories"
+          label="Category"
+        >
+        </v-select>
+      </div>
 
       <!-- Control Buttons -->
-      <div class="flex items-center gap-8">
+      <div class="flex items-center gap-8 absolute bottom-40">
         <button 
-          @click="emit('reset')"
-          class="w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary hover:text-pomodo-orange hover:border-pomodo-orange/50 transition-all flex items-center justify-center"
+          @click="resetTimer"
+          class="w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary flex items-center justify-center"
+          :disabled="isRunning"
         >
-          <RotateCcw :size="20" />
+          <RotateCcw :size="20" :class="{'opacity-50': isRunning, 'hover:text-pomodo-orange hover:border-pomodo-orange/50 transition-all': !isRunning}" />
         </button>
         
         <button 
-          @click="emit('play')"
-          class="w-20 h-20 rounded-full bg-gradient-to-br from-pomodo-orange to-pomodo-red text-white hover:scale-105 transition-transform shadow-fab hover:shadow-fab-hover flex items-center justify-center"
+          @click="toggleTimer"
+          class="w-20 h-20 rounded-full  text-white hover:scale-105 transition-transform shadow-fab hover:shadow-fab-hover flex items-center justify-center"
+          :class="[
+            {'bg-gradient-to-br from-pomodo-orange to-pomodo-red': !isRunning},
+            {'bg-gradient-to-br from-gray-600 to-black': isRunning}
+          ]"
         >
-          <Play :size="32" />
+            <Pause :size="32" v-if="isRunning"/>
+            <Play :size="32" v-else/>
         </button>
         
         <button 
           @click="emit('skip')"
-          class="w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary hover:text-pomodo-orange hover:border-pomodo-orange/50 transition-all flex items-center justify-center"
+          class="bg-opacity-0 border-opacity-0 w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary hover:text-pomodo-orange hover:border-pomodo-orange/50 transition-all flex items-center justify-center"
+          disabled
         >
-          <SkipForward :size="20" />
+          <!--<SkipForward :size="20" />-->
         </button>
       </div>
     </div>
