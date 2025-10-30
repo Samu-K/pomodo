@@ -3,7 +3,7 @@ import { Pause, Play, RotateCcw } from "lucide-vue-next";
 import { ref } from "vue";
 import { useCountdownTimer } from "../../components/timer/countdown";
 
-const timer = useCountdownTimer(25 * 60);
+const timer = useCountdownTimer(20, 10);
 
 const categories = ref<Array<string>>([
 	"work",
@@ -13,14 +13,10 @@ const categories = ref<Array<string>>([
 ]);
 
 const selected_category = ref<string>(categories.value[0]);
-
-const emit = defineEmits<{
-	play: [];
-	pause: [];
-	reset: [];
-	skip: [];
-	categoryChange: [category: string];
-}>();
+const nextTask = {
+	name: "Algorithm study",
+	estimate: 4
+};
 </script>
 
 <template>
@@ -28,11 +24,21 @@ const emit = defineEmits<{
     <!-- Main Timer Container -->
     <div class="flex-1 flex flex-col items-center justify-center px-6 gap-10">
       <!-- Progress Ring -->
-      <v-progress-circular :model-value="timer.percent.value" color="pomodo-orange" :size="160" width="10">
+      <v-progress-circular :model-value="timer.percent.value" color="pomodo-orange" :size="170" width="10">
       </v-progress-circular>
 
+
+      <!-- Focus / test -->
+      <div class="text-pomodo-orange -mb-12 text-2xl">
+        <div v-if="timer.mode.value === 'focus'">
+          FOCUS
+        </div>
+        <div v-if="timer.mode.value === 'rest'">
+          REST
+        </div>
+      </div>
       <!-- Timer Display -->
-      <div class="text-timer text-pomodo-red">
+      <div class="text-timer text-pomodo-red mt-12">
         {{ timer.formattedTime }}
       </div>
 
@@ -69,7 +75,6 @@ const emit = defineEmits<{
         </button>
         
         <button 
-          @click="emit('skip')"
           class="bg-opacity-0 border-opacity-0 w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary hover:text-pomodo-orange hover:border-pomodo-orange/50 transition-all flex items-center justify-center"
           disabled
         >
@@ -81,7 +86,7 @@ const emit = defineEmits<{
     <!-- Task Preview Bar (optional) -->
     <div class="px-6 py-4 bg-dark-pure border-t border-dark-border">
       <div class="text-text-muted text-sm text-center">
-        Next: Algorithm Study (4 pomodoros)
+        Next: {{nextTask.name }} ( {{nextTask.estimate}} pomodoros )
       </div>
     </div>
   </div>

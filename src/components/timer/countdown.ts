@@ -1,13 +1,21 @@
 import { computed, onUnmounted, readonly, ref } from "vue";
 
-export function useCountdownTimer(initialTime: number = 25 * 60) {
+export function useCountdownTimer(
+	initialTime: number,
+	initialRestTime: number
+) {
 	// Use ref for primitive values that need to be reactive
 	const initialTimeRef = ref(initialTime);
 	const remainingTime = ref(initialTimeRef.value);
 	const isRunning = ref(false);
+	const mode = ref("focus");
 
 	// Private timer ID
 	let timerId: number | undefined;
+
+	const setInitialTime = (time: number) => {
+		initialTimeRef.value = time;
+	};
 
 	const formattedTime = computed(() => {
 		const time = remainingTime.value < 0 ? 0 : remainingTime.value;
@@ -34,6 +42,15 @@ export function useCountdownTimer(initialTime: number = 25 * 60) {
 			remainingTime.value--;
 		} else {
 			pauseTimer();
+			if (mode.value === "focus") {
+				setInitialTime(initialRestTime);
+				mode.value = "rest";
+				remainingTime.value = initialTimeRef.value;
+			} else {
+				setInitialTime(initialTime);
+				mode.value = "focus";
+				remainingTime.value = initialTimeRef.value;
+			}
 		}
 	};
 
@@ -76,6 +93,7 @@ export function useCountdownTimer(initialTime: number = 25 * 60) {
 	return {
 		remainingTime: readonly(remainingTime),
 		isRunning: readonly(isRunning),
+		mode,
 		formattedTime,
 		percent,
 		startTimer,
