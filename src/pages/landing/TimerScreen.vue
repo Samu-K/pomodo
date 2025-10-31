@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Pause, Play, RotateCcw } from "lucide-vue-next";
-import { ref } from "vue";
+import { Pause, Play, RotateCcw, SkipForward } from "lucide-vue-next";
+import { ref, computed } from "vue";
 import { useCountdownTimer } from "../../components/timer/countdown";
 
 const timer = useCountdownTimer(20, 10);
@@ -17,6 +17,30 @@ const nextTask = {
 	name: "Algorithm study",
 	estimate: 4
 };
+const themeColor = computed(() =>
+	timer.mode.value === "focus" ? "pomodo-orange" : "green"
+);
+const showCategorySelector = computed(() => {
+	if (timer.isRunning.value || timer.percent.value < 100) {
+		return false;
+	} else {
+		return true;
+	}
+});
+
+const allowSkip = computed(() => {
+	if (timer.mode.value === "rest") {
+		return true;
+	}
+	if (timer.isRunning.value) {
+		return false;
+	}
+	if (timer.percent.value < 100) {
+		return true;
+	} else {
+		return false;
+	}
+});
 </script>
 
 <template>
@@ -24,12 +48,12 @@ const nextTask = {
     <!-- Main Timer Container -->
     <div class="flex-1 flex flex-col items-center justify-center px-6 gap-10">
       <!-- Progress Ring -->
-      <v-progress-circular :model-value="timer.percent.value" color="pomodo-orange" :size="170" width="10">
+      <v-progress-circular :model-value="timer.percent.value" :color="themeColor" :size="170" width="10">
       </v-progress-circular>
 
 
       <!-- Focus / test -->
-      <div class="text-pomodo-orange -mb-12 text-2xl">
+      <div :class="(`-mb-12 text-2xl text-${themeColor}`)">
         <div v-if="timer.mode.value === 'focus'">
           FOCUS
         </div>
@@ -38,18 +62,23 @@ const nextTask = {
         </div>
       </div>
       <!-- Timer Display -->
-      <div class="text-timer text-pomodo-red mt-12">
+      <div :class="(`text-timer text-${themeColor} mt-12`)">
         {{ timer.formattedTime }}
       </div>
 
-      <div class="w-64 h-22">
+      <div class="w-64 h-22" v-if="timer.mode.value === 'focus'">
         <!-- Category Selector -->
         <v-select
           v-model="selected_category"
           :items="categories"
           label="Category"
+          v-if="showCategorySelector"
         >
         </v-select>
+        <div v-else
+          class="text-3xl text-pomodo-orange text-center -mt-10">
+          {{ selected_category }}
+        </div>
       </div>
 
       <!-- Control Buttons -->
@@ -57,16 +86,17 @@ const nextTask = {
         <button 
           @click="timer.resetTimer"
           class="w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary flex items-center justify-center"
-          :disabled="timer.isRunning.value"
+          :disabled="timer.isRunning.value || timer.percent.value === 100"
         >
-          <RotateCcw :size="20" :class="{'opacity-50': timer.isRunning.value, 'hover:text-pomodo-orange hover:border-pomodo-orange/50 transition-all': !timer.isRunning.value}" />
+          <RotateCcw :size="20" :class="{'opacity-50': timer.isRunning.value || timer.percent.value === 100}"/>
         </button>
         
         <button 
           @click="timer.toggleTimer"
-          class="w-20 h-20 rounded-full  text-white hover:scale-105 transition-transform shadow-fab hover:shadow-fab-hover flex items-center justify-center"
+          class="w-20 h-20 rounded-full text-white hover:scale-105 transition-transform shadow-fab hover:shadow-fab-hover flex items-center justify-center"
           :class="[
-            {'bg-gradient-to-br from-pomodo-orange to-pomodo-red': !timer.isRunning.value},
+            {'bg-gradient-to-br from-pomodo-orange to-pomodo-red': !timer.isRunning.value && timer.mode.value === 'focus'},
+            {'bg-gradient-to-br from-green-400 to-green-700': !timer.isRunning.value && timer.mode.value === 'rest'},
             {'bg-gradient-to-br from-gray-600 to-black': timer.isRunning.value}
           ]"
         >
@@ -75,10 +105,12 @@ const nextTask = {
         </button>
         
         <button 
-          class="bg-opacity-0 border-opacity-0 w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary hover:text-pomodo-orange hover:border-pomodo-orange/50 transition-all flex items-center justify-center"
-          disabled
+          class="w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary flex items-center justify-center"
+          :disabled="!allowSkip"
+          :class="{'opacity-50': !allowSkip}"
+          @click="timer.skip"
         >
-          <!--<SkipForward :size="20" />-->
+          <SkipForward :size="20" />
         </button>
       </div>
     </div>

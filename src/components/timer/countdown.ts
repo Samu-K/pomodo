@@ -37,6 +37,19 @@ export function useCountdownTimer(
 		return Number((remainingTime.value / initialTimeRef.value) * 100);
 	});
 
+	const skip = () => {
+		pauseTimer();
+		if (mode.value === "focus") {
+			setInitialTime(initialRestTime);
+			mode.value = "rest";
+			remainingTime.value = initialTimeRef.value;
+		} else {
+			setInitialTime(initialTime);
+			mode.value = "focus";
+			remainingTime.value = initialTimeRef.value;
+		}
+	};
+
 	const tick = () => {
 		if (remainingTime.value > 0) {
 			remainingTime.value--;
@@ -99,6 +112,7 @@ export function useCountdownTimer(
 		startTimer,
 		pauseTimer,
 		toggleTimer,
-		resetTimer
+		resetTimer,
+		skip
 	};
 }
