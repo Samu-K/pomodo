@@ -1,18 +1,36 @@
 <script setup lang="ts">
 import { Pause, Play, RotateCcw, SkipForward } from "lucide-vue-next";
-import { ref, computed } from "vue";
+import { computed, ref } from "vue";
 import { useCountdownTimer } from "../../components/timer/countdown";
+import { Category } from "../../defines/category.ts";
+import { Session } from "../../defines/session.ts";
 
 const timer = useCountdownTimer(20, 10);
+const completedSessions = ref<Array<Session>>([]);
 
-const categories = ref<Array<string>>([
-	"work",
-	"school",
-	"project",
-	"cleaning"
+const categories = ref<Array<Category>>([
+	{
+		id: 1,
+		name: "work",
+		color: "yellow"
+	},
+	{
+		id: 2,
+		name: "study",
+		color: "green"
+	},
+	{
+		id: 3,
+		name: "cleaning",
+		color: "purple"
+	},
+	{
+		id: 4,
+		name: "planning"
+	}
 ]);
 
-const selected_category = ref<string>(categories.value[0]);
+const selected_category = ref<Category>(categories.value[0]);
 const nextTask = {
 	name: "Algorithm study",
 	estimate: 4
@@ -41,6 +59,16 @@ const allowSkip = computed(() => {
 		return false;
 	}
 });
+
+const toggleSession = () => {
+	/* session not started */
+	if (timer.percent.value === 100) {
+		timer.setCategoryId(selected_category.value.id);
+	} else if (timer.percent.value === 0) {
+		timer.setCategoryId(undefined);
+	}
+	timer.toggleTimer();
+};
 </script>
 
 <template>
@@ -71,13 +99,15 @@ const allowSkip = computed(() => {
         <v-select
           v-model="selected_category"
           :items="categories"
+          item-title="name"
           label="Category"
           v-if="showCategorySelector"
+          return-object
         >
         </v-select>
         <div v-else
-          class="text-3xl text-pomodo-orange text-center -mt-10">
-          {{ selected_category }}
+          :class="(`text-3xl text-${selected_category.color} text-center -mt-10`)">
+          {{ selected_category.name }}
         </div>
       </div>
 
@@ -92,7 +122,7 @@ const allowSkip = computed(() => {
         </button>
         
         <button 
-          @click="timer.toggleTimer"
+          @click="toggleSession"
           class="w-20 h-20 rounded-full text-white hover:scale-105 transition-transform shadow-fab hover:shadow-fab-hover flex items-center justify-center"
           :class="[
             {'bg-gradient-to-br from-pomodo-orange to-pomodo-red': !timer.isRunning.value && timer.mode.value === 'focus'},

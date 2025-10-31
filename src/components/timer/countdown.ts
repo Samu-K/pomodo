@@ -1,4 +1,5 @@
-import { computed, onUnmounted, readonly, ref } from "vue";
+import { computed, onUnmounted, type Ref, readonly, ref } from "vue";
+import type { Session } from "../../defines/session.ts";
 
 export function useCountdownTimer(
 	initialTime: number,
@@ -8,13 +9,20 @@ export function useCountdownTimer(
 	const initialTimeRef = ref(initialTime);
 	const remainingTime = ref(initialTimeRef.value);
 	const isRunning = ref(false);
+	let category_id: number | undefined;
+
 	const mode = ref("focus");
+	const sessions: Ref<Array<Session>> = ref([]);
 
 	// Private timer ID
 	let timerId: number | undefined;
 
 	const setInitialTime = (time: number) => {
 		initialTimeRef.value = time;
+	};
+
+	const setCategoryId = (cat_id: number | undefined) => {
+		category_id = cat_id;
 	};
 
 	const formattedTime = computed(() => {
@@ -56,6 +64,8 @@ export function useCountdownTimer(
 		} else {
 			pauseTimer();
 			if (mode.value === "focus") {
+				sessions.value[sessions.value.length - 1].finished = true;
+
 				setInitialTime(initialRestTime);
 				mode.value = "rest";
 				remainingTime.value = initialTimeRef.value;
@@ -72,6 +82,26 @@ export function useCountdownTimer(
 			remainingTime.value = initialTimeRef.value;
 		}
 		if (!isRunning.value && remainingTime.value > 0) {
+			if (
+				remainingTime.value === initialTimeRef.value &&
+				mode.value === "focus"
+			) {
+				let id = 1;
+				if (sessions.value.length > 0) {
+					id = sessions.value[sessions.value.length - 1].id + 1;
+				}
+				if (category_id === undefined) {
+					return;
+				}
+				const new_session: Session = {
+					id: id,
+					start_time: new Date(),
+					duration: initialTimeRef.value,
+					finished: false,
+					category_id: category_id ? category_id : -99
+				};
+				sessions.value.push(new_session);
+			}
 			isRunning.value = true;
 			timerId = window.setInterval(tick, 1000);
 		}
@@ -95,6 +125,9 @@ export function useCountdownTimer(
 
 	const resetTimer = () => {
 		pauseTimer();
+		if (sessions.value.length > 0 && mode.value === "focus") {
+			sessions.value.pop();
+		}
 		remainingTime.value = initialTimeRef.value;
 	};
 
@@ -106,6 +139,7 @@ export function useCountdownTimer(
 	return {
 		remainingTime: readonly(remainingTime),
 		isRunning: readonly(isRunning),
+		sessions: readonly(sessions),
 		mode,
 		formattedTime,
 		percent,
@@ -113,6 +147,7 @@ export function useCountdownTimer(
 		pauseTimer,
 		toggleTimer,
 		resetTimer,
-		skip
+		skip,
+		setCategoryId
 	};
 }
