@@ -58,8 +58,7 @@ pub struct Category {
 pub struct Session {
     pub id: i64,
     pub start_time: NaiveDateTime, // TIMESTAMP
-    pub duration_seconds: Option<i64>,
-    pub session_length: Option<i64>,
+    pub duration: Option<i64>,
     pub finished: bool,
     pub category_id: Option<i64>,
     pub notes: Option<String>,

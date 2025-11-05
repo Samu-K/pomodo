@@ -21,11 +21,11 @@ impl SessionActions {
      * ########################################################################
      */
     pub async fn add_session(&self, session: Session) -> IdReturn {
-        if session.session_length.unwrap_or(0) == 0 {
+        if session.duration.unwrap_or(0) == 0 {
             return Err("Session length must be more than 0".into());
         };
 
-        let mut sql = String::from("INSERT into sessions (session_length, finished");
+        let mut sql = String::from("INSERT into sessions (duration, finished");
 
         let mut count = 2;
         if session.category_id.is_some() {
@@ -39,7 +39,7 @@ impl SessionActions {
         sql += ");";
 
         let mut query = sqlx::query(&sql)
-            .bind(session.session_length)
+            .bind(session.duration)
             .bind(session.finished);
 
         if session.category_id.is_some() {

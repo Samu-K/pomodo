@@ -1,5 +1,7 @@
 import { computed, onUnmounted, type Ref, readonly, ref } from "vue";
 import type { Session } from "../../defines/session.ts";
+import { add_session } from "../../funcs/db/session.ts";
+import { invoke } from "@tauri-apps/api/core";
 
 export function useCountdownTimer(
 	initialTime: number,
@@ -95,11 +97,16 @@ export function useCountdownTimer(
 				}
 				const new_session: Session = {
 					id: id,
-					start_time: new Date(),
+					start_time: new Date().toISOString(),
 					duration: initialTimeRef.value,
 					finished: false,
-					category_id: category_id ? category_id : -99
+					category_id: category_id ? category_id : -99,
+					notes: null,
+					created_at: null,
+					last_modified: null
 				};
+				console.log(new_session);
+				invoke("session_add_session", { session: new_session });
 				sessions.value.push(new_session);
 			}
 			isRunning.value = true;

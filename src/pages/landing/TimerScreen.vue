@@ -5,7 +5,7 @@ import { useCountdownTimer } from "../../components/timer/countdown";
 import { Category } from "../../defines/category.ts";
 import { Session } from "../../defines/session.ts";
 
-const timer = useCountdownTimer(20, 10);
+const timer = useCountdownTimer(5, 10);
 const completedSessions = ref<Array<Session>>([]);
 
 const categories = ref<Array<Category>>([
