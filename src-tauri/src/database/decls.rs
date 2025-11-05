@@ -56,7 +56,7 @@ pub struct Category {
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, FromRow)]
 pub struct Session {
-    pub id: i64,
+    pub id: Option<i64>,
     pub start_time: NaiveDateTime, // TIMESTAMP
     pub duration: Option<i64>,
     pub finished: bool,

@@ -1,6 +1,5 @@
 import { computed, onUnmounted, type Ref, readonly, ref } from "vue";
 import type { Session } from "../../defines/session.ts";
-import { add_session } from "../../funcs/db/session.ts";
 import { invoke } from "@tauri-apps/api/core";
 
 export function useCountdownTimer(
@@ -66,6 +65,13 @@ export function useCountdownTimer(
 		} else {
 			pauseTimer();
 			if (mode.value === "focus") {
+				invoke<Session[]>("session_get_sessions").then(
+					(sessions: Session[]) => {
+						const indx = sessions.length - 1;
+						const session_id = sessions[indx].id;
+						invoke("session_set_session_complete", { id: session_id });
+					}
+				);
 				sessions.value[sessions.value.length - 1].finished = true;
 
 				setInitialTime(initialRestTime);
@@ -88,25 +94,24 @@ export function useCountdownTimer(
 				remainingTime.value === initialTimeRef.value &&
 				mode.value === "focus"
 			) {
-				let id = 1;
-				if (sessions.value.length > 0) {
-					id = sessions.value[sessions.value.length - 1].id + 1;
-				}
 				if (category_id === undefined) {
 					return;
 				}
 				const new_session: Session = {
-					id: id,
-					start_time: new Date().toISOString(),
+					id: null,
+					start_time: new Date().toISOString().slice(0, 19),
 					duration: initialTimeRef.value,
 					finished: false,
-					category_id: category_id ? category_id : -99,
+					category_id: category_id ? category_id : null,
 					notes: null,
 					created_at: null,
 					last_modified: null
 				};
 				console.log(new_session);
 				invoke("session_add_session", { session: new_session });
+				invoke("session_get_sessions").then((sessions) => {
+					console.log(sessions);
+				});
 				sessions.value.push(new_session);
 			}
 			isRunning.value = true;
@@ -132,6 +137,11 @@ export function useCountdownTimer(
 
 	const resetTimer = () => {
 		pauseTimer();
+		invoke<Session[]>("session_get_sessions").then((sessions: Session[]) => {
+			const indx = sessions.length - 1;
+			const session_id = sessions[indx].id;
+			invoke("delete_session", { id: session_id });
+		});
 		if (sessions.value.length > 0 && mode.value === "focus") {
 			sessions.value.pop();
 		}

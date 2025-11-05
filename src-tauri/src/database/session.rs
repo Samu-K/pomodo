@@ -25,9 +25,9 @@ impl SessionActions {
             return Err("Session length must be more than 0".into());
         };
 
-        let mut sql = String::from("INSERT into sessions (duration, finished");
+        let mut sql = String::from("INSERT into sessions (start_time, duration, finished");
 
-        let mut count = 2;
+        let mut count = 3;
         if session.category_id.is_some() {
             sql += ", category_id";
             count += 1
@@ -39,6 +39,7 @@ impl SessionActions {
         sql += ");";
 
         let mut query = sqlx::query(&sql)
+            .bind(session.start_time)
             .bind(session.duration)
             .bind(session.finished);
 
