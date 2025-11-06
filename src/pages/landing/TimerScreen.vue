@@ -1,26 +1,28 @@
 <script setup lang="ts">
 import {
-	Edit,
-	List,
 	MinusCircle,
 	Pause,
 	Play,
 	RotateCcw,
 	SkipForward
 } from "lucide-vue-next";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, type Ref, ref } from "vue";
 import { useCountdownTimer } from "../../components/timer/countdown";
 import { Category } from "../../defines/category.ts";
-import { clear_all_sessions, get_sessions } from "../../funcs/db/sesssion.ts";
+import {
+	add_category,
+	change_category_name,
+	delete_category,
+	get_categories
+} from "../../funcs/db/categories.ts";
+import { clear_all_sessions } from "../../funcs/db/sesssion.ts";
 
-onMounted(() => {
-	clear_all_sessions().then(() => {
-		console.log("Cleared");
-		get_sessions().then((sessions) => console.log(sessions));
-	});
-});
+const categories: Ref<Category[]> = ref([]);
 
-const showCategoryModal = ref(false);
+await clear_all_sessions();
+const cats = await get_categories();
+categories.value = cats;
+
 const timer = useCountdownTimer(5, 10);
 const catEditMode = ref(false);
 const showAddCategoryModal = ref(false);
@@ -31,30 +33,11 @@ const newCategory = ref<Category>({
 	id: 0
 });
 
-const categories = ref<Array<Category>>([
-	{
-		id: 1,
-		name: "work",
-		color: "yellow"
-	},
-	{
-		id: 2,
-		name: "study",
-		color: "green"
-	},
-	{
-		id: 3,
-		name: "cleaning",
-		color: "purple"
-	},
-	{
-		id: 4,
-		name: "planning",
-		color: null
-	}
-]);
-
-const selected_category = ref<Category>(categories.value[0]);
+const selected_category = ref<Category>(
+	categories.value.length > 0
+		? categories.value[0]
+		: { name: "None", color: null, id: 0 }
+);
 const nextTask = {
 	name: "Algorithm study",
 	estimate: 4
@@ -112,35 +95,74 @@ const categoryToDelete = ref<Category | null>(null);
  */
 const openEditMode = () => {
 	// Create a deep copy to edit, so we can cancel
-	editableCategories.value = JSON.parse(JSON.stringify(categories.value));
+	editableCategories.value = JSON.parse(JSON.stringify(categories));
 	catEditMode.value = true;
 };
 
 /**
- * Saves the changes from the editable copy back to the original list.
+ * ⭐ NEW SAVE LOGIC ⭐
+ * Calculates the delta (changes) and applies them to the original list.
+ * This prepares for a real DB/API call.
  */
-const saveEdits = () => {
+const saveEdits = async () => {
 	// 1. Get the ID of the currently selected category *before* saving
 	const selectedId = selected_category.value.id;
 
-	// 2. Commit the changes from the copy
-	categories.value = editableCategories.value;
-	catEditMode.value = false;
+	// 2. Calculate the deltas
+	const toUpdate: Category[] = [];
+	const toDelete: Category[] = [];
 
-	// 3. Find the category in the *new* list that has the same ID
+	// Find Creates and Updates by iterating the new list
+	for (const editedCat of editableCategories.value) {
+		if (editedCat.id > 0) {
+			// It's an existing category, check if it was modified
+			const originalCat = categories.value.find((c) => c.id === editedCat.id);
+			if (originalCat && originalCat.name !== editedCat.name) {
+				// Name was changed, add to update list
+				toUpdate.push(editedCat);
+			}
+		}
+	}
+
+	// Find Deletes by iterating the original list
+	for (const originalCat of categories.value) {
+		// If it's not in the new list, it was deleted
+		if (!editableCategories.value.some((c) => c.id === originalCat.id)) {
+			toDelete.push(originalCat);
+		}
+	}
+
+	// --- 💡 DB INTEGRATION POINT ---
+	// This is where you would make your API calls.
+	// You would wait for all promises to resolve.
+	//
+	if (toUpdate.length > 0) {
+		for (const category of toUpdate) {
+			await change_category_name(category.id, category.name);
+		}
+	}
+	if (toDelete.length > 0) {
+		for (const category of toDelete) {
+			await delete_category(category.id);
+		}
+	}
+
+	// refetch categories
+	categories.value = await get_categories();
+
+	// 4. Find and re-set the selected category (handles renames/deletes)
 	const updatedSelectedCategory = categories.value.find(
 		(c) => c.id === selectedId
 	);
-
 	if (updatedSelectedCategory) {
-		// 4. If found, set it. This updates the activator button text
-		//    if the name was changed.
 		setSelCat(updatedSelectedCategory);
 	} else {
-		// 5. If not found (it was deleted), select the first available
-		//    category as a fallback.
+		// Fallback if the selected category was deleted
 		setSelCat(categories.value[0] || { id: 0, name: "None", color: null });
 	}
+
+	// 5. Exit edit mode
+	catEditMode.value = false;
 };
 
 /**
@@ -184,8 +206,10 @@ const cancelDelete = () => {
 	categoryToDelete.value = null;
 };
 
-const createCategory = () => {
-	categories.value.push(newCategory.value);
+const createCategory = async () => {
+	await add_category(newCategory.value);
+
+	categories.value = await get_categories();
 	newCategory.value = {
 		id: 0,
 		name: "",
