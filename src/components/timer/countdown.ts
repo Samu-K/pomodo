@@ -1,18 +1,26 @@
-import { computed, onUnmounted, type Ref, readonly, ref } from "vue";
+import { computed, onUnmounted, type Ref, readonly, ref, watch } from "vue";
 import type { Session } from "../../defines/session.ts";
-import { invoke } from "@tauri-apps/api/core";
+import {
+	add_session,
+	delete_latest_session,
+	get_sessions,
+	set_newest_session_complete
+} from "../../funcs/db/sesssion.ts";
 
 export function useCountdownTimer(
-	initialTime: number,
+	initialFocusTime: number,
 	initialRestTime: number
 ) {
-	// Use ref for primitive values that need to be reactive
-	const initialTimeRef = ref(initialTime);
+	const initialTimeRef = ref(initialFocusTime);
 	const remainingTime = ref(initialTimeRef.value);
 	const isRunning = ref(false);
 	let category_id: number | undefined;
+	enum TIMER_MODES {
+		FOCUS = 0,
+		REST = 1
+	}
 
-	const mode = ref("focus");
+	const mode = ref(TIMER_MODES.FOCUS);
 	const sessions: Ref<Array<Session>> = ref([]);
 
 	// Private timer ID
@@ -48,51 +56,50 @@ export function useCountdownTimer(
 
 	const skip = () => {
 		pauseTimer();
-		if (mode.value === "focus") {
+		if (mode.value === TIMER_MODES.FOCUS) {
 			setInitialTime(initialRestTime);
-			mode.value = "rest";
+			mode.value = TIMER_MODES.REST;
 			remainingTime.value = initialTimeRef.value;
 		} else {
-			setInitialTime(initialTime);
-			mode.value = "focus";
+			setInitialTime(initialFocusTime);
+			mode.value = TIMER_MODES.FOCUS;
 			remainingTime.value = initialTimeRef.value;
 		}
 	};
+
+	watch(remainingTime, async (newTime: number) => {
+		if (newTime === 0) {
+			pauseTimer();
+			if (mode.value === TIMER_MODES.FOCUS) {
+				await set_newest_session_complete();
+
+				setInitialTime(initialRestTime);
+				mode.value = TIMER_MODES.REST;
+				remainingTime.value = initialTimeRef.value;
+			} else {
+				setInitialTime(initialFocusTime);
+				mode.value = TIMER_MODES.FOCUS;
+				remainingTime.value = initialTimeRef.value;
+			}
+		}
+	});
 
 	const tick = () => {
 		if (remainingTime.value > 0) {
 			remainingTime.value--;
 		} else {
 			pauseTimer();
-			if (mode.value === "focus") {
-				invoke<Session[]>("session_get_sessions").then(
-					(sessions: Session[]) => {
-						const indx = sessions.length - 1;
-						const session_id = sessions[indx].id;
-						invoke("session_set_session_complete", { id: session_id });
-					}
-				);
-				sessions.value[sessions.value.length - 1].finished = true;
-
-				setInitialTime(initialRestTime);
-				mode.value = "rest";
-				remainingTime.value = initialTimeRef.value;
-			} else {
-				setInitialTime(initialTime);
-				mode.value = "focus";
-				remainingTime.value = initialTimeRef.value;
-			}
 		}
 	};
 
-	const startTimer = () => {
+	const startTimer = async () => {
 		if (remainingTime.value === 0) {
 			remainingTime.value = initialTimeRef.value;
 		}
 		if (!isRunning.value && remainingTime.value > 0) {
 			if (
 				remainingTime.value === initialTimeRef.value &&
-				mode.value === "focus"
+				mode.value === TIMER_MODES.FOCUS
 			) {
 				if (category_id === undefined) {
 					return;
@@ -108,11 +115,9 @@ export function useCountdownTimer(
 					last_modified: null
 				};
 				console.log(new_session);
-				invoke("session_add_session", { session: new_session });
-				invoke("session_get_sessions").then((sessions) => {
-					console.log(sessions);
-				});
-				sessions.value.push(new_session);
+				await add_session(new_session);
+				const old_sessions = await get_sessions();
+				console.log(old_sessions);
 			}
 			isRunning.value = true;
 			timerId = window.setInterval(tick, 1000);
@@ -135,15 +140,10 @@ export function useCountdownTimer(
 		}
 	};
 
-	const resetTimer = () => {
+	const resetTimer = async () => {
 		pauseTimer();
-		invoke<Session[]>("session_get_sessions").then((sessions: Session[]) => {
-			const indx = sessions.length - 1;
-			const session_id = sessions[indx].id;
-			invoke("delete_session", { id: session_id });
-		});
-		if (sessions.value.length > 0 && mode.value === "focus") {
-			sessions.value.pop();
+		if (mode.value === TIMER_MODES.FOCUS) {
+			await delete_latest_session();
 		}
 		remainingTime.value = initialTimeRef.value;
 	};
@@ -157,6 +157,7 @@ export function useCountdownTimer(
 		remainingTime: readonly(remainingTime),
 		isRunning: readonly(isRunning),
 		sessions: readonly(sessions),
+		TIMER_MODES: readonly(TIMER_MODES),
 		mode,
 		formattedTime,
 		percent,
