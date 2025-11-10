@@ -2,9 +2,9 @@ import { createApp } from "vue";
 import "./style.css"; // Your Tailwind CSS imports
 import App from "./App.vue";
 import "vuetify/styles";
+import { VueQueryPlugin } from "@tanstack/vue-query";
 import { createVuetify } from "vuetify";
 import { aliases, mdi } from "vuetify/iconsets/mdi-svg";
-import { VueQueryPlugin } from "@tanstack/vue-query";
 
 const vuetify = createVuetify({
 	icons: {

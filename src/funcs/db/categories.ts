@@ -6,7 +6,7 @@ const get_categories = async () => {
 	if (categories.length > 0) {
 		return categories;
 	} else {
-		throw Error("Categories empty");
+		return [];
 	}
 };
 

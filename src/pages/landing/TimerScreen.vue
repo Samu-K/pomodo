@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import {
 	MinusCircle,
 	Pause,
@@ -11,14 +12,10 @@ import { useCountdownTimer } from "../../components/timer/countdown";
 import { Category } from "../../defines/category.ts";
 import {
 	add_category,
-	change_category_name,
 	change_category_name_array,
-	delete_category,
 	delete_category_array,
 	get_categories
 } from "../../funcs/db/categories.ts";
-import { clear_all_sessions } from "../../funcs/db/sesssion.ts";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 
 const queryClient = useQueryClient();
 
@@ -31,14 +28,17 @@ const categories: Ref<Category[] | undefined> = categoriesState.data;
 const deleteCatState = useMutation({
 	mutationFn: async (cat_array: Category[]) =>
 		await delete_category_array(cat_array),
+	onError: () => {
+		console.log("Error deleting categories");
+	},
 	onSuccess: async () => {
 		await queryClient.invalidateQueries({ queryKey: ["categories"] });
 	},
 	onSettled: () => {
-		if (categories.value) {
+		if (categoriesState.data.value) {
 			// is selected category still in categories
 			if (
-				!categories.value.find((c) =>
+				!categoriesState.data.value.find((c) =>
 					selected_category.value ? c.id === selected_category.value.id : false
 				)
 			) {
@@ -298,9 +298,13 @@ const createCategory = () => {
 
               <v-card-text class="px-4" style="height: 300px">
                 <div v-if="!catEditMode">
+                  <div v-if="categories ? categories.length === 0 : true" class="items-center justify-center">
+                    No categories, create one with the button below
+                  </div>
                   <div
                     class="flex flex-col"
                     v-for="category in categories"
+                    v-else
                     :key="category.id"
                   >
                     <v-btn
@@ -352,7 +356,8 @@ const createCategory = () => {
                   color="surface-variant"
                   text="Edit"
                   variant="flat"
-                  v-if="!catEditMode && (categories ? categories.length > 0 : false)"
+                  v-if="!catEditMode || (categories ? categories.length === 0 : true)"
+                  :disabled="categories ? categories.length === 0 : true"
                   @click="openEditMode"
                 ></v-btn>
 
@@ -414,6 +419,7 @@ const createCategory = () => {
                     <v-btn
                       color="green-darken-1"
                       text="Create"
+                      :disabled="newCategory.name.length === 0"
                       @click="createCategory"
                     ></v-btn>
                   </v-card-actions>
