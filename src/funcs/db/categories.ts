@@ -30,4 +30,23 @@ const change_category_name = async (category_id: number, new_name: string) => {
 	return res;
 };
 
-export { add_category, change_category_name, delete_category, get_categories };
+const change_category_name_array = async (category_array: Category[]) => {
+	for (const category of category_array) {
+		await change_category_name(category.id, category.name);
+	}
+};
+
+const delete_category_array = async (category_array: Category[]) => {
+	for (const category of category_array) {
+		await delete_category(category.id);
+	}
+};
+
+export {
+	add_category,
+	change_category_name,
+	delete_category,
+	get_categories,
+	change_category_name_array,
+	delete_category_array
+};

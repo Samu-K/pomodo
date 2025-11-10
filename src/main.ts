@@ -4,6 +4,7 @@ import App from "./App.vue";
 import "vuetify/styles";
 import { createVuetify } from "vuetify";
 import { aliases, mdi } from "vuetify/iconsets/mdi-svg";
+import { VueQueryPlugin } from "@tanstack/vue-query";
 
 const vuetify = createVuetify({
 	icons: {
@@ -31,6 +32,7 @@ const app = createApp(App);
 // app.use(router)
 
 // Mount the app
+app.use(VueQueryPlugin);
 app.use(vuetify).mount("#app");
 
 // For Tauri, you might want to add:

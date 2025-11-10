@@ -12,16 +12,67 @@ import { Category } from "../../defines/category.ts";
 import {
 	add_category,
 	change_category_name,
+	change_category_name_array,
 	delete_category,
+	delete_category_array,
 	get_categories
 } from "../../funcs/db/categories.ts";
 import { clear_all_sessions } from "../../funcs/db/sesssion.ts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 
-const categories: Ref<Category[]> = ref([]);
+const queryClient = useQueryClient();
 
-await clear_all_sessions();
-const cats = await get_categories();
-categories.value = cats;
+const categoriesState = useQuery({
+	queryKey: ["categories"],
+	queryFn: get_categories
+});
+const categories: Ref<Category[] | undefined> = categoriesState.data;
+
+const deleteCatState = useMutation({
+	mutationFn: async (cat_array: Category[]) =>
+		await delete_category_array(cat_array),
+	onSuccess: async () => {
+		await queryClient.invalidateQueries({ queryKey: ["categories"] });
+	},
+	onSettled: () => {
+		if (categories.value) {
+			// is selected category still in categories
+			if (
+				!categories.value.find((c) =>
+					selected_category.value ? c.id === selected_category.value.id : false
+				)
+			) {
+				// not found or not set
+				setSelCat(null);
+			}
+		} else {
+			setSelCat(null);
+		}
+	}
+});
+
+const changeCatState = useMutation({
+	mutationFn: async (cat_array: Category[]) =>
+		await change_category_name_array(cat_array),
+	onSuccess: async () => {
+		await queryClient.invalidateQueries({ queryKey: ["categories"] });
+	},
+	onSettled: () => {
+		if (categories.value) {
+			let newCat = categories.value.find((c) =>
+				selected_category.value ? c.id === selected_category.value.id : false
+			);
+			setSelCat(newCat ? newCat : null);
+		}
+	}
+});
+
+const addCatState = useMutation({
+	mutationFn: async (cat: Category) => await add_category(cat),
+	onSuccess: async () => {
+		await queryClient.invalidateQueries({ queryKey: ["categories"] });
+	}
+});
 
 const timer = useCountdownTimer(5, 10);
 const catEditMode = ref(false);
@@ -33,11 +84,7 @@ const newCategory = ref<Category>({
 	id: 0
 });
 
-const selected_category = ref<Category>(
-	categories.value.length > 0
-		? categories.value[0]
-		: { name: "None", color: null, id: 0 }
-);
+const selected_category = ref<Category | null>();
 const nextTask = {
 	name: "Algorithm study",
 	estimate: 4
@@ -68,20 +115,22 @@ const allowSkip = computed(() => {
 });
 
 const toggleSession = () => {
-	/* session not started */
-	if (timer.percent.value === 100) {
-		timer.setCategoryId(selected_category.value.id);
-	} else if (timer.percent.value === 0) {
-		timer.setCategoryId(undefined);
+	if (selected_category.value) {
+		/* session not started */
+		if (timer.percent.value === 100) {
+			timer.setCategoryId(selected_category.value.id);
+		} else if (timer.percent.value === 0) {
+			timer.setCategoryId(undefined);
+		}
+		timer.toggleTimer();
 	}
-	timer.toggleTimer();
 };
 
-const setSelCat = (cat: Category) => {
+const setSelCat = (cat: Category | null) => {
 	selected_category.value = cat;
 };
 // --- State for Edit Mode ---
-const editableCategories = ref<Array<Category>>([]);
+const editableCategories = ref<Category[]>([]);
 
 // --- State for Delete Confirmation ---
 const showDeleteConfirm = ref(false);
@@ -95,7 +144,11 @@ const categoryToDelete = ref<Category | null>(null);
  */
 const openEditMode = () => {
 	// Create a deep copy to edit, so we can cancel
-	editableCategories.value = JSON.parse(JSON.stringify(categories));
+	if (categories.value) {
+		editableCategories.value = JSON.parse(JSON.stringify(categories.value));
+	} else {
+		editableCategories.value = [];
+	}
 	catEditMode.value = true;
 };
 
@@ -104,63 +157,43 @@ const openEditMode = () => {
  * Calculates the delta (changes) and applies them to the original list.
  * This prepares for a real DB/API call.
  */
-const saveEdits = async () => {
-	// 1. Get the ID of the currently selected category *before* saving
-	const selectedId = selected_category.value.id;
+const saveEdits = () => {
+	if (categories.value && editableCategories.value) {
+		// 2. Calculate the deltas
+		const toUpdate: Category[] = [];
+		const toDelete: Category[] = [];
 
-	// 2. Calculate the deltas
-	const toUpdate: Category[] = [];
-	const toDelete: Category[] = [];
-
-	// Find Creates and Updates by iterating the new list
-	for (const editedCat of editableCategories.value) {
-		if (editedCat.id > 0) {
-			// It's an existing category, check if it was modified
-			const originalCat = categories.value.find((c) => c.id === editedCat.id);
-			if (originalCat && originalCat.name !== editedCat.name) {
-				// Name was changed, add to update list
-				toUpdate.push(editedCat);
+		// Find Creates and Updates by iterating the new list
+		for (const editedCat of editableCategories.value) {
+			if (editedCat.id > 0) {
+				// It's an existing category, check if it was modified
+				const originalCat = categories.value.find((c) => c.id === editedCat.id);
+				if (originalCat && originalCat.name !== editedCat.name) {
+					// Name was changed, add to update list
+					toUpdate.push(editedCat);
+				}
 			}
 		}
-	}
 
-	// Find Deletes by iterating the original list
-	for (const originalCat of categories.value) {
-		// If it's not in the new list, it was deleted
-		if (!editableCategories.value.some((c) => c.id === originalCat.id)) {
-			toDelete.push(originalCat);
+		// Find Deletes by iterating the original list
+		for (const originalCat of categories.value) {
+			// If it's not in the new list, it was deleted
+			if (!editableCategories.value.some((c) => c.id === originalCat.id)) {
+				toDelete.push(originalCat);
+			}
+		}
+
+		// --- 💡 DB INTEGRATION POINT ---
+		// This is where you would make your API calls.
+		// You would wait for all promises to resolve.
+		//
+		if (toUpdate.length > 0) {
+			changeCatState.mutate(toUpdate);
+		}
+		if (toDelete.length > 0) {
+			deleteCatState.mutate(toDelete);
 		}
 	}
-
-	// --- 💡 DB INTEGRATION POINT ---
-	// This is where you would make your API calls.
-	// You would wait for all promises to resolve.
-	//
-	if (toUpdate.length > 0) {
-		for (const category of toUpdate) {
-			await change_category_name(category.id, category.name);
-		}
-	}
-	if (toDelete.length > 0) {
-		for (const category of toDelete) {
-			await delete_category(category.id);
-		}
-	}
-
-	// refetch categories
-	categories.value = await get_categories();
-
-	// 4. Find and re-set the selected category (handles renames/deletes)
-	const updatedSelectedCategory = categories.value.find(
-		(c) => c.id === selectedId
-	);
-	if (updatedSelectedCategory) {
-		setSelCat(updatedSelectedCategory);
-	} else {
-		// Fallback if the selected category was deleted
-		setSelCat(categories.value[0] || { id: 0, name: "None", color: null });
-	}
-
 	// 5. Exit edit mode
 	catEditMode.value = false;
 };
@@ -206,10 +239,9 @@ const cancelDelete = () => {
 	categoryToDelete.value = null;
 };
 
-const createCategory = async () => {
-	await add_category(newCategory.value);
+const createCategory = () => {
+	addCatState.mutate(newCategory.value);
 
-	categories.value = await get_categories();
 	newCategory.value = {
 		id: 0,
 		name: "",
@@ -253,7 +285,7 @@ const createCategory = async () => {
           <template v-slot:activator="{ props: activatorProps }">
             <v-btn
               color="orange"
-              :text="selected_category.name"
+              :text="selected_category ? selected_category.name : 'Select category'"
               variant="outlined"
               v-bind="activatorProps"
               class="px-12"
@@ -297,7 +329,7 @@ const createCategory = async () => {
                   >
                     <v-text-field
                       v-model="category.name"
-                      class="mt-4"
+                      class="mt-4 "
                       variant="outlined"
                       density="compact"
                       hide-details
@@ -320,7 +352,7 @@ const createCategory = async () => {
                   color="surface-variant"
                   text="Edit"
                   variant="flat"
-                  v-if="!catEditMode"
+                  v-if="!catEditMode && (categories ? categories.length > 0 : false)"
                   @click="openEditMode"
                 ></v-btn>
 
@@ -392,8 +424,8 @@ const createCategory = async () => {
         </v-dialog>
       </div>
       <div 
-        :class="(`text-3xl text-${selected_category.color} text-center -mt-10`)" v-else>
-        {{ selected_category.name }}
+        :class="(`text-3xl text-${selected_category ? selected_category.color : 'pomodo-orange'} text-center -mt-10`)" v-else>
+        {{ selected_category ? selected_category.name : "No category selected"}}
       </div>
       </div>
 
@@ -409,15 +441,18 @@ const createCategory = async () => {
         
         <button 
           @click="toggleSession"
-          class="w-20 h-20 rounded-full text-white hover:scale-105 transition-transform shadow-fab hover:shadow-fab-hover flex items-center justify-center"
+          :disabled="!selected_category"
+          class="w-20 h-20 rounded-full text-white flex items-center justify-center"
           :class="[
-            {'bg-gradient-to-br from-pomodo-orange to-pomodo-red': !timer.isRunning.value && timer.mode.value === timer.TIMER_MODES.FOCUS},
+            {'bg-gradient-to-br from-pomodo-orange to-pomodo-red': !timer.isRunning.value && timer.mode.value === timer.TIMER_MODES.FOCUS && selected_category},
             {'bg-gradient-to-br from-green-400 to-green-700': !timer.isRunning.value && timer.mode.value === timer.TIMER_MODES.REST},
-            {'bg-gradient-to-br from-gray-600 to-black': timer.isRunning.value}
+            {'bg-gradient-to-br from-gray-600 to-black': timer.isRunning.value},
+            {'bg-gradient-to-br from-gray-900 to-black opacity-70': !selected_category},
+            {'hover:scale-105 transition-transform shadow-fab hover:shadow-fab-hover ': selected_category}
           ]"
         >
             <Pause :size="32" v-if="timer.isRunning.value"/>
-            <Play :size="32" v-else/>
+            <Play :size="32" v-else"/>
         </button>
         
         <button 
