@@ -1,7 +1,17 @@
-import { computed, onUnmounted, type Ref, readonly, ref, watch } from "vue";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import {
+	computed,
+	onMounted,
+	onUnmounted,
+	type Ref,
+	readonly,
+	ref,
+	watch
+} from "vue";
 import type { Session } from "../../defines/session.ts";
 import {
 	add_session,
+	clear_all_sessions,
 	delete_latest_session,
 	get_sessions,
 	set_newest_session_complete
@@ -11,6 +21,43 @@ export function useCountdownTimer(
 	initialFocusTime: number,
 	initialRestTime: number
 ) {
+	const queryClient = useQueryClient();
+
+	const clearSessionsState = useMutation({
+		mutationFn: clear_all_sessions,
+		onSuccess: async () =>
+			await queryClient.invalidateQueries({ queryKey: ["sessions"] })
+	});
+
+	onMounted(() => {
+		clearSessionsState.mutate();
+	});
+
+	const sessionsState = useQuery({
+		queryKey: ["sessions"],
+		queryFn: get_sessions
+	});
+	const sessions: Ref<Session[] | undefined> = sessionsState.data;
+
+	const addSessionState = useMutation({
+		mutationFn: async (session: Session) => await add_session(session),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["sessions"] });
+		}
+	});
+	const deleteSessionState = useMutation({
+		mutationFn: delete_latest_session,
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["sessions"] });
+		}
+	});
+	const setSessionCompleteState = useMutation({
+		mutationFn: set_newest_session_complete,
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["sessions"] });
+		}
+	});
+
 	const initialTimeRef = ref(initialFocusTime);
 	const remainingTime = ref(initialTimeRef.value);
 	const isRunning = ref(false);
@@ -21,7 +68,6 @@ export function useCountdownTimer(
 	}
 
 	const mode = ref(TIMER_MODES.FOCUS);
-	const sessions: Ref<Array<Session>> = ref([]);
 
 	// Private timer ID
 	let timerId: number | undefined;
@@ -67,11 +113,11 @@ export function useCountdownTimer(
 		}
 	};
 
-	watch(remainingTime, async (newTime: number) => {
+	watch(remainingTime, (newTime: number) => {
 		if (newTime === 0) {
 			pauseTimer();
 			if (mode.value === TIMER_MODES.FOCUS) {
-				await set_newest_session_complete();
+				setSessionCompleteState.mutate();
 
 				setInitialTime(initialRestTime);
 				mode.value = TIMER_MODES.REST;
@@ -92,7 +138,7 @@ export function useCountdownTimer(
 		}
 	};
 
-	const startTimer = async () => {
+	const startTimer = () => {
 		if (remainingTime.value === 0) {
 			remainingTime.value = initialTimeRef.value;
 		}
@@ -114,11 +160,9 @@ export function useCountdownTimer(
 					created_at: null,
 					last_modified: null
 				};
-				console.log(new_session);
-				await add_session(new_session);
-				const old_sessions = await get_sessions();
-				console.log(old_sessions);
+				addSessionState.mutate(new_session);
 			}
+
 			isRunning.value = true;
 			timerId = window.setInterval(tick, 1000);
 		}
@@ -140,10 +184,10 @@ export function useCountdownTimer(
 		}
 	};
 
-	const resetTimer = async () => {
+	const resetTimer = () => {
 		pauseTimer();
 		if (mode.value === TIMER_MODES.FOCUS) {
-			await delete_latest_session();
+			deleteSessionState.mutate();
 		}
 		remainingTime.value = initialTimeRef.value;
 	};
@@ -156,8 +200,8 @@ export function useCountdownTimer(
 	return {
 		remainingTime: readonly(remainingTime),
 		isRunning: readonly(isRunning),
-		sessions: readonly(sessions),
 		TIMER_MODES: readonly(TIMER_MODES),
+		sessions: readonly(sessions),
 		mode,
 		formattedTime,
 		percent,
