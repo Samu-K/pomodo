@@ -27,8 +27,8 @@ CREATE TABLE sessions (
     category_id INTEGER,
     notes TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP--,
-    --FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+    last_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
 -- Indexes to assist common queries
