@@ -255,10 +255,6 @@ const createCategory = () => {
   <div class="flex flex-col h-full bg-dark-bg">
     <!-- Main Timer Container -->
     <div class="flex-1 flex flex-col items-center justify-center px-6 gap-10">
-      <div class="absolute items-center justify-center top-10">
-        {{timer.sessions}} 
-        <p>IS RUNNING {{timer.isRunning}}</p>
-      </div>
       <!-- Progress Ring -->
       <v-progress-circular :model-value="timer.percent" :color="themeColor" :size="170" width="10" z-index='2'>
       </v-progress-circular>

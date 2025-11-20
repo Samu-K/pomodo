@@ -1,17 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import {
-	computed,
-	onMounted,
-	onUnmounted,
-	type Ref,
-	readonly,
-	ref,
-	watch
-} from "vue";
+import { computed, onUnmounted, type Ref, readonly, ref, watch } from "vue";
 import type { Session } from "../../defines/session.ts";
 import {
 	add_session,
-	clear_all_sessions,
 	delete_latest_session,
 	get_sessions,
 	set_newest_session_complete
@@ -22,16 +13,6 @@ export function useCountdownTimer(
 	initialRestTime: number
 ) {
 	const queryClient = useQueryClient();
-
-	const clearSessionsState = useMutation({
-		mutationFn: clear_all_sessions,
-		onSuccess: async () =>
-			await queryClient.invalidateQueries({ queryKey: ["sessions"] })
-	});
-
-	onMounted(() => {
-		clearSessionsState.mutate();
-	});
 
 	const sessionsState = useQuery({
 		queryKey: ["sessions"],

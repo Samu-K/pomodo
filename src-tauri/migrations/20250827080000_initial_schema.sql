@@ -1,12 +1,11 @@
 -- recurring_tasks_schema.sql
--- Schema for recurring tasks, instances, and pomodoro sessions
 -- Constraints: no UNIQUE constraints, no DB-side validation checks, use TIMESTAMP for all dates.
 
 -- Categories
 CREATE TABLE categories (
     id INTEGER PRIMARY KEY ,
     name TEXT NOT NULL,
-    color TEXT NOT NULL DEFAULT '#808080',
+    color TEXT NOT NULL DEFAULT 'pomodo-orange',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

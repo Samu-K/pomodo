@@ -1,7 +1,7 @@
 export interface Session {
 	id: number | null;
 	start_time: string;
-	duration: number | null;
+	duration: number;
 	finished: boolean;
 	category_id: number | null;
 	notes: string | null;
