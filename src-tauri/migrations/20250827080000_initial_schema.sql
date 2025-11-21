@@ -15,8 +15,15 @@ CREATE TABLE user_settings (
     id INTEGER PRIMARY KEY ,
     key TEXT NOT NULL,
     value TEXT NOT NULL,
+    description TEXT,
     data_type TEXT NOT NULL,
+    category_id INTEGER NOT NULL, 
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE settings_categories (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL
 );
 
 CREATE TABLE sessions (

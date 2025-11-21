@@ -10,7 +10,7 @@ use crate::database::{
     category::CategoryActions,
     decls::{
         Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, Session, SessionGetVec,
-        SettingGetVec, StringReturn,
+        SettingCatGetVec, SettingGetVec, StringReturn,
     },
     session::SessionActions,
     settings::SettingActions,
@@ -65,8 +65,8 @@ tauri_commands! {
     settings::get_setting_value(key: String) -> StringReturn,
     settings::get_all_settings() -> SettingGetVec,
     settings::set_setting_value(value: String, key: String) -> NoReturn,
-    settings::reset_default_setting(key: String) -> NoReturn,
-    settings::reset_all_settings_default() -> NoReturn
+    settings::get_setting_categories() -> SettingCatGetVec,
+    settings::get_settings_for_category(cat_id: i64) -> SettingGetVec
 }
 
 pub fn run() {
@@ -93,8 +93,8 @@ pub fn run() {
             settings_get_setting_value,
             settings_get_all_settings,
             settings_set_setting_value,
-            settings_reset_default_setting,
-            settings_reset_all_settings_default,
+            settings_get_setting_categories,
+            settings_get_settings_for_category,
         ])
         .setup(|app| {
             tauri::async_runtime::block_on(async move {

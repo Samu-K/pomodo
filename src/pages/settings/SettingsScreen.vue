@@ -1,5 +1,21 @@
 <script setup lang="ts">
+import { useQuery } from "@tanstack/vue-query";
 import { Minus, Plus } from "lucide-vue-next";
+import { type Ref, ref } from "vue";
+import ToggleSwitch from "../../components/settings/ToggleSwitch.vue";
+import {
+	get_settings,
+	get_settings_categories
+} from "../../funcs/db/settings.ts";
+
+const settingsStatus = useQuery({
+	queryKey: ["settings"],
+	queryFn: get_settings
+});
+const settingCategories = useQuery({
+	queryKey: ["setting_categories"],
+	queryFn: get_settings_categories
+});
 
 // Sample settings data - you'll connect to real state
 const timerSettings = {
@@ -9,8 +25,8 @@ const timerSettings = {
 };
 
 const automationSettings = {
-	autoStartBreaks: true,
-	autoStartFocus: false
+	autoStartBreaks: false,
+	autoStartFocus: true
 };
 
 const notificationSettings = {
@@ -19,8 +35,35 @@ const notificationSettings = {
 	pushNotifications: false
 };
 
+const autoStartBreaks = ref(true);
+const autoStartFocus = ref(false);
+const soundAlerts = ref(true);
+const vibration = ref(true);
+const pushNotif = ref(false);
+
+const focusDuration = ref(25);
+
 const themeOptions = ["Dark", "Light", "Auto"];
 const accentColors = ["#b8744f", "#c75450", "#d4a373", "#4ade80"];
+
+interface Switch {
+	label: string;
+	sublabel: string;
+	modelValue: Ref<boolean>;
+}
+
+const switches: Array<Switch> = [
+	{
+		label: "Auto-start Breaks",
+		sublabel: "Start break when focus ends",
+		modelValue: ref(false)
+	},
+	{
+		label: "Auto-start Focus",
+		sublabel: "Start focus when break ends",
+		modelValue: ref(true)
+	}
+];
 </script>
 
 <template>
@@ -48,6 +91,21 @@ const accentColors = ["#b8744f", "#c75450", "#d4a373", "#4ade80"];
               <Plus :size="16" />
             </button>
           </div>
+        </div>
+        <div class="flex items-center justify-between mt-2">
+          <div flex="flex flex-col">
+            <p class="text-white font-medium">Focus duration</p>
+            <p class="text-xs text-text-muted">Lenght of focus session</p>
+          </div>
+          <v-number-input
+            :reverse="false"
+            controlVariant="split"
+            :model-value="focusDuration"
+            :hideInput="false"
+            :inset="false"
+            variant="solo-filled"
+            class="pl-10 "
+          ></v-number-input>
         </div>
 
         <!-- Short Break -->
@@ -91,47 +149,10 @@ const accentColors = ["#b8744f", "#c75450", "#d4a373", "#4ade80"];
           Automation
         </h2>
         
-        <!-- Auto-start Breaks -->
-        <div class="flex items-center justify-between py-4 border-b border-dark-border">
-          <div class="flex-1">
-            <h3 class="text-white font-medium">Auto-start Breaks</h3>
-            <p class="text-xs text-text-muted mt-1">Start break when focus ends</p>
-          </div>
-          <button 
-            :class="[
-              'relative w-12 h-7 rounded-full transition-colors',
-              automationSettings.autoStartBreaks ? 'bg-pomodo-orange' : 'bg-dark-surface'
-            ]"
-          >
-            <div 
-              :class="[
-                'absolute top-0.5 w-6 h-6 bg-white rounded-full transition-transform',
-                automationSettings.autoStartBreaks ? 'translate-x-5' : 'translate-x-0.5'
-              ]"
-            ></div>
-          </button>
+        <div v-for="sw in switches">
+          <ToggleSwitch :label="sw.label" :sublabel="sw.sublabel" :model-value="sw.modelValue.value"></ToggleSwitch>
         </div>
 
-        <!-- Auto-start Focus -->
-        <div class="flex items-center justify-between py-4 border-b border-dark-border">
-          <div class="flex-1">
-            <h3 class="text-white font-medium">Auto-start Focus</h3>
-            <p class="text-xs text-text-muted mt-1">Start next session after break</p>
-          </div>
-          <button 
-            :class="[
-              'relative w-12 h-7 rounded-full transition-colors',
-              automationSettings.autoStartFocus ? 'bg-pomodo-orange' : 'bg-dark-surface'
-            ]"
-          >
-            <div 
-              :class="[
-                'absolute top-0.5 w-6 h-6 bg-white rounded-full transition-transform',
-                automationSettings.autoStartFocus ? 'translate-x-5' : 'translate-x-0.5'
-              ]"
-            ></div>
-          </button>
-        </div>
       </section>
 
       <!-- Notifications -->

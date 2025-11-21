@@ -68,10 +68,18 @@ pub struct Session {
 
 #[derive(serde::Deserialize, serde::Serialize, FromRow, Debug, Default)]
 pub struct Setting {
-    pub id: String,
+    pub id: i64,
     pub key: String,
+    pub description: Option<String>,
     pub value: String,
+    pub category_id: i64,
     pub data_type: String,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, FromRow, Debug, Default)]
+pub struct SettingCategory {
+    pub id: i64,
+    pub name: String,
 }
 
 pub type NoReturn = Result<(), AppError>;
@@ -86,4 +94,6 @@ pub type SessionGet = Result<Session, AppError>;
 pub type SessionGetVec = Result<Vec<Session>, AppError>;
 
 pub type SettingGetVec = Result<Vec<Setting>, AppError>;
+pub type SettingCatGetVec = Result<Vec<SettingCategory>, AppError>;
+
 pub type StringReturn = Result<String, AppError>;

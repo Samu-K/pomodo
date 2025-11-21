@@ -75,7 +75,5 @@ tauri_commands! {
     session::delete_session(session_id: i64) -> NoReturn,
     settings::get_setting_value(key: String) -> Result<String, Box<dyn Error>>,
     settings::get_all_settings() -> SettingGetVec,
-    settings::set_setting_value(value: String, key: String) -> NoReturn,
-    settings::reset_default_setting(key: String) -> NoReturn,
-    settings::reset_all_settings_default() -> NoReturn,
+    settings::set_setting_value(value: String, key: String) -> NoReturn
 }
