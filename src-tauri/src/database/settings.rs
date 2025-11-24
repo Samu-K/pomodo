@@ -51,7 +51,7 @@ impl SettingActions {
         Ok(settings)
     }
     pub async fn get_setting_categories(&self) -> SettingCatGetVec {
-        let sql = "SELECT * FROM setting_categories";
+        let sql = "SELECT * FROM settings_categories";
         let set_cats = sqlx::query_as::<_, SettingCategory>(sql)
             .fetch(&*self.db)
             .try_collect()

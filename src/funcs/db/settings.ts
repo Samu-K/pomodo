@@ -11,8 +11,12 @@ const get_settings = async () => {
 };
 const get_settings_categories = async () => {
 	const categories = await invoke<SettingCategory[]>(
-		"settings_get_all_settings"
-	);
+		"settings_get_setting_categories"
+	).catch((err) => {
+		console.error(err);
+		return [];
+	});
+
 	if (categories.length > 0) {
 		return categories;
 	} else {

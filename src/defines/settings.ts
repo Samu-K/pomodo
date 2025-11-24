@@ -1,3 +1,4 @@
+import type { Ref } from "vue";
 export interface Setting {
 	id: number;
 	key: string;
@@ -10,4 +11,11 @@ export interface Setting {
 export interface SettingCategory {
 	id: number;
 	name: string;
+}
+
+export interface SettingRef {
+	key: string;
+	description: string | undefined;
+	value: string;
+	dataRef: Ref<number> | Ref<boolean>;
 }

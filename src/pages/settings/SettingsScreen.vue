@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
 import { Minus, Plus } from "lucide-vue-next";
-import { type Ref, ref } from "vue";
-import ToggleSwitch from "../../components/settings/ToggleSwitch.vue";
+import { computed, type Ref, ref, watchEffect } from "vue";
+import SettingBox from "../../components/settings/SettingBox.vue";
+import SettingSection from "../../components/settings/SettingSection.vue";
+import { SettingRef } from "../../defines/settings.ts";
 import {
 	get_settings,
 	get_settings_categories
 } from "../../funcs/db/settings.ts";
+
+interface SectionSettingProps {
+	sectionTitle: string;
+	settings: Array<SettingRef>;
+}
 
 const settingsStatus = useQuery({
 	queryKey: ["settings"],
@@ -15,6 +22,27 @@ const settingsStatus = useQuery({
 const settingCategories = useQuery({
 	queryKey: ["setting_categories"],
 	queryFn: get_settings_categories
+});
+
+const settingSections = computed<SectionSettingProps[]>(() => {
+	if (!settingsStatus.isSuccess || !settingCategories.isSuccess) {
+		return [];
+	}
+	if (!settingsStatus.data.value || !settingCategories.data.value) {
+		return [];
+	}
+
+	for (const category of settingCategories.data.value) {
+		let newSection: SectionSettingProps;
+		newSection.sectionTitle = category.name;
+
+		// get all setting of category
+	}
+});
+
+watchEffect(() => {
+	console.log("Settings data", settingsStatus.data.value);
+	console.log("Cat data", settingCategories.data.value);
 });
 
 // Sample settings data - you'll connect to real state
@@ -104,7 +132,7 @@ const switches: Array<Switch> = [
             :hideInput="false"
             :inset="false"
             variant="solo-filled"
-            class="pl-10 "
+            max-width="35%"
           ></v-number-input>
         </div>
 
@@ -144,16 +172,7 @@ const switches: Array<Switch> = [
       </section>
 
       <!-- Automation -->
-      <section class="mb-8">
-        <h2 class="text-xs font-semibold text-pomodo-orange uppercase tracking-wider mb-4">
-          Automation
-        </h2>
-        
-        <div v-for="sw in switches">
-          <ToggleSwitch :label="sw.label" :sublabel="sw.sublabel" :model-value="sw.modelValue.value"></ToggleSwitch>
-        </div>
-
-      </section>
+      <SettingSection section-title="Automation" :settings="switches"/>
 
       <!-- Notifications -->
       <section class="mb-8">

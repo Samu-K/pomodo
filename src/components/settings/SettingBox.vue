@@ -12,7 +12,7 @@ const props = defineProps<{
       <p class="text-text-muted text-xs ">{{props.sublabel}}</p>
     </div>
     <div v-if="typeof props.modelValue === 'boolean'">
-      <v-switch :model-value="props.modelValue" color="orange-lighten-1" base-color="grey-darken-3" inset></v-switch>
+      <v-switch class="pr-4" :model-value="props.modelValue" color="orange-lighten-1" base-color="grey-darken-3" inset></v-switch>
     </div>
     <div v-else-if="typeof props.modelValue === 'number'">
       <v-number-input
@@ -22,7 +22,7 @@ const props = defineProps<{
         :hideInput="false"
         :inset="false"
         variant="solo-filled"
-        class="pl-10 "
+        max-width="35%"
       ></v-number-input>
     </div>
   </div>
