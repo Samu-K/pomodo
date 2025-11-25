@@ -66,9 +66,9 @@ impl SettingActions {
      * ########################################################################
      */
     pub async fn set_setting_value(&self, value: String, id: i64) -> NoReturn {
-        let mut sql = String::from("UPDATE user_settings SET value = $1 WHERE id = $2");
+        let sql = "UPDATE user_settings SET value = $1 WHERE id = $2";
 
-        let _res = sqlx::query(&sql)
+        let _res = sqlx::query(sql)
             .bind(value)
             .bind(id)
             .execute(&*self.db)
