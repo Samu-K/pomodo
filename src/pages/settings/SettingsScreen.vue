@@ -1,40 +1,33 @@
 <script setup lang="ts">
-import { useQuery } from "@tanstack/vue-query";
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import ErrorBoundary from "../../components/ErrorBoundary.vue";
 import SettingSection from "../../components/settings/SettingSection.vue";
 import { Setting } from "../../defines/settings.ts";
-import {
-	get_settings,
-	get_settings_categories
-} from "../../funcs/db/settings.ts";
+import { useSettingsStore } from "../../stores/settings";
 
 interface SectionSettingProps {
 	sectionTitle: string;
 	settings: Array<Setting>;
 }
 
-const settingCategories = useQuery({
-	queryKey: ["setting_categories"],
-	queryFn: get_settings_categories
-});
-const settingState = useQuery({
-	queryKey: ["settings"],
-	queryFn: get_settings
+const settingsStore = useSettingsStore();
+
+onMounted(() => {
+	settingsStore.fetchSettings();
 });
 
 const settingSections = computed<SectionSettingProps[]>(() => {
-	if (!settingCategories.isSuccess || !settingState.isSuccess) {
-		return [];
-	}
-	if (!settingCategories.data.value || !settingState.data.value) {
+	if (
+		settingsStore.categories.length === 0 ||
+		settingsStore.settings.length === 0
+	) {
 		return [];
 	}
 
 	let sections: SectionSettingProps[] = [];
-	for (const category of settingCategories.data.value) {
+	for (const category of settingsStore.categories) {
 		const sectionTitle = category.name;
-		const settings = settingState.data.value.filter(
+		const settings = settingsStore.settings.filter(
 			(setting) => setting.category_id === category.id
 		);
 		const newSection: SectionSettingProps = {

@@ -1,37 +1,47 @@
 <script setup lang="ts">
 import { Pause, Play, RotateCcw, SkipForward } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted } from "vue";
 import CategoryManager from "../../components/timer/CategoryManager.vue";
-import { TimerMode, useCountdownTimer } from "../../components/timer/countdown";
-import type { Category } from "../../defines/category.ts";
 
-const timer = useCountdownTimer();
-const selectedCategory = ref<Category | null>(null);
+import { useCategoryStore } from "../../stores/categories";
+import { TimerMode, useTimerStore } from "../../stores/timer";
 
-watch(selectedCategory, (newCat) => {
-	timer.setCategoryId(newCat ? newCat.id : null);
+const timer = useTimerStore();
+const categoryStore = useCategoryStore();
+
+onMounted(() => {
+	if (categoryStore.categories.length === 0) {
+		categoryStore.fetchCategories();
+	}
+});
+
+const selectedCategory = computed(() => {
+	if (!timer.categoryId) return null;
+	return (
+		categoryStore.categories.find((c) => c.id === timer.categoryId) || null
+	);
 });
 
 const themeColor = computed(() =>
-	timer.mode.value === TimerMode.FOCUS ? "pomodo-orange" : "green"
+	timer.mode === TimerMode.FOCUS ? "pomodo-orange" : "green"
 );
 
 const showCategorySelector = computed(() => {
 	// Only show selector if timer is NOT running AND is fully reset
-	return !timer.isRunning.value && timer.percent.value >= 100;
+	return !timer.isRunning && timer.percent >= 100;
 });
 
 const allowSkip = computed(() => {
-	if (timer.mode.value === TimerMode.REST) return true;
-	if (timer.isRunning.value) return false;
-	return timer.percent.value < 100;
+	if (timer.mode === TimerMode.REST) return true;
+	if (timer.isRunning) return false;
+	return timer.percent < 100;
 });
 </script>
 
 <template>
     <div class="flex flex-col h-full bg-dark-bg">
         
-        <div v-if="!timer.isReady.value" class="flex-1 flex items-center justify-center">
+        <div v-if="!timer.isReady" class="flex-1 flex items-center justify-center">
              <v-progress-circular indeterminate color="primary" />
         </div>
 
@@ -40,7 +50,7 @@ const allowSkip = computed(() => {
         {{timer.sessionStreak}} / {{timer.long_break_interval}}
       </div>
             <v-progress-circular 
-                :model-value="timer.percent.value" 
+                :model-value="timer.percent" 
                 :color="themeColor" 
                 :size="170" 
                 width="10" 
@@ -48,18 +58,18 @@ const allowSkip = computed(() => {
             ></v-progress-circular>
 
             <div :class="(`-mb-12 text-2xl text-${themeColor}`)">
-                {{ timer.mode.value === TimerMode.FOCUS ? 'FOCUS' : 'REST' }}
+                {{ timer.mode === TimerMode.FOCUS ? 'FOCUS' : 'REST' }}
             </div>
 
             <div :class="(`text-timer text-${themeColor} mt-12`)">
-                {{ timer.formattedTime.value }}
+                {{ timer.formattedTime }}
             </div>
 
-            <div class="w-64 h-22" v-if="timer.mode.value === TimerMode.FOCUS">
+            <div class="w-64 h-22" v-if="timer.mode === TimerMode.FOCUS">
                 <div v-if="showCategorySelector" class="flex items-center justify-center">
                     <CategoryManager 
                         :selectedCategory="selectedCategory"
-                        @select="(cat) => selectedCategory = cat"
+                        @select="(cat) => timer.setCategoryId(cat.id)"
                     />
                 </div>
                 <div v-else 
@@ -73,9 +83,9 @@ const allowSkip = computed(() => {
             <button 
                 @click="timer.resetTimer"
                 class="w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary flex items-center justify-center"
-                :disabled="timer.isRunning.value || timer.percent.value === 100"
+                :disabled="timer.isRunning || timer.percent === 100"
             >
-                <RotateCcw :size="20" :class="{'opacity-50': timer.isRunning.value || timer.percent.value === 100}"/>
+                <RotateCcw :size="20" :class="{'opacity-50': timer.isRunning || timer.percent === 100}"/>
             </button>
             
             <button 
@@ -83,14 +93,14 @@ const allowSkip = computed(() => {
                 :disabled="!selectedCategory"
                 class="w-20 h-20 rounded-full text-white flex items-center justify-center transition-transform"
                 :class="[
-                    {'bg-gradient-to-br from-pomodo-orange to-pomodo-red': !timer.isRunning.value && timer.mode.value === TimerMode.FOCUS && selectedCategory},
-                    {'bg-gradient-to-br from-green-400 to-green-700': !timer.isRunning.value && timer.mode.value === TimerMode.REST},
-                    {'bg-gradient-to-br from-gray-600 to-black': timer.isRunning.value},
+                    {'bg-gradient-to-br from-pomodo-orange to-pomodo-red': !timer.isRunning && timer.mode === TimerMode.FOCUS && selectedCategory},
+                    {'bg-gradient-to-br from-green-400 to-green-700': !timer.isRunning && timer.mode === TimerMode.REST},
+                    {'bg-gradient-to-br from-gray-600 to-black': timer.isRunning},
                     {'bg-gradient-to-br from-gray-900 to-black opacity-70': !selectedCategory},
                     {'hover:scale-105 shadow-fab hover:shadow-fab-hover': selectedCategory}
                 ]"
             >
-                <Pause :size="32" v-if="timer.isRunning.value"/>
+                <Pause :size="32" v-if="timer.isRunning"/>
                 <Play :size="32" v-else/>
             </button>
             

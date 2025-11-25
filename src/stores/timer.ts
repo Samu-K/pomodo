@@ -1,81 +1,82 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { computed, onUnmounted, readonly, ref, watch } from "vue";
-import type { Session } from "../../defines/session.ts";
+import { defineStore } from "pinia";
+import { computed, ref, watch } from "vue";
+import type { Session } from "../defines/session";
 import {
 	add_session,
 	delete_latest_session,
 	set_newest_session_complete
-} from "../../funcs/db/sesssion.ts";
-import { get_settings } from "../../funcs/db/settings.ts";
+} from "../funcs/db/sesssion";
+import { useSettingsStore } from "./settings";
 
 export enum TimerMode {
 	FOCUS = 0,
 	REST = 1
 }
 
-export function useCountdownTimer() {
-	const queryClient = useQueryClient();
+export const useTimerStore = defineStore("timer", () => {
+	const settingsStore = useSettingsStore();
 
-	const { data: settings, isPending: isLoadingSettings } = useQuery({
-		queryKey: ["settings"],
-		queryFn: get_settings
-	});
+	// --- Settings & Computed Durations ---
+	// Ensure settings are loaded
+	if (settingsStore.settings.length === 0) {
+		settingsStore.fetchSettings();
+	}
 
-	// safely derive durations (in seconds). default to 25/5 if settings missing.
 	const focusDuration = computed(() => {
-		const val = settings.value?.find((s) => s.key === "Focus Duration")?.value;
+		const val = settingsStore.settings.find(
+			(s) => s.key === "Focus Duration"
+		)?.value;
 		return val ? Number(val) * 60 : 25 * 60;
 	});
 
 	const restDuration = computed(() => {
-		const val = settings.value?.find(
+		const val = settingsStore.settings.find(
 			(s) => s.key === "Short Break Time"
 		)?.value;
 		return val ? Number(val) * 60 : 5 * 60;
 	});
 
 	const break_auto_start = computed(() => {
-		const val = settings.value?.find(
+		const val = settingsStore.settings.find(
 			(s) => s.key === "Auto Start Break"
 		)?.value;
-		if (val?.toLowerCase() === "true") {
-			return true;
-		} else {
-			return false;
-		}
+		return val?.toLowerCase() === "true";
 	});
+
 	const focus_auto_start = computed(() => {
-		const val = settings.value?.find(
+		const val = settingsStore.settings.find(
 			(s) => s.key === "Auto Start Focus"
 		)?.value;
-		if (val?.toLowerCase() === "true") {
-			return true;
-		} else {
-			return false;
-		}
+		return val?.toLowerCase() === "true";
 	});
+
 	const long_break_interval = computed(() => {
-		const val = settings.value?.find(
+		const val = settingsStore.settings.find(
 			(s) => s.key === "Long Break Interval"
 		)?.value;
 		return val ? Number(val) : 4;
 	});
+
 	const long_break_time = computed(() => {
-		const val = settings.value?.find((s) => s.key === "Long Break Time")?.value;
+		const val = settingsStore.settings.find(
+			(s) => s.key === "Long Break Time"
+		)?.value;
 		return val ? Number(val) * 60 : 15 * 60;
 	});
 
+	// --- State ---
 	const remainingTime = ref(0);
-	// how many sessions in a row
-	const session_streak = ref(0);
+	const sessionStreak = ref(0);
 	const mode = ref<TimerMode>(TimerMode.FOCUS);
 	const isRunning = ref(false);
 	const categoryId = ref<number | null>(null);
 	let timerId: number | undefined;
+	let endTime: number | undefined;
 
-	// initialize timer once settings are loaded
+	// --- Initialization ---
+	// Initialize timer when settings are loaded and timer is fresh
 	watch(
-		[focusDuration, isLoadingSettings],
+		[focusDuration, () => settingsStore.isLoading],
 		([newDuration, loading]) => {
 			if (!loading && !isRunning.value && remainingTime.value === 0) {
 				remainingTime.value = newDuration;
@@ -84,37 +85,30 @@ export function useCountdownTimer() {
 		{ immediate: true }
 	);
 
-	const { mutate: createSession } = useMutation({
-		mutationFn: add_session,
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sessions"] })
-	});
-
-	const { mutate: completeSession } = useMutation({
-		mutationFn: set_newest_session_complete,
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sessions"] })
-	});
-
-	const { mutate: deleteSession } = useMutation({
-		mutationFn: delete_latest_session,
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sessions"] })
-	});
+	// --- Actions ---
 
 	const tick = () => {
-		if (remainingTime.value > 0) {
-			remainingTime.value--;
+		if (!endTime) return;
+
+		const now = Date.now();
+		const diff = Math.ceil((endTime - now) / 1000);
+
+		if (diff > 0) {
+			remainingTime.value = diff;
 		} else {
+			remainingTime.value = 0;
 			handleComplete();
 		}
 	};
 
-	const handleComplete = () => {
+	const handleComplete = async () => {
 		pauseTimer();
 		if (mode.value === TimerMode.FOCUS) {
-			completeSession(); // Mark DB entry as finished
-			session_streak.value = session_streak.value + 1;
-			if (session_streak.value === long_break_interval.value) {
+			await set_newest_session_complete(); // Mark DB entry as finished
+			sessionStreak.value = sessionStreak.value + 1;
+			if (sessionStreak.value === long_break_interval.value) {
 				remainingTime.value = long_break_time.value;
-				session_streak.value = 0;
+				sessionStreak.value = 0;
 			} else {
 				remainingTime.value = restDuration.value;
 			}
@@ -131,7 +125,7 @@ export function useCountdownTimer() {
 		}
 	};
 
-	const startTimer = () => {
+	const startTimer = async () => {
 		if (isRunning.value) return;
 
 		// if starting a fresh Focus session, create DB entry
@@ -150,34 +144,38 @@ export function useCountdownTimer() {
 					created_at: null,
 					last_modified: null
 				};
-				createSession(new_session);
+				await add_session(new_session);
 			}
 		}
 
+		// Calculate end time based on current remaining time
+		endTime = Date.now() + remainingTime.value * 1000;
+
 		isRunning.value = true;
-		timerId = window.setInterval(tick, 1000);
+		timerId = window.setInterval(tick, 100); // Check more frequently for smoothness
 	};
 
 	const pauseTimer = () => {
 		isRunning.value = false;
 		clearInterval(timerId);
 		timerId = undefined;
+		endTime = undefined;
 	};
 
 	const toggleTimer = () => {
 		isRunning.value ? pauseTimer() : startTimer();
 	};
 
-	const resetTimer = () => {
+	const resetTimer = async () => {
 		pauseTimer();
 		// if we reset a running focus session, delete it from DB
 		if (mode.value === TimerMode.FOCUS) {
-			deleteSession();
+			await delete_latest_session();
 		}
 		if (mode.value === TimerMode.FOCUS) {
 			remainingTime.value = focusDuration.value;
 		} else {
-			if (session_streak.value === long_break_interval.value) {
+			if (sessionStreak.value === long_break_interval.value) {
 				remainingTime.value = long_break_time.value;
 			} else {
 				remainingTime.value = restDuration.value;
@@ -189,11 +187,11 @@ export function useCountdownTimer() {
 		pauseTimer();
 		// switch modes immediately
 		if (mode.value === TimerMode.FOCUS) {
-			session_streak.value = session_streak.value + 1;
+			sessionStreak.value = sessionStreak.value + 1;
 			mode.value = TimerMode.REST;
-			if (session_streak.value === long_break_interval.value) {
+			if (sessionStreak.value === long_break_interval.value) {
 				remainingTime.value = long_break_time.value;
-				session_streak.value = 0;
+				sessionStreak.value = 0;
 			} else {
 				remainingTime.value = restDuration.value;
 			}
@@ -207,6 +205,7 @@ export function useCountdownTimer() {
 		categoryId.value = id ?? null;
 	};
 
+	// --- Helpers ---
 	const formattedTime = computed(() => {
 		const time = remainingTime.value < 0 ? 0 : remainingTime.value;
 		const hours = Math.floor(time / 3600);
@@ -226,21 +225,21 @@ export function useCountdownTimer() {
 		return Number((remainingTime.value / total) * 100);
 	});
 
-	onUnmounted(() => pauseTimer());
+	const isReady = computed(() => !settingsStore.isLoading);
 
 	return {
 		// State
-		remainingTime: readonly(remainingTime),
-		isRunning: readonly(isRunning),
-		mode: readonly(mode),
-		isReady: computed(() => !isLoadingSettings.value),
-		sessionStreak: readonly(session_streak),
-		long_break_interval: readonly(long_break_interval),
+		remainingTime,
+		isRunning,
+		mode,
+		sessionStreak,
+		categoryId,
+		long_break_interval,
+		isReady,
 
 		// Helpers
 		formattedTime,
 		percent,
-		TimerMode: readonly(TimerMode),
 
 		// Actions
 		startTimer,
@@ -250,4 +249,4 @@ export function useCountdownTimer() {
 		skip,
 		setCategoryId
 	};
-}
+});

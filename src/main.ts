@@ -33,6 +33,10 @@ const app = createApp(App);
 
 // Mount the app
 app.use(VueQueryPlugin);
+
+import { createPinia } from "pinia";
+
+app.use(createPinia());
 app.use(vuetify).mount("#app");
 
 // For Tauri, you might want to add:

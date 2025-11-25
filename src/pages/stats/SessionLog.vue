@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { Trash, ChevronDown, ChevronUp} from "lucide-vue-next";
+import { ChevronDown, ChevronUp, Trash } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { get_categories } from "../../funcs/db/categories";
 import { delete_session, get_sessions } from "../../funcs/db/sesssion";
@@ -30,28 +30,31 @@ const expandedPanel = ref<number | undefined>(undefined);
 
 const processedSessions = computed(() => {
 	if (!sessionsState.data.value) return [];
-	
+
 	const cats = categoriesState.data.value || [];
-	const catMap = new Map(cats.map(c => [c.id, c]));
+	const catMap = new Map(cats.map((c) => [c.id, c]));
 
 	return [...sessionsState.data.value]
-		.filter(s => s.finished && s.start_time)
-		.map(s => {
-			const date = new Date(s.start_time!);
+		.filter(
+			(s): s is typeof s & { start_time: string } =>
+				!!(s.finished && s.start_time)
+		)
+		.map((s) => {
+			const date = new Date(s.start_time);
 			const cat = s.category_id ? catMap.get(s.category_id) : null;
 			return {
 				...s,
 				dateObj: date,
 				year: date.getFullYear(),
 				monthIndex: date.getMonth(),
-				monthName: date.toLocaleDateString(undefined, { month: 'long' }),
-				categoryName: cat ? cat.name : 'Uncategorized',
-				categoryColor: cat?.color ? `bg-${cat.color}` : 'bg-pomodo-orange',
+				monthName: date.toLocaleDateString(undefined, { month: "long" }),
+				categoryName: cat ? cat.name : "Uncategorized",
+				categoryColor: cat?.color ? `bg-${cat.color}` : "bg-pomodo-orange",
 				formattedDate: date.toLocaleDateString(undefined, {
-					month: 'short',
-					day: 'numeric',
-					hour: '2-digit',
-					minute: '2-digit'
+					month: "short",
+					day: "numeric",
+					hour: "2-digit",
+					minute: "2-digit"
 				})
 			};
 		})
@@ -59,23 +62,27 @@ const processedSessions = computed(() => {
 });
 
 const availableYears = computed(() => {
-	const years = new Set(processedSessions.value.map(s => s.year));
+	const years = new Set(processedSessions.value.map((s) => s.year));
 	const currentYear = new Date().getFullYear();
 	years.add(currentYear);
 	return Array.from(years).sort((a, b) => b - a);
 });
 
 const groupedSessions = computed(() => {
-	const filtered = processedSessions.value.filter(s => s.year === selectedYear.value);
-	
+	const filtered = processedSessions.value.filter(
+		(s) => s.year === selectedYear.value
+	);
+
 	const groups = new Map<string, typeof filtered>();
-	
+
 	// Create groups for all months that have data
-	filtered.forEach(session => {
-		if (!groups.has(session.monthName)) {
-			groups.set(session.monthName, []);
+	filtered.forEach((session) => {
+		let group = groups.get(session.monthName);
+		if (!group) {
+			group = [];
+			groups.set(session.monthName, group);
 		}
-		groups.get(session.monthName)!.push(session);
+		group.push(session);
 	});
 
 	// Convert to array and sort by month index (descending)
@@ -89,18 +96,23 @@ const groupedSessions = computed(() => {
 });
 
 // Set initial expanded panel to current month
-watch(groupedSessions, (newGroups) => {
-	if (expandedPanel.value === undefined && newGroups.length > 0) {
-		const currentMonthIndex = new Date().getMonth();
-		const groupIndex = newGroups.findIndex(g => g.monthIndex === currentMonthIndex);
-		if (groupIndex !== -1) {
-			expandedPanel.value = groupIndex;
-		} else {
-			expandedPanel.value = 0; // Default to first (newest) if current month not found
+watch(
+	groupedSessions,
+	(newGroups) => {
+		if (expandedPanel.value === undefined && newGroups.length > 0) {
+			const currentMonthIndex = new Date().getMonth();
+			const groupIndex = newGroups.findIndex(
+				(g) => g.monthIndex === currentMonthIndex
+			);
+			if (groupIndex !== -1) {
+				expandedPanel.value = groupIndex;
+			} else {
+				expandedPanel.value = 0; // Default to first (newest) if current month not found
+			}
 		}
-	}
-}, { immediate: true });
-
+	},
+	{ immediate: true }
+);
 
 const handleDelete = (id: number) => {
 	if (confirm("Are you sure you want to delete this session?")) {

@@ -1,73 +1,31 @@
 <script setup lang="ts">
-import { useMutation } from "@tanstack/vue-query";
-import { type Ref, ref, watch } from "vue";
+import { computed } from "vue";
 import { Setting } from "../../defines/settings.ts";
-import { set_setting_value } from "../../funcs/db/settings.ts";
+import { useSettingsStore } from "../../stores/settings";
 
 const props = defineProps<{
 	setting: Setting;
 }>();
+
 if (!props.setting) {
 	throw Error(`Error with setting definition: ${props.setting}`);
 }
-const value_ref: Ref<boolean> | Ref<number> | Ref<undefined> = ref();
 
-if (props.setting.data_type === "boolean") {
-	if (props.setting.value === "true") {
-		value_ref.value = true;
-	} else {
-		value_ref.value = false;
-	}
-} else if (props.setting.data_type === "number") {
-	const val = Number(props.setting.value);
-	value_ref.value = val;
-} else {
-	throw Error(`Invalid data_type for setting: ${props.setting.data_type}`);
-}
+const settingsStore = useSettingsStore();
 
-interface settingStateMutationProps {
-	stt_id: number;
-	value: string;
-}
-const settingState = useMutation({
-	mutationFn: async (props: settingStateMutationProps) =>
-		await set_setting_value(props.stt_id, props.value)
-});
-
-watch(value_ref, (new_value, old_value) => {
-	console.log("value changed to ", new_value);
-	if (new_value === null || new_value === undefined) {
-		if (typeof old_value === "number") {
-			value_ref.value = Number(old_value);
-		} else if (typeof old_value === "boolean") {
-			if (old_value) {
-				value_ref.value = true;
-			} else {
-				value_ref.value = false;
-			}
+const value_ref = computed({
+	get: () => {
+		if (props.setting.data_type === "boolean") {
+			return props.setting.value === "true";
+		} else if (props.setting.data_type === "number") {
+			return Number(props.setting.value);
 		}
+		return undefined;
+	},
+	set: (newValue) => {
+		if (newValue === undefined || newValue === null) return;
+		settingsStore.updateSetting(props.setting.id, newValue);
 	}
-
-	let new_val: string = "";
-	if (typeof new_value === "boolean") {
-		if (new_value) {
-			new_val = "true";
-		} else {
-			new_val = "false";
-		}
-	} else if (typeof new_value === "number") {
-		if (new_value <= 1) {
-			console.error("New value null or zero");
-			value_ref.value = Number(old_value);
-		} else {
-			new_val = String(new_value);
-		}
-	}
-
-	if (new_val === "") {
-		return;
-	}
-	settingState.mutate({ stt_id: props.setting.id, value: new_val });
 });
 </script>
 <template>

@@ -1,45 +1,22 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { MinusCircle } from "lucide-vue-next";
-import {
-	add_category,
-	change_category_name_array,
-	delete_category_array,
-	get_categories
-} from "../../funcs/db/categories.ts";
+import { onMounted, ref } from "vue";
 import type { Category } from "../../defines/category.ts";
+import { useCategoryStore } from "../../stores/categories";
 
-const props = defineProps<{
+defineProps<{
 	selectedCategory: Category | null | undefined;
 }>();
 
-const emit = defineEmits<{
-	(e: "select", category: Category): void;
-}>();
+const emit = defineEmits<(e: "select", category: Category) => void>();
 
-const queryClient = useQueryClient();
+const categoryStore = useCategoryStore();
 
 // --- Data ---
-const { data: categories } = useQuery({
-	queryKey: ["categories"],
-	queryFn: get_categories
-});
-
-// --- Mutations ---
-const changeCatState = useMutation({
-	mutationFn: change_category_name_array,
-	onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] })
-});
-
-const deleteCatState = useMutation({
-	mutationFn: delete_category_array,
-	onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] })
-});
-
-const addCatState = useMutation({
-	mutationFn: add_category,
-	onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] })
+onMounted(() => {
+	if (categoryStore.categories.length === 0) {
+		categoryStore.fetchCategories();
+	}
 });
 
 // --- UI State ---
@@ -57,17 +34,19 @@ const categoryColors = ["green", "purple", "orange", "red", "none"];
 // --- Logic ---
 
 const openEditMode = () => {
-	if (categories.value) {
+	if (categoryStore.categories) {
 		// Deep copy for safe editing
-		editableCategories.value = JSON.parse(JSON.stringify(categories.value));
+		editableCategories.value = JSON.parse(
+			JSON.stringify(categoryStore.categories)
+		);
 	} else {
 		editableCategories.value = [];
 	}
 	catEditMode.value = true;
 };
 
-const saveEdits = () => {
-	if (!categories.value || !editableCategories.value) return;
+const saveEdits = async () => {
+	if (!categoryStore.categories || !editableCategories.value) return;
 
 	const toUpdate: Category[] = [];
 	const toDelete: Category[] = [];
@@ -75,7 +54,9 @@ const saveEdits = () => {
 	// Find Updates
 	for (const editedCat of editableCategories.value) {
 		if (editedCat.id > 0) {
-			const original = categories.value.find((c) => c.id === editedCat.id);
+			const original = categoryStore.categories.find(
+				(c) => c.id === editedCat.id
+			);
 			if (original && original.name !== editedCat.name) {
 				toUpdate.push(editedCat);
 			}
@@ -83,14 +64,14 @@ const saveEdits = () => {
 	}
 
 	// Find Deletes (Items in original but missing in editable)
-	for (const original of categories.value) {
+	for (const original of categoryStore.categories) {
 		if (!editableCategories.value.some((c) => c.id === original.id)) {
 			toDelete.push(original);
 		}
 	}
 
-	if (toUpdate.length > 0) changeCatState.mutate(toUpdate);
-	if (toDelete.length > 0) deleteCatState.mutate(toDelete);
+	if (toUpdate.length > 0) await categoryStore.updateCategories(toUpdate);
+	if (toDelete.length > 0) await categoryStore.removeCategories(toDelete);
 
 	catEditMode.value = false;
 };
@@ -100,8 +81,8 @@ const cancelEdits = () => {
 	editableCategories.value = [];
 };
 
-const createCategory = () => {
-	addCatState.mutate(newCategory.value);
+const createCategory = async () => {
+	await categoryStore.createCategory(newCategory.value);
 	newCategory.value = { id: 0, name: "", color: "none" };
 	showAddCategoryModal.value = false;
 };
@@ -141,10 +122,10 @@ const confirmDelete = () => {
 
                 <v-card-text class="px-4" style="height: 300px">
                     <div v-if="!catEditMode">
-                        <div v-if="!categories || categories.length === 0" class="items-center justify-center">
+                        <div v-if="!categoryStore.categories || categoryStore.categories.length === 0" class="items-center justify-center">
                             No categories, create one below.
                         </div>
-                        <div class="flex flex-col" v-for="cat in categories" :key="cat.id">
+                        <div class="flex flex-col" v-for="cat in categoryStore.categories" :key="cat.id">
                             <v-btn variant="tonal" class="mt-4" 
                                 @click="() => { emit('select', cat); isActive.value = false; }">
                                 {{ cat.name }}
@@ -183,7 +164,7 @@ const confirmDelete = () => {
                             color="surface-variant"
                             text="Edit"
                             variant="flat"
-                            :disabled="!categories || categories.length === 0"
+                            :disabled="!categoryStore.categories || categoryStore.categories.length === 0"
                             @click="openEditMode"
                         ></v-btn>
                     </template>
