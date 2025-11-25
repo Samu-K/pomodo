@@ -1,0 +1,202 @@
+<script setup lang="ts">
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { Trash, ChevronDown, ChevronUp} from "lucide-vue-next";
+import { computed, ref, watch } from "vue";
+import { get_categories } from "../../funcs/db/categories";
+import { delete_session, get_sessions } from "../../funcs/db/sesssion";
+import { formatDuration } from "../../funcs/stats/date_handling";
+
+const queryClient = useQueryClient();
+
+const categoriesState = useQuery({
+	queryKey: ["categories"],
+	queryFn: get_categories
+});
+
+const sessionsState = useQuery({
+	queryKey: ["sessions"],
+	queryFn: get_sessions
+});
+
+const deleteSessionMutation = useMutation({
+	mutationFn: delete_session,
+	onSuccess: () => {
+		queryClient.invalidateQueries({ queryKey: ["sessions"] });
+	}
+});
+
+const selectedYear = ref(new Date().getFullYear());
+const expandedPanel = ref<number | undefined>(undefined);
+
+const processedSessions = computed(() => {
+	if (!sessionsState.data.value) return [];
+	
+	const cats = categoriesState.data.value || [];
+	const catMap = new Map(cats.map(c => [c.id, c]));
+
+	return [...sessionsState.data.value]
+		.filter(s => s.finished && s.start_time)
+		.map(s => {
+			const date = new Date(s.start_time!);
+			const cat = s.category_id ? catMap.get(s.category_id) : null;
+			return {
+				...s,
+				dateObj: date,
+				year: date.getFullYear(),
+				monthIndex: date.getMonth(),
+				monthName: date.toLocaleDateString(undefined, { month: 'long' }),
+				categoryName: cat ? cat.name : 'Uncategorized',
+				categoryColor: cat?.color ? `bg-${cat.color}` : 'bg-pomodo-orange',
+				formattedDate: date.toLocaleDateString(undefined, {
+					month: 'short',
+					day: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit'
+				})
+			};
+		})
+		.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
+});
+
+const availableYears = computed(() => {
+	const years = new Set(processedSessions.value.map(s => s.year));
+	const currentYear = new Date().getFullYear();
+	years.add(currentYear);
+	return Array.from(years).sort((a, b) => b - a);
+});
+
+const groupedSessions = computed(() => {
+	const filtered = processedSessions.value.filter(s => s.year === selectedYear.value);
+	
+	const groups = new Map<string, typeof filtered>();
+	
+	// Create groups for all months that have data
+	filtered.forEach(session => {
+		if (!groups.has(session.monthName)) {
+			groups.set(session.monthName, []);
+		}
+		groups.get(session.monthName)!.push(session);
+	});
+
+	// Convert to array and sort by month index (descending)
+	return Array.from(groups.entries())
+		.map(([monthName, sessions]) => ({
+			monthName,
+			monthIndex: sessions[0].monthIndex,
+			sessions
+		}))
+		.sort((a, b) => b.monthIndex - a.monthIndex);
+});
+
+// Set initial expanded panel to current month
+watch(groupedSessions, (newGroups) => {
+	if (expandedPanel.value === undefined && newGroups.length > 0) {
+		const currentMonthIndex = new Date().getMonth();
+		const groupIndex = newGroups.findIndex(g => g.monthIndex === currentMonthIndex);
+		if (groupIndex !== -1) {
+			expandedPanel.value = groupIndex;
+		} else {
+			expandedPanel.value = 0; // Default to first (newest) if current month not found
+		}
+	}
+}, { immediate: true });
+
+
+const handleDelete = (id: number) => {
+	if (confirm("Are you sure you want to delete this session?")) {
+		deleteSessionMutation.mutate(id);
+	}
+};
+</script>
+
+<template>
+	<div class="flex flex-col h-full bg-dark-bg">
+		<div class="flex-1 overflow-y-auto px-6 py-6">
+			<div class="flex items-center justify-between mb-6">
+				<h1 class="text-2xl font-semibold text-pomodo-orange">
+					Session Log
+				</h1>
+				<div class="w-32">
+					<v-select
+						v-model="selectedYear"
+						:items="availableYears"
+						density="compact"
+						variant="outlined"
+						hide-details
+						bg-color="transparent"
+						color="primary"
+					></v-select>
+				</div>
+			</div>
+
+			<div v-if="sessionsState.isLoading.value" class="text-center text-text-secondary mt-10">
+				Loading sessions...
+			</div>
+
+			<div v-else-if="groupedSessions.length === 0" class="text-center text-text-secondary mt-10">
+				No sessions found for {{ selectedYear }}.
+			</div>
+
+			<div v-else>
+				<v-expansion-panels v-model="expandedPanel" variant="accordion">
+					<v-expansion-panel
+						v-for="(group, index) in groupedSessions"
+						:key="group.monthName"
+						:value="index"
+						class="mb-2 bg-dark-surface rounded-lg overflow-hidden border border-dark-border"
+						elevation="0"
+					>
+						<v-expansion-panel-title class="bg-dark-surface text-white font-medium">
+							{{ group.monthName }}
+							<template v-slot:actions="{ expanded }">
+								<v-icon :icon="expanded ? ChevronUp : ChevronDown" color="primary"></v-icon>
+							</template>
+						</v-expansion-panel-title>
+						
+						<v-expansion-panel-text class="bg-dark-bg">
+							<div class="space-y-3 pt-3">
+								<div 
+									v-for="session in group.sessions" 
+									:key="session.id || 0"
+									class="flex items-center justify-between p-3 bg-dark-surface rounded-lg group border border-dark-border"
+								>
+									<div class="flex items-center gap-4">
+										<div class="w-3 h-3 rounded-full" :class="session.categoryColor"></div>
+										<div class="flex flex-col">
+											<span class="text-white font-medium">{{ session.categoryName }}</span>
+											<span class="text-text-secondary text-sm">{{ session.formattedDate }}</span>
+										</div>
+									</div>
+
+									<div class="flex items-center gap-6">
+										<span class="text-white font-medium">{{ formatDuration(session.duration) }}</span>
+										<button 
+											v-if="session.id"
+											@click.stop="handleDelete(session.id)"
+											class="transition-colors hover:text-red-500"
+											title="Delete session"
+										>
+											<Trash :size="18" />
+										</button>
+									</div>
+								</div>
+							</div>
+						</v-expansion-panel-text>
+					</v-expansion-panel>
+				</v-expansion-panels>
+			</div>
+		</div>
+	</div>
+</template>
+
+<style scoped>
+:deep(.v-expansion-panel-title) {
+	min-height: 48px;
+}
+:deep(.v-expansion-panel-text__wrapper) {
+	padding: 0 16px 16px 16px;
+}
+:deep(.v-theme--dark) {
+    --v-theme-surface: 30, 30, 30; /* Match bg-dark-surface */
+}
+</style>

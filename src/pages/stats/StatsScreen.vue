@@ -24,18 +24,6 @@ const sessionsState = useQuery({
 const today_session_count: Ref<number> = ref(0);
 const total_seconds_today: Ref<number> = ref(0);
 
-/*
-watchEffect(() => {
-	if (categoriesState.isFetched.value && sessionsState.isFetched.value) {
-		console.log(
-			"Data Loaded:",
-			categoriesState.data.value,
-			sessionsState.data.value
-		);
-	}
-});
-*/
-
 const todaysFocusData = computed(() => {
 	if (!sessionsState.data.value || !categoriesState.data.value) return [];
 
@@ -77,6 +65,7 @@ const weeklySessionsRaw = computed(() => {
 
 const emit = defineEmits<{
 	"settings-click": [];
+	"view-session-log": [];
 }>();
 </script>
 
@@ -116,6 +105,14 @@ const emit = defineEmits<{
           <span class="text-text-secondary text-sm min-w-[60px] text-right">{{ item.time }}</span>
         </div>
 
+        <div class="flex items-center justify-end">
+          <button 
+          @click="emit('view-session-log')"
+          class="text-pomodo-orange hover:bg-dark-surface rounded-lg transition-colors bg-dark-surface px-4 py-2"
+        >
+            View session log
+        </button>
+        </div>
         <p class="text-text-muted text-center text-sm mt-6">
           {{today_session_count}} focus sessions completed today
         </p>
