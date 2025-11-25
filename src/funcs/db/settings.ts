@@ -24,11 +24,15 @@ const get_settings_categories = async () => {
 	}
 };
 
-const set_setting_value = async (key: string, new_value: string) => {
+const set_setting_value = async (stt_id: number, new_value: string) => {
+	console.log("Triggered");
 	const res = await invoke("settings_set_setting_value", {
 		value: new_value,
-		key: key
-	});
+		id: stt_id
+	}).catch((err) =>
+		console.error(`error setting value for setting ${stt_id} ${err}`)
+	);
+	console.log(`Response ${res}`);
 	return res;
 };
 

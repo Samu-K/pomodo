@@ -64,7 +64,7 @@ tauri_commands! {
     session::delete_session(session_id: i64) -> NoReturn,
     settings::get_setting_value(key: String) -> StringReturn,
     settings::get_all_settings() -> SettingGetVec,
-    settings::set_setting_value(value: String, key: String) -> NoReturn,
+    settings::set_setting_value(value: String, id: i64) -> NoReturn,
     settings::get_setting_categories() -> SettingCatGetVec,
     settings::get_settings_for_category(cat_id: i64) -> SettingGetVec
 }
