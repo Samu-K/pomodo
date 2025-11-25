@@ -36,6 +36,9 @@ const allowSkip = computed(() => {
         </div>
 
         <div v-else class="flex-1 flex flex-col items-center justify-center px-6 gap-10">
+      <div class="text-pomodo-orange text-2xl ">
+        {{timer.sessionStreak}} / {{timer.long_break_interval}}
+      </div>
             <v-progress-circular 
                 :model-value="timer.percent.value" 
                 :color="themeColor" 

@@ -174,8 +174,15 @@ export function useCountdownTimer() {
 		if (mode.value === TimerMode.FOCUS) {
 			deleteSession();
 		}
-		remainingTime.value =
-			mode.value === TimerMode.FOCUS ? focusDuration.value : restDuration.value;
+		if (mode.value === TimerMode.FOCUS) {
+			remainingTime.value = focusDuration.value;
+		} else {
+			if (session_streak.value === long_break_interval.value) {
+				remainingTime.value = long_break_time.value;
+			} else {
+				remainingTime.value = restDuration.value;
+			}
+		}
 	};
 
 	const skip = () => {
@@ -227,6 +234,8 @@ export function useCountdownTimer() {
 		isRunning: readonly(isRunning),
 		mode: readonly(mode),
 		isReady: computed(() => !isLoadingSettings.value),
+		sessionStreak: readonly(session_streak),
+		long_break_interval: readonly(long_break_interval),
 
 		// Helpers
 		formattedTime,
