@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MinusCircle } from "lucide-vue-next";
+import { MinusCircle, PlusCircle } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
 import type { Category } from "../../defines/category.ts";
 import { useCategoryStore } from "../../stores/categories";
@@ -45,6 +45,7 @@ const openEditMode = () => {
 	catEditMode.value = true;
 };
 
+import { mdiPlusCircleOutline } from "@mdi/js";
 import { useTimerStore } from "../../stores/timer";
 
 const timerStore = useTimerStore();
@@ -73,10 +74,10 @@ const saveEdits = async () => {
 	for (const original of categoryStore.categories) {
 		if (!editableCategories.value.some((c) => c.id === original.id)) {
 			toDelete.push(original);
-            // If the deleted category is currently selected in the timer, clear it
-            if (timerStore.categoryId === original.id) {
-                timerStore.setCategoryId(null);
-            }
+			// If the deleted category is currently selected in the timer, clear it
+			if (timerStore.categoryId === original.id) {
+				timerStore.setCategoryId(null);
+			}
 		}
 	}
 
@@ -115,7 +116,7 @@ const confirmDelete = () => {
 </script>
 
 <template>
-    <v-dialog v-model="showDialog" width="auto" scrollable>
+    <v-dialog v-model="showDialog" width="80%" scrollable>
         <template v-slot:activator="{ props: activatorProps }">
             <v-btn
                 :color="selectedCategory ? selectedCategory.color : 'orange'"
@@ -130,7 +131,7 @@ const confirmDelete = () => {
             <v-card title="Select category">
                 <v-divider class="mt-1"></v-divider>
 
-                <v-card-text class="px-4" style="height: 300px">
+                <v-card-text class="px-12" style="height: 300px" >
                     <div v-if="!catEditMode">
                         <div v-if="!categoryStore.categories || categoryStore.categories.length === 0" class="items-center justify-center">
                             No categories, create one below.
@@ -139,11 +140,6 @@ const confirmDelete = () => {
                             <v-btn variant="tonal" class="mt-4" 
                                 @click="() => { emit('select', cat); isActive.value = false; }">
                                 {{ cat.name }}
-                            </v-btn>
-                        </div>
-                        <div class="flex items-center justify-center mt-4">
-                            <v-btn variant="elevated" color="#09402B" @click="showAddCategoryModal = true">
-                                Add category
                             </v-btn>
                         </div>
                     </div>
@@ -165,8 +161,13 @@ const confirmDelete = () => {
 
                 <v-divider></v-divider>
 
-                <v-card-actions>
+                <v-card-actions >
                     <v-btn text="Cancel" @click="isActive.value = false" v-if="!catEditMode"></v-btn>
+
+                    <v-spacer></v-spacer>
+                    <v-btn variant="elevated" color="#09402B" @click="showAddCategoryModal = true" v-if="!catEditMode">
+                        <PlusCircle/>
+                    </v-btn>
                     <v-spacer></v-spacer>
 
                     <template v-if="!catEditMode">

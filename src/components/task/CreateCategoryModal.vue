@@ -9,33 +9,26 @@ const emit = defineEmits<{
 // Form data
 const categoryName = ref("");
 const selectedColor = ref("#b8744f");
-const selectedIcon = ref("💼");
 const dailyGoal = ref(4);
 const trackStatistics = ref(true);
 
 const colorOptions = [
-	"#b8744f",
-	"#c75450",
-	"#d4a373",
-	"#8b5a3c",
-	"#ff6b6b",
-	"#4ecdc4",
-	"#95e1d3",
-	"#ffd700"
-];
-const iconOptions = [
-	"💼",
-	"📚",
-	"🏠",
-	"🎯",
-	"🎨",
-	"💪",
-	"🧘",
-	"🎵",
-	"🚀",
-	"⚡",
-	"🌟",
-	"❤️"
+	"#b8744f", // pomodo-orange
+	"#c75450", // pomodo-red
+	"#d4a373", // pomodo-gold
+	"#8b5a3c", // pomodo-brown
+	"#E53935", // Red
+	"#D81B60", // Pink
+	"#8E24AA", // Purple
+	"#5E35B1", // Deep Purple
+	"#3949AB", // Indigo
+	"#1E88E5", // Blue
+	"#039BE5", // Light Blue
+	"#00ACC1", // Cyan
+	"#00897B", // Teal
+	"#43A047", // Green
+	"#7CB342", // Light Green
+	"#FDD835" // Yellow
 ];
 </script>
 
@@ -84,26 +77,6 @@ const iconOptions = [
               ]"
               :style="`background-color: ${color}`"
             ></button>
-          </div>
-        </div>
-
-        <!-- Icon Selection -->
-        <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
-            Icon
-          </label>
-          <div class="grid grid-cols-6 gap-2">
-            <button
-              v-for="icon in iconOptions"
-              :key="icon"
-              @click="selectedIcon = icon"
-              :class="[
-                'w-12 h-12 bg-dark-surface rounded-lg flex items-center justify-center text-xl hover:bg-dark-border transition-colors',
-                selectedIcon === icon ? 'ring-2 ring-pomodo-orange' : ''
-              ]"
-            >
-              {{ icon }}
-            </button>
           </div>
         </div>
 

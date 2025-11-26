@@ -55,6 +55,12 @@ The project uses a specific color palette defined in `tailwind.config.js`.
     - **Lucide First**: Use `lucide-vue-next` for all icons.
     - Avoid `@mdi/js` unless strictly necessary for legacy reasons.
 
+6.  **Workflow & Verification**:
+    - **Linting**: Always ensure `pnpm lint` gives no warnings or errors.
+    - **Formatting**: Always run `pnpm fmt` at the end of changes.
+    - **Testing**: Always run `pnpm test` after changes to code.
+    - **Test Integrity**: Never change tests unless explicitly instructed to.
+
 ## 📂 Project Structure
 
 - `src/`: Frontend source code

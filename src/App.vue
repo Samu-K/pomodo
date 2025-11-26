@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import AppLayout from "./components/AppLayout.vue";
 import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
 import CreateTaskModal from "./components/task/CreateTaskModal.vue";
@@ -11,6 +11,7 @@ import SettingsScreen from "./pages/settings/SettingsScreen.vue";
 import SessionLog from "./pages/stats/SessionLog.vue";
 import StatsScreen from "./pages/stats/StatsScreen.vue";
 import TimelineScreen from "./pages/timeline/TimelineScreen.vue";
+import { TimerMode, useTimerStore } from "./stores/timer";
 
 // Navigation state
 const activeTab = ref<"timer" | "timeline" | "tasks" | "stats">("timer");
@@ -32,6 +33,12 @@ const selectedTask = ref<Task>({
 	recurrence: {
 		type: RecurrenceType.NONE
 	}
+});
+
+const timer = useTimerStore();
+
+const hideBottomNav = computed(() => {
+	return timer.isRunning && timer.mode === TimerMode.FOCUS;
 });
 
 // Handle navigation
@@ -77,6 +84,7 @@ const openTaskDetails = (task: Task) => {
     :active-tab="activeTab"
     @nav-click="handleNavClick"
     @back-click="handleBackClick"
+    :hide-bottom-nav="hideBottomNav"
   >
     <!-- Dynamic Screen Rendering -->
     <SettingsScreen v-if="showSettings" />

@@ -76,40 +76,17 @@ export const useTimerStore = defineStore("timer", () => {
 	// --- Initialization ---
 	// Initialize timer when settings are loaded and timer is fresh
 	watch(
-		[focusDuration, restDuration, long_break_time, () => settingsStore.isLoading],
+		[
+			focusDuration,
+			restDuration,
+			long_break_time,
+			() => settingsStore.isLoading
+		],
 		([newFocus, newRest, newLongBreak, loading]) => {
 			if (!loading && !isRunning.value) {
 				// If timer is at the "start" of a session type (full duration), update it to the new duration
 				// This handles cases where user changes settings while timer is reset
 				if (mode.value === TimerMode.FOCUS) {
-					// Check if it was equal to the OLD focus duration? 
-					// Actually, simpler logic: if not running, and we are in a "fresh" state or user wants updates
-					// Let's assume if it's paused and equals the OLD duration, we update.
-					// But we don't have the old duration easily. 
-					// Safe bet: if !isRunning, we can update if it looks like it was reset.
-					// Or just force update if it matches the *current* duration (which it won't if it changed).
-
-					// Better logic:
-					// If the timer is NOT running, we should probably update the display to the new time 
-					// IF the user hasn't partially completed a session.
-					// How to know if partially completed? 
-					// We can check if remainingTime equals the *previous* default. 
-					// But we don't track previous.
-
-					// Let's just update it if it seems to be in a "reset" state (percent 100 or 0 depending on how you look at it, but here remainingTime is what matters).
-					// Actually, the original code only checked `remainingTime.value === 0`.
-					// We want to update it if it's currently set to a full duration of *some* kind, or just always if not running?
-					// Always updating if not running might be annoying if you paused at 10:00 of 25:00 and changed settings to 30:00.
-					// But if you paused at 25:00 (start), it should update to 30:00.
-
-					// Let's try: if remainingTime equals the *current* value of the *other* settings, or if it was just initialized.
-					// Actually, let's just stick to: if it's not running, and we are at the start.
-
-					// The issue described was "doesn't always update... if it's already initialized".
-					// Original code: `if (!loading && !isRunning.value && remainingTime.value === 0)`
-					// This only updates if it's 0. But usually it's 25*60.
-
-					// Fix:
 					remainingTime.value = newFocus;
 				} else if (mode.value === TimerMode.REST) {
 					// Check if we are in long break or short break

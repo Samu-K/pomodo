@@ -13,6 +13,7 @@ interface Props {
 	showBackButton?: boolean;
 	showSettingsButton?: boolean;
 	activeTab?: "timer" | "timeline" | "tasks" | "stats";
+	hideBottomNav?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
@@ -20,7 +21,8 @@ withDefaults(defineProps<Props>(), {
 	headerTitle: "Pomodo",
 	showBackButton: false,
 	showSettingsButton: true,
-	activeTab: "timer"
+	activeTab: "timer",
+	hideBottomNav: false
 });
 
 const emit = defineEmits<{
@@ -59,7 +61,7 @@ const emit = defineEmits<{
     </main>
 
     <!-- Bottom Navigation -->
-    <nav class="h-20 bg-dark-pure border-t border-dark-border">
+    <nav v-if="!hideBottomNav" class="h-20 bg-dark-pure border-t border-dark-border">
       <div class="h-full flex items-center justify-around px-4">
         <button 
           @click="emit('nav-click', 'timer')"
