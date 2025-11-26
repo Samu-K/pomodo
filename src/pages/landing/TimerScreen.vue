@@ -33,8 +33,14 @@ const showCategorySelector = computed(() => {
 
 const allowSkip = computed(() => {
 	if (timer.mode === TimerMode.REST) return true;
-	if (timer.isRunning) return false;
-	return timer.percent < 100;
+	// Focus mode: only if paused
+	return !timer.isRunning;
+});
+
+const allowReset = computed(() => {
+    if (timer.mode === TimerMode.REST) return false;
+    // Focus mode: only if paused
+    return !timer.isRunning && timer.percent < 100;
 });
 </script>
 
@@ -83,9 +89,9 @@ const allowSkip = computed(() => {
             <button 
                 @click="timer.resetTimer"
                 class="w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary flex items-center justify-center"
-                :disabled="timer.isRunning || timer.percent === 100"
+                :disabled="!allowReset"
             >
-                <RotateCcw :size="20" :class="{'opacity-50': timer.isRunning || timer.percent === 100}"/>
+                <RotateCcw :size="20" :class="{'opacity-50': !allowReset}"/>
             </button>
             
             <button 

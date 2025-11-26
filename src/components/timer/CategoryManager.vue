@@ -45,6 +45,12 @@ const openEditMode = () => {
 	catEditMode.value = true;
 };
 
+import { useTimerStore } from "../../stores/timer";
+
+const timerStore = useTimerStore();
+
+// ... (existing code)
+
 const saveEdits = async () => {
 	if (!categoryStore.categories || !editableCategories.value) return;
 
@@ -67,6 +73,10 @@ const saveEdits = async () => {
 	for (const original of categoryStore.categories) {
 		if (!editableCategories.value.some((c) => c.id === original.id)) {
 			toDelete.push(original);
+            // If the deleted category is currently selected in the timer, clear it
+            if (timerStore.categoryId === original.id) {
+                timerStore.setCategoryId(null);
+            }
 		}
 	}
 
