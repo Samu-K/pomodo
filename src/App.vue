@@ -1,22 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import AppLayout from "./components/AppLayout.vue";
 import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
 import CreateTaskModal from "./components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "./components/task/TaskDetailsModal.vue";
 import { RecurrenceType } from "./defines/recur.ts";
 import { Task } from "./defines/task.ts";
-import TimerScreen from "./pages/landing/TimerScreen.vue";
-import SettingsScreen from "./pages/settings/SettingsScreen.vue";
-import SessionLog from "./pages/stats/SessionLog.vue";
-import StatsScreen from "./pages/stats/StatsScreen.vue";
-import TimelineScreen from "./pages/timeline/TimelineScreen.vue";
 import { TimerMode, useTimerStore } from "./stores/timer";
 
-// Navigation state
-const activeTab = ref<"timer" | "timeline" | "tasks" | "stats">("timer");
-const showSettings = ref(false);
-const showSessionLog = ref(false);
+const route = useRoute();
+const router = useRouter();
 
 // Modal states
 const showCreateTask = ref(false);
@@ -41,28 +35,12 @@ const hideBottomNav = computed(() => {
 	return timer.isRunning && timer.mode === TimerMode.FOCUS;
 });
 
-// Handle navigation
-const handleNavClick = (tab: typeof activeTab.value) => {
-	activeTab.value = tab;
-	showSettings.value = false;
-	showSessionLog.value = false;
-};
-
-const handleSettingsClick = () => {
-	showSettings.value = true;
-	showSessionLog.value = false;
-};
-
-const handleSessionLogClick = () => {
-	showSessionLog.value = true;
-};
+const showBackButton = computed(() => {
+	return route.path === "/settings" || route.path === "/stats/log";
+});
 
 const handleBackClick = () => {
-	if (showSessionLog.value) {
-		showSessionLog.value = false;
-	} else {
-		showSettings.value = false;
-	}
+	router.back();
 };
 
 // Handle FAB click from timeline
@@ -78,26 +56,15 @@ const openTaskDetails = (task: Task) => {
 
 <template>
   <AppLayout
-    :header-title="showSettings ? 'Settings' : showSessionLog ? 'Session Log' : 'Pomodo'"
-    :show-back-button="showSettings || showSessionLog"
-    :show-settings-button="!showSettings && !showSessionLog"
-    :active-tab="activeTab"
-    @nav-click="handleNavClick"
-    @back-click="handleBackClick"
+    :header-title="route.name?.toString() || 'Pomodo'"
+    :show-back-button="showBackButton"
+    :show-settings-button="false"
     :hide-bottom-nav="hideBottomNav"
+    @back-click="handleBackClick"
+    @add-task="handleAddTask"
+    @task-details="openTaskDetails"
   >
-    <!-- Dynamic Screen Rendering -->
-    <SettingsScreen v-if="showSettings" />
-    <SessionLog v-else-if="showSessionLog" @back="showSessionLog = false" />
-    <TimerScreen v-else-if="activeTab === 'timer'" />
-    <TimelineScreen v-else-if="activeTab === 'timeline'" @add-task="handleAddTask" @task-details="openTaskDetails"/>
-    <StatsScreen v-else-if="activeTab === 'stats'"
-    @settings-click="handleSettingsClick"
-    @view-session-log="handleSessionLogClick"
-    />
-    <div v-else class="p-6 text-white">
-      Tasks Screen (To be implemented)
-    </div>
+    <!-- Content rendered by AppLayout via router-view -->
   </AppLayout>
   
   <!-- Modals -->

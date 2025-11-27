@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { Setting, SettingCategory } from "../defines/settings";
+import type { Setting, SettingCategory } from "../funcs/commands";
 import {
 	get_settings,
 	get_settings_categories,

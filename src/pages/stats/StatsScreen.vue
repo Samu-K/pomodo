@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/vue-query";
 import { Settings } from "lucide-vue-next";
 import { computed, type Ref, ref } from "vue";
+import { useRouter } from "vue-router";
 import WeeklyFocusChart from "../../components/stats/WeeklyFocusChart.vue";
 import WeeklyOverview from "../../components/stats/WeeklyOverview.vue";
 import { get_categories } from "../../funcs/db/categories";
@@ -11,6 +12,8 @@ import {
 	isSameWeek,
 	isToday
 } from "../../funcs/stats/date_handling";
+
+const router = useRouter();
 
 const categoriesState = useQuery({
 	queryKey: ["categories"],
@@ -33,7 +36,10 @@ const todaysFocusData = computed(() => {
 	console.log(todaySessions);
 	today_session_count.value = todaySessions.length;
 
-	const totalSeconds = todaySessions.reduce((sum, s) => sum + s.duration, 0);
+	const totalSeconds = todaySessions.reduce(
+		(sum, s) => sum + (s.duration || 0),
+		0
+	);
 	total_seconds_today.value = totalSeconds;
 
 	if (totalSeconds === 0) return [];
@@ -42,7 +48,7 @@ const todaysFocusData = computed(() => {
 		.map((cat) => {
 			const catSeconds = todaySessions
 				.filter((s) => s.category_id === cat.id)
-				.reduce((sum, s) => sum + s.duration, 0);
+				.reduce((sum, s) => sum + (s.duration || 0), 0);
 
 			return {
 				category: cat.name,
@@ -62,11 +68,6 @@ const weeklySessionsRaw = computed(() => {
 		(s) => s.start_time && isSameWeek(s.start_time)
 	);
 });
-
-const emit = defineEmits<{
-	"settings-click": [];
-	"view-session-log": [];
-}>();
 </script>
 
 <template>
@@ -79,7 +80,7 @@ const emit = defineEmits<{
         </h1>
 
         <button 
-          @click="emit('settings-click')"
+          @click="router.push('/settings')"
           class="-mt-2 text-pomodo-orange hover:bg-dark-surface rounded-lg transition-colors"
         >
           <Settings :size="20" />
@@ -107,7 +108,7 @@ const emit = defineEmits<{
 
         <div class="flex items-center justify-end">
           <button 
-          @click="emit('view-session-log')"
+          @click="router.push('/stats/log')"
           class="text-pomodo-orange hover:bg-dark-surface rounded-lg transition-colors bg-dark-surface px-4 py-2"
         >
             View session log

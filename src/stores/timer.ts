@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
-import type { Session } from "../defines/session";
+import type { Session } from "../funcs/commands";
 import {
 	add_session,
 	delete_latest_session,

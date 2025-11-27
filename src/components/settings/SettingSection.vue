@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SettingBox from "../../components/settings/SettingBox.vue";
-import { Setting } from "../../defines/settings.ts";
+import type { Setting } from "../../funcs/commands";
 import ErrorBoundary from "../ErrorBoundary.vue";
 
 const props = defineProps<{

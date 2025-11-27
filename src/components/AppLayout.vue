@@ -6,13 +6,15 @@ import {
 	ListTodo,
 	Timer
 } from "lucide-vue-next";
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { Task } from "../defines/task.ts";
 
 interface Props {
 	showHeader?: boolean;
 	headerTitle?: string;
 	showBackButton?: boolean;
 	showSettingsButton?: boolean;
-	activeTab?: "timer" | "timeline" | "tasks" | "stats";
 	hideBottomNav?: boolean;
 }
 
@@ -21,15 +23,29 @@ withDefaults(defineProps<Props>(), {
 	headerTitle: "Pomodo",
 	showBackButton: false,
 	showSettingsButton: true,
-	activeTab: "timer",
 	hideBottomNav: false
 });
 
 const emit = defineEmits<{
-	"nav-click": [tab: "timer" | "timeline" | "tasks" | "stats"];
-	"settings-click": [];
 	"back-click": [];
+	"add-task": [];
+	"task-details": [task: Task];
 }>();
+
+const route = useRoute();
+const router = useRouter();
+
+const activeTab = computed(() => {
+	if (route.path === "/") return "timer";
+	if (route.path.startsWith("/timeline")) return "timeline";
+	if (route.path.startsWith("/tasks")) return "tasks";
+	if (route.path.startsWith("/stats")) return "stats";
+	return "";
+});
+
+const navigateTo = (path: string) => {
+	router.push(path);
+};
 </script>
 
 <template>
@@ -43,28 +59,21 @@ const emit = defineEmits<{
       >
         <ChevronLeft :size="28" />
       </button>
-      
-      <!--
-      <button 
-        v-if="showSettingsButton"
-        @click="emit('settings-click')"
-        class="absolute right-6 w-12 h-12 flex items-center justify-center text-pomodo-orange hover:bg-dark-surface rounded-lg transition-colors"
-      >
-        <Settings :size="20" />
-      </button>
-      -->
     </header>
 
     <!-- Main Content -->
     <main class="flex-1 overflow-hidden">
-      <slot />
+      <router-view 
+        @add-task="emit('add-task')"
+        @task-details="(task) => emit('task-details', task)"
+      />
     </main>
 
     <!-- Bottom Navigation -->
     <nav v-if="!hideBottomNav" class="h-20 bg-dark-pure border-t border-dark-border">
       <div class="h-full flex items-center justify-around px-4">
         <button 
-          @click="emit('nav-click', 'timer')"
+          @click="navigateTo('/')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
             activeTab === 'timer' ? 'text-pomodo-orange' : 'text-text-muted hover:text-text-secondary'
@@ -75,7 +84,7 @@ const emit = defineEmits<{
         </button>
         
         <button 
-          @click="emit('nav-click', 'timeline')"
+          @click="navigateTo('/timeline')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
             activeTab === 'timeline' ? 'text-pomodo-orange' : 'text-text-muted hover:text-text-secondary'
@@ -86,7 +95,7 @@ const emit = defineEmits<{
         </button>
         
         <button 
-          @click="emit('nav-click', 'tasks')"
+          @click="navigateTo('/tasks')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
             activeTab === 'tasks' ? 'text-pomodo-orange' : 'text-text-muted hover:text-text-secondary'
@@ -97,7 +106,7 @@ const emit = defineEmits<{
         </button>
         
         <button 
-          @click="emit('nav-click', 'stats')"
+          @click="navigateTo('/stats')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
             activeTab === 'stats' ? 'text-pomodo-orange' : 'text-text-muted hover:text-text-secondary'
@@ -106,7 +115,6 @@ const emit = defineEmits<{
           <BarChart3 :size="24" />
           <span class="text-xs font-medium">Stats</span>
         </button>
-
       </div>
     </nav>
   </div>

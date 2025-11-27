@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Setting, SettingCategory } from "@/defines/settings";
+import type { Setting, SettingCategory } from "../../commands";
 import {
 	get_settings,
 	get_settings_categories,

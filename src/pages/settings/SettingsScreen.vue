@@ -2,7 +2,7 @@
 import { computed, onMounted } from "vue";
 import ErrorBoundary from "../../components/ErrorBoundary.vue";
 import SettingSection from "../../components/settings/SettingSection.vue";
-import { Setting } from "../../defines/settings.ts";
+import type { Setting } from "../../funcs/commands";
 import { useSettingsStore } from "../../stores/settings";
 
 interface SectionSettingProps {

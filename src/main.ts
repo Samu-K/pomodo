@@ -36,7 +36,10 @@ app.use(VueQueryPlugin);
 
 import { createPinia } from "pinia";
 
+import router from "./router";
+
 app.use(createPinia());
+app.use(router);
 app.use(vuetify).mount("#app");
 
 // For Tauri, you might want to add:

@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { Category } from "../defines/category";
+import type { Category } from "../funcs/commands";
 import {
 	add_category,
 	change_category_name_array,

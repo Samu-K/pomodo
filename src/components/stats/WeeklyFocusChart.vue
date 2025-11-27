@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import type { Session } from "../../defines/session.ts";
+import type { Session } from "../../funcs/commands";
 
 // 2. Receive data from parent
 const props = defineProps<{

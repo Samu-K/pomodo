@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { MinusCircle, PlusCircle } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
-import type { Category } from "../../defines/category.ts";
+import type { Category } from "../../funcs/commands";
 import { useCategoryStore } from "../../stores/categories";
 
 defineProps<{
@@ -45,7 +45,6 @@ const openEditMode = () => {
 	catEditMode.value = true;
 };
 
-import { mdiPlusCircleOutline } from "@mdi/js";
 import { useTimerStore } from "../../stores/timer";
 
 const timerStore = useTimerStore();
@@ -119,7 +118,7 @@ const confirmDelete = () => {
     <v-dialog v-model="showDialog" width="80%" scrollable>
         <template v-slot:activator="{ props: activatorProps }">
             <v-btn
-                :color="selectedCategory ? selectedCategory.color : 'orange'"
+                :color="selectedCategory?.color ?? undefined"
                 :text="selectedCategory ? selectedCategory.name : 'Select category'"
                 variant="outlined"
                 v-bind="activatorProps"

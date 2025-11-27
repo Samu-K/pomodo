@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Session } from "@/defines/session";
+import type { Session } from "../../commands";
 import {
 	add_session,
 	clear_all_sessions,

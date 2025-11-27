@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Category } from "@/defines/category";
+import type { Category } from "../../commands";
 import {
 	add_category,
 	change_category_name,

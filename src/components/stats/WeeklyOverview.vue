@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Clock, Target, TrendingUp } from "lucide-vue-next";
 import { computed } from "vue";
-import type { Session } from "../../defines/session";
+import type { Session } from "../../funcs/commands";
 
 const props = defineProps<{
 	data: Session[];
@@ -12,7 +12,10 @@ const weeklyStats = computed(() => {
 	const finishedWeek = allWeek.filter((s) => s.finished);
 
 	// Total Seconds
-	const totalSeconds = finishedWeek.reduce((sum, s) => sum + s.duration, 0);
+	const totalSeconds = finishedWeek.reduce(
+		(sum, s) => sum + (s.duration || 0),
+		0
+	);
 
 	// Convert Seconds to Hours (Fixed to 1 decimal)
 	const totalHours = (totalSeconds / 3600).toFixed(1);
