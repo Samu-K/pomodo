@@ -7,7 +7,12 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["src/**/*.ts", "src/**/*.vue", "!src/**/*.d.ts"]
+		"includes": [
+			"src/**/*.ts",
+			"src/**/*.vue",
+			"!src/**/*.d.ts",
+			"!src/funcs/commands.ts"
+		]
 	},
 	"formatter": {
 		"enabled": true,

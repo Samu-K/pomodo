@@ -101,7 +101,7 @@ describe("Session DB Functions", () => {
 		await delete_session(sessionId);
 
 		expect(invoke).toHaveBeenCalledWith("session_delete_session", {
-			session_id: sessionId
+			sessionId: sessionId
 		});
 	});
 
@@ -124,7 +124,7 @@ describe("Session DB Functions", () => {
 
 		expect(invoke).toHaveBeenCalledWith("session_get_sessions");
 		expect(invoke).toHaveBeenCalledWith("session_delete_session", {
-			session_id: 2
+			sessionId: 2
 		});
 	});
 
@@ -168,10 +168,10 @@ describe("Session DB Functions", () => {
 
 		expect(invoke).toHaveBeenCalledWith("session_get_sessions");
 		expect(invoke).toHaveBeenCalledWith("session_delete_session", {
-			session_id: 1
+			sessionId: 1
 		});
 		expect(invoke).toHaveBeenCalledWith("session_delete_session", {
-			session_id: 2
+			sessionId: 2
 		});
 	});
 });

@@ -1,16 +1,16 @@
-import { invoke } from "@tauri-apps/api/core";
-import type { Session } from "@/defines/session";
+import type { Session } from "../commands";
+import { commands } from "../commands";
 
 const add_session = async (session: Session) => {
-	const res = await invoke("session_add_session", { session: session });
-	return res;
+	const res = await commands.sessionAddSession(session);
+	if (res.status === "error") throw new Error(res.error.message);
+	return res.data;
 };
 
 const delete_session = async (session_id: number) => {
-	const res = await invoke("session_delete_session", {
-		session_id: session_id
-	});
-	return res;
+	const res = await commands.sessionDeleteSession(session_id);
+	if (res.status === "error") throw new Error(res.error.message);
+	return res.data;
 };
 
 const delete_latest_session = async () => {
@@ -33,12 +33,16 @@ const set_newest_session_complete = async () => {
 	const indx = sessions.length - 1;
 	const session_id = sessions[indx].id;
 	if (session_id) {
-		await invoke("session_set_session_complete", { id: session_id });
+		const res = await commands.sessionSetSessionComplete(session_id);
+		if (res.status === "error") throw new Error(res.error.message);
+		return res.data;
 	}
 };
 
 const get_sessions = async () => {
-	const sessions = await invoke<Session[]>("session_get_sessions");
+	const res = await commands.sessionGetSessions();
+	if (res.status === "error") throw new Error(res.error.message);
+	const sessions = res.data;
 	if (sessions && sessions.length > 0) {
 		return sessions;
 	} else {

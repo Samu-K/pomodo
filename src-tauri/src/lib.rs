@@ -5,6 +5,7 @@ use paste::paste;
 use std::sync::Arc;
 use tauri::Manager as _;
 use tauri::State;
+use specta::specta;
 
 use crate::database::{
     category::CategoryActions,
@@ -29,6 +30,7 @@ macro_rules! tauri_commands {
         $(
             paste! {
                 #[tauri::command(rename_all="snake_case")]
+                #[specta]
                 async fn [<$action _ $method>]<'r>(
                     state: State<'r, $state_type>,
                     $($param: $param_type),*
@@ -70,9 +72,8 @@ tauri_commands! {
 }
 
 pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![
+    let builder = tauri_specta::Builder::<tauri::Wry>::new()
+        .commands(tauri_specta::collect_commands![
             categories_add_category,
             categories_get_categories,
             categories_get_category_by_name,
@@ -95,7 +96,20 @@ pub fn run() {
             settings_set_setting_value,
             settings_get_setting_categories,
             settings_get_settings_for_category,
-        ])
+        ]);
+
+    #[cfg(debug_assertions)]
+    builder
+        .export(
+            specta_typescript::Typescript::default()
+                .bigint(specta_typescript::BigIntExportBehavior::Number),
+            "../src/funcs/commands.ts",
+        )
+        .expect("Failed to export typescript bindings");
+
+    tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .invoke_handler(builder.invoke_handler())
         .setup(|app| {
             tauri::async_runtime::block_on(async move {
                 let db = Arc::new(database::create_database(Some(app)).await);

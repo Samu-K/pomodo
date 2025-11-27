@@ -1,11 +1,12 @@
 // decls.rs (updated)
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+use specta::Type;
 use sqlx::FromRow;
 use sqlx::{Pool, Sqlite};
 use std::fmt;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Type)]
 pub struct AppError {
     message: String,
 }
@@ -47,14 +48,14 @@ impl From<Box<dyn std::error::Error>> for AppError {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, FromRow, Debug)]
+#[derive(serde::Deserialize, serde::Serialize, FromRow, Debug, Type)]
 pub struct Category {
     pub id: i64,
     pub name: String,
     pub color: Option<String>,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize, FromRow)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, FromRow, Type)]
 pub struct Session {
     pub id: Option<i64>,
     pub start_time: NaiveDateTime, // TIMESTAMP
@@ -66,7 +67,7 @@ pub struct Session {
     pub last_modified: Option<NaiveDateTime>,
 }
 
-#[derive(serde::Deserialize, serde::Serialize, FromRow, Debug, Default)]
+#[derive(serde::Deserialize, serde::Serialize, FromRow, Debug, Default, Type)]
 pub struct Setting {
     pub id: i64,
     pub key: String,
@@ -76,7 +77,7 @@ pub struct Setting {
     pub data_type: String,
 }
 
-#[derive(serde::Deserialize, serde::Serialize, FromRow, Debug, Default)]
+#[derive(serde::Deserialize, serde::Serialize, FromRow, Debug, Default, Type)]
 pub struct SettingCategory {
     pub id: i64,
     pub name: String,

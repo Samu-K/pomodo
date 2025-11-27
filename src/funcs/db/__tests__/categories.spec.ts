@@ -65,7 +65,7 @@ describe("Categories DB Functions", () => {
 		await delete_category(catId);
 
 		expect(invoke).toHaveBeenCalledWith("categories_delete_category", {
-			cat_id: catId
+			catId: catId
 		});
 	});
 
@@ -78,7 +78,7 @@ describe("Categories DB Functions", () => {
 
 		expect(invoke).toHaveBeenCalledWith("categories_set_category_name", {
 			name: newName,
-			cat_id: catId
+			catId: catId
 		});
 	});
 
@@ -94,11 +94,11 @@ describe("Categories DB Functions", () => {
 		expect(invoke).toHaveBeenCalledTimes(2);
 		expect(invoke).toHaveBeenNthCalledWith(1, "categories_set_category_name", {
 			name: "Cat 1",
-			cat_id: 1
+			catId: 1
 		});
 		expect(invoke).toHaveBeenNthCalledWith(2, "categories_set_category_name", {
 			name: "Cat 2",
-			cat_id: 2
+			catId: 2
 		});
 	});
 
@@ -113,10 +113,10 @@ describe("Categories DB Functions", () => {
 
 		expect(invoke).toHaveBeenCalledTimes(2);
 		expect(invoke).toHaveBeenNthCalledWith(1, "categories_delete_category", {
-			cat_id: 1
+			catId: 1
 		});
 		expect(invoke).toHaveBeenNthCalledWith(2, "categories_delete_category", {
-			cat_id: 2
+			catId: 2
 		});
 	});
 });

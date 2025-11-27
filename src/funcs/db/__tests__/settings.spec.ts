@@ -105,7 +105,7 @@ describe("Settings DB Functions", () => {
 		const result = await get_settings_for_category(catId);
 
 		expect(invoke).toHaveBeenCalledWith("settings_get_settings_for_category", {
-			cat_id: catId
+			catId: catId
 		});
 		expect(result).toEqual(mockSettings);
 	});
@@ -117,7 +117,7 @@ describe("Settings DB Functions", () => {
 		const result = await get_settings_for_category(catId);
 
 		expect(invoke).toHaveBeenCalledWith("settings_get_settings_for_category", {
-			cat_id: catId
+			catId: catId
 		});
 		expect(result).toEqual([]);
 	});

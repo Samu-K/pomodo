@@ -1,33 +1,26 @@
-import { invoke } from "@tauri-apps/api/core";
-import type { Setting, SettingCategory } from "../../defines/settings.ts";
+import { commands } from "../commands";
 
 const get_settings = async () => {
-	const settings = await invoke<Setting[]>("settings_get_all_settings");
-	return settings || [];
+	const res = await commands.settingsGetAllSettings();
+	if (res.status === "error") throw new Error(res.error.message);
+	return res.data || [];
 };
 const get_settings_categories = async () => {
-	const categories = await invoke<SettingCategory[]>(
-		"settings_get_setting_categories"
-	);
-	return categories || [];
+	const res = await commands.settingsGetSettingCategories();
+	if (res.status === "error") throw new Error(res.error.message);
+	return res.data || [];
 };
 
 const set_setting_value = async (stt_id: number, new_value: string) => {
-	const res = await invoke("settings_set_setting_value", {
-		value: new_value,
-		id: stt_id
-	});
-	return res;
+	const res = await commands.settingsSetSettingValue(new_value, stt_id);
+	if (res.status === "error") throw new Error(res.error.message);
+	return res.data;
 };
 
 const get_settings_for_category = async (cat_id: number) => {
-	const settings = await invoke<Setting[]>(
-		"settings_get_settings_for_category",
-		{
-			cat_id: cat_id
-		}
-	);
-	return settings || [];
+	const res = await commands.settingsGetSettingsForCategory(cat_id);
+	if (res.status === "error") throw new Error(res.error.message);
+	return res.data || [];
 };
 
 export {
