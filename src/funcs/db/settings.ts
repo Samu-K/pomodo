@@ -3,36 +3,20 @@ import type { Setting, SettingCategory } from "../../defines/settings.ts";
 
 const get_settings = async () => {
 	const settings = await invoke<Setting[]>("settings_get_all_settings");
-	if (settings.length > 0) {
-		return settings;
-	} else {
-		return [];
-	}
+	return settings || [];
 };
 const get_settings_categories = async () => {
 	const categories = await invoke<SettingCategory[]>(
 		"settings_get_setting_categories"
-	).catch((err) => {
-		console.error(err);
-		return [];
-	});
-
-	if (categories.length > 0) {
-		return categories;
-	} else {
-		return [];
-	}
+	);
+	return categories || [];
 };
 
 const set_setting_value = async (stt_id: number, new_value: string) => {
-	console.log("Triggered");
 	const res = await invoke("settings_set_setting_value", {
 		value: new_value,
 		id: stt_id
-	}).catch((err) =>
-		console.error(`error setting value for setting ${stt_id} ${err}`)
-	);
-	console.log(`Response ${res}`);
+	});
 	return res;
 };
 
@@ -43,11 +27,7 @@ const get_settings_for_category = async (cat_id: number) => {
 			cat_id: cat_id
 		}
 	);
-	if (settings.length > 0) {
-		return settings;
-	} else {
-		return [];
-	}
+	return settings || [];
 };
 
 export {

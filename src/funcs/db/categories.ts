@@ -3,11 +3,7 @@ import type { Category } from "../../defines/category";
 
 const get_categories = async () => {
 	const categories = await invoke<Category[]>("categories_get_categories");
-	if (categories.length > 0) {
-		return categories;
-	} else {
-		return [];
-	}
+	return categories || [];
 };
 
 const add_category = async (new_category: Category) => {

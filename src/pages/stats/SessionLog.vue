@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { ChevronDown, ChevronUp, Trash } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { get_categories } from "../../funcs/db/categories";
-import { delete_session, get_sessions } from "../../funcs/db/sesssion";
+import { delete_session, get_sessions } from "../../funcs/db/session";
 import { formatDuration } from "../../funcs/stats/date_handling";
 
 const queryClient = useQueryClient();

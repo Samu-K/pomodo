@@ -4,7 +4,7 @@ import { useSettingsStore } from "../settings";
 import { TimerMode, useTimerStore } from "../timer";
 
 // Mock DB functions
-vi.mock("../../funcs/db/sesssion", () => ({
+vi.mock("../../funcs/db/session", () => ({
 	add_session: vi.fn(),
 	delete_latest_session: vi.fn(),
 	set_newest_session_complete: vi.fn()
@@ -295,6 +295,164 @@ describe("Timer Store", () => {
 
 			expect(timerStore.mode).toBe(TimerMode.FOCUS);
 			expect(timerStore.sessionStreak).toBe(0);
+		});
+
+		it("auto-starts focus if enabled", async () => {
+			// Update settings to enable auto-start focus
+			const autoStartSetting = settingsStore.settings.find(
+				(s) => s.key === "Auto Start Focus"
+			);
+			if (autoStartSetting) autoStartSetting.value = "true";
+
+			vi.useFakeTimers();
+			timerStore.mode = TimerMode.REST;
+			timerStore.remainingTime = 0.1;
+
+			await timerStore.startTimer();
+
+			// Advance to finish current timer
+			vi.advanceTimersByTime(200);
+
+			// Flush microtasks for handleComplete
+			await Promise.resolve();
+
+			expect(timerStore.mode).toBe(TimerMode.FOCUS);
+			expect(timerStore.isRunning).toBe(true);
+
+			// Verify new timer is running
+			const timeAtStart = timerStore.remainingTime;
+			vi.advanceTimersByTime(1000);
+			expect(timerStore.remainingTime).toBeLessThan(timeAtStart);
+		});
+	});
+
+	describe("Database Integration", () => {
+		it("creates session when starting with category", async () => {
+			const { add_session } = await import("../../funcs/db/session");
+
+			vi.useFakeTimers();
+			timerStore.mode = TimerMode.FOCUS;
+			timerStore.remainingTime = 1500; // Full focus duration
+			timerStore.setCategoryId(42);
+
+			await timerStore.startTimer();
+
+			expect(add_session).toHaveBeenCalledWith(
+				expect.objectContaining({
+					category_id: 42,
+					duration: 1500,
+					finished: false
+				})
+			);
+		});
+
+		it("does not create session when category is null", async () => {
+			const { add_session } = await import("../../funcs/db/session");
+
+			vi.useFakeTimers();
+			vi.clearAllMocks();
+
+			timerStore.mode = TimerMode.FOCUS;
+			timerStore.remainingTime = 1500; // Full focus duration
+			timerStore.setCategoryId(null);
+
+			await timerStore.startTimer();
+
+			expect(add_session).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("Additional Actions", () => {
+		it("toggleTimer toggles from paused to running", async () => {
+			vi.useFakeTimers();
+			timerStore.isRunning = false;
+			timerStore.remainingTime = 1500;
+
+			await timerStore.toggleTimer();
+
+			expect(timerStore.isRunning).toBe(true);
+		});
+
+		it("toggleTimer toggles from running to paused", async () => {
+			vi.useFakeTimers();
+			await timerStore.startTimer();
+			expect(timerStore.isRunning).toBe(true);
+
+			timerStore.toggleTimer();
+
+			expect(timerStore.isRunning).toBe(false);
+		});
+
+		it("resetTimer resets in REST mode (short break)", async () => {
+			timerStore.mode = TimerMode.REST;
+			timerStore.sessionStreak = 2; // Not at long break interval
+			timerStore.remainingTime = 100;
+
+			await timerStore.resetTimer();
+
+			expect(timerStore.isRunning).toBe(false);
+			expect(timerStore.remainingTime).toBe(300); // Short break duration
+		});
+
+		it("resetTimer resets in REST mode (long break)", async () => {
+			timerStore.mode = TimerMode.REST;
+			timerStore.sessionStreak = 4; // At long break interval
+			timerStore.remainingTime = 100;
+
+			await timerStore.resetTimer();
+
+			expect(timerStore.isRunning).toBe(false);
+			expect(timerStore.remainingTime).toBe(900); // Long break duration
+		});
+
+		it("setCategoryId handles undefined", () => {
+			timerStore.setCategoryId(123);
+			expect(timerStore.categoryId).toBe(123);
+
+			timerStore.setCategoryId(undefined);
+			expect(timerStore.categoryId).toBeNull();
+		});
+	});
+
+	describe("Settings Watcher", () => {
+		it("updates remainingTime when settings change in REST mode (short break)", async () => {
+			timerStore.mode = TimerMode.REST;
+			timerStore.sessionStreak = 2; // Not at long break
+			timerStore.isRunning = false;
+
+			// Change short break setting
+			const shortBreakSetting = settingsStore.settings.find(
+				(s) => s.key === "Short Break Time"
+			);
+			if (shortBreakSetting) {
+				shortBreakSetting.value = "10"; // Change from 5 to 10 minutes
+			}
+
+			// Trigger watcher by waiting for next tick
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(timerStore.remainingTime).toBe(600); // 10 minutes in seconds
+		});
+
+		it("updates remainingTime when settings change in REST mode (long break)", async () => {
+			timerStore.mode = TimerMode.REST;
+			timerStore.sessionStreak = 4; // At long break interval
+			timerStore.isRunning = false;
+
+			// Change long break setting
+			const longBreakSetting = settingsStore.settings.find(
+				(s) => s.key === "Long Break Time"
+			);
+			if (longBreakSetting) {
+				longBreakSetting.value = "20"; // Change from 15 to 20 minutes
+			}
+
+			// Trigger watcher by waiting for next tick
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(timerStore.remainingTime).toBe(1200); // 20 minutes in seconds
 		});
 	});
 });

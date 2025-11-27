@@ -57,6 +57,7 @@ The project uses a specific color palette defined in `tailwind.config.js`.
 
 6.  **Workflow & Verification**:
     - **Linting**: Always ensure `pnpm lint` gives no warnings or errors.
+    - **Biome Compliance**: STRICTLY follow the configuration and rules in `biome.json`.
     - **Formatting**: Always run `pnpm fmt` at the end of changes.
     - **Testing**: Always run `pnpm test` after changes to code.
     - **Test Integrity**: Never change tests unless explicitly instructed to.

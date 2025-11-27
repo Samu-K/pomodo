@@ -5,7 +5,7 @@ import {
 	add_session,
 	delete_latest_session,
 	set_newest_session_complete
-} from "../funcs/db/sesssion";
+} from "../funcs/db/session";
 import { useSettingsStore } from "./settings";
 
 export enum TimerMode {

@@ -14,33 +14,35 @@ const delete_session = async (session_id: number) => {
 };
 
 const delete_latest_session = async () => {
-	const sessions = await invoke<Session[]>("session_get_sessions");
+	const sessions = await get_sessions();
+	if (sessions.length === 0) {
+		return;
+	}
 	const id = sessions[sessions.length - 1].id;
 	if (id) {
 		const res = await delete_session(id);
 		return res;
-	} else {
-		return;
 	}
 };
 
 const set_newest_session_complete = async () => {
-	const res = invoke<Session[]>("session_get_sessions").then(
-		(sessions: Session[]) => {
-			const indx = sessions.length - 1;
-			const session_id = sessions[indx].id;
-			invoke("session_set_session_complete", { id: session_id });
-		}
-	);
-	return res;
+	const sessions = await get_sessions();
+	if (sessions.length === 0) {
+		return;
+	}
+	const indx = sessions.length - 1;
+	const session_id = sessions[indx].id;
+	if (session_id) {
+		await invoke("session_set_session_complete", { id: session_id });
+	}
 };
 
 const get_sessions = async () => {
 	const sessions = await invoke<Session[]>("session_get_sessions");
-	if (sessions.length > 0) {
+	if (sessions && sessions.length > 0) {
 		return sessions;
 	} else {
-		throw Error("Sessions empty");
+		return [];
 	}
 };
 

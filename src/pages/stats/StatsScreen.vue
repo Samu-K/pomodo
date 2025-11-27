@@ -5,7 +5,7 @@ import { computed, type Ref, ref } from "vue";
 import WeeklyFocusChart from "../../components/stats/WeeklyFocusChart.vue";
 import WeeklyOverview from "../../components/stats/WeeklyOverview.vue";
 import { get_categories } from "../../funcs/db/categories";
-import { get_sessions } from "../../funcs/db/sesssion";
+import { get_sessions } from "../../funcs/db/session";
 import {
 	formatDuration,
 	isSameWeek,
