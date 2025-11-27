@@ -70,8 +70,25 @@ export const useTimerStore = defineStore("timer", () => {
 	const mode = ref<TimerMode>(TimerMode.FOCUS);
 	const isRunning = ref(false);
 	const categoryId = ref<number | null>(null);
-	let timerId: number | undefined;
 	let endTime: number | undefined;
+
+	// --- Worker ---
+	const worker = new Worker(
+		new URL("../workers/timer.worker.ts", import.meta.url),
+		{
+			type: "module"
+		}
+	);
+
+	worker.onmessage = (e) => {
+		const { type, payload } = e.data;
+		if (type === "TICK") {
+			remainingTime.value = payload.remainingTime;
+		} else if (type === "COMPLETE") {
+			remainingTime.value = 0;
+			handleComplete();
+		}
+	};
 
 	// --- Initialization ---
 	// Initialize timer when settings are loaded and timer is fresh
@@ -102,20 +119,6 @@ export const useTimerStore = defineStore("timer", () => {
 	);
 
 	// --- Actions ---
-
-	const tick = () => {
-		if (!endTime) return;
-
-		const now = Date.now();
-		const diff = Math.ceil((endTime - now) / 1000);
-
-		if (diff > 0) {
-			remainingTime.value = diff;
-		} else {
-			remainingTime.value = 0;
-			handleComplete();
-		}
-	};
 
 	const handleComplete = async () => {
 		pauseTimer();
@@ -170,13 +173,12 @@ export const useTimerStore = defineStore("timer", () => {
 		endTime = Date.now() + remainingTime.value * 1000;
 
 		isRunning.value = true;
-		timerId = window.setInterval(tick, 100); // Check more frequently for smoothness
+		worker.postMessage({ type: "START", payload: { endTime } });
 	};
 
 	const pauseTimer = () => {
 		isRunning.value = false;
-		clearInterval(timerId);
-		timerId = undefined;
+		worker.postMessage({ type: "PAUSE" });
 		endTime = undefined;
 	};
 

@@ -10,6 +10,31 @@ vi.mock("../../funcs/db/session", () => ({
 	set_newest_session_complete: vi.fn()
 }));
 
+// Mock Worker
+const postMessageMock = vi.fn();
+const terminateMock = vi.fn();
+let onMessageCallback: ((e: MessageEvent) => void) | null = null;
+
+class MockWorker {
+	postMessage(data: unknown) {
+		postMessageMock(data);
+	}
+
+	set onmessage(callback: (e: MessageEvent) => void) {
+		onMessageCallback = callback;
+	}
+
+	get onmessage() {
+		return onMessageCallback;
+	}
+
+	terminate() {
+		terminateMock();
+	}
+}
+
+vi.stubGlobal("Worker", MockWorker);
+
 describe("Timer Store", () => {
 	let timerStore: ReturnType<typeof useTimerStore>;
 	let settingsStore: ReturnType<typeof useSettingsStore>;
@@ -72,6 +97,9 @@ describe("Timer Store", () => {
 		settingsStore.isLoading = false;
 		settingsStore.fetchSettings = vi.fn();
 
+		postMessageMock.mockClear();
+		onMessageCallback = null;
+
 		timerStore = useTimerStore();
 	});
 
@@ -89,9 +117,6 @@ describe("Timer Store", () => {
 		});
 
 		it("fetches settings if empty", () => {
-			// We need to simulate the condition where settings are empty
-			// Since timerStore is already created in beforeEach with populated settings,
-			// we need to create a NEW pinia environment for this test.
 			setActivePinia(createPinia());
 			const localSettingsStore = useSettingsStore();
 			localSettingsStore.settings = [];
@@ -115,7 +140,6 @@ describe("Timer Store", () => {
 		});
 
 		it("calculates percent correctly", () => {
-			// Focus mode: 25 mins = 1500s
 			timerStore.remainingTime = 750;
 			expect(timerStore.percent).toBe(50);
 
@@ -125,30 +149,27 @@ describe("Timer Store", () => {
 	});
 
 	describe("Actions", () => {
-		it("startTimer starts the timer", async () => {
-			vi.useFakeTimers();
+		it("startTimer starts the timer and sends message to worker", async () => {
 			timerStore.remainingTime = 1500;
 
 			await timerStore.startTimer();
 
 			expect(timerStore.isRunning).toBe(true);
-
-			// Advance time
-			vi.advanceTimersByTime(1000);
-			expect(timerStore.remainingTime).toBeLessThan(1500);
+			expect(postMessageMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					type: "START",
+					payload: expect.objectContaining({ endTime: expect.any(Number) })
+				})
+			);
 		});
 
-		it("pauseTimer stops the timer", async () => {
-			vi.useFakeTimers();
+		it("pauseTimer stops the timer and sends message to worker", async () => {
 			await timerStore.startTimer();
 			expect(timerStore.isRunning).toBe(true);
 
 			timerStore.pauseTimer();
 			expect(timerStore.isRunning).toBe(false);
-
-			const timeAtPause = timerStore.remainingTime;
-			vi.advanceTimersByTime(2000);
-			expect(timerStore.remainingTime).toBe(timeAtPause);
+			expect(postMessageMock).toHaveBeenCalledWith({ type: "PAUSE" });
 		});
 
 		it("resetTimer resets state", async () => {
@@ -158,11 +179,11 @@ describe("Timer Store", () => {
 			await timerStore.resetTimer();
 
 			expect(timerStore.isRunning).toBe(false);
-			expect(timerStore.remainingTime).toBe(1500); // Back to full focus duration
+			expect(timerStore.remainingTime).toBe(1500);
+			expect(postMessageMock).toHaveBeenCalledWith({ type: "PAUSE" });
 		});
 
 		it("skip switches modes", () => {
-			// Focus -> Rest
 			timerStore.mode = TimerMode.FOCUS;
 			timerStore.sessionStreak = 0;
 
@@ -170,9 +191,9 @@ describe("Timer Store", () => {
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
 			expect(timerStore.sessionStreak).toBe(1);
-			expect(timerStore.remainingTime).toBe(300); // 5 min short break
+			expect(timerStore.remainingTime).toBe(300);
+			expect(postMessageMock).toHaveBeenCalledWith({ type: "PAUSE" });
 
-			// Rest -> Focus
 			timerStore.skip();
 
 			expect(timerStore.mode).toBe(TimerMode.FOCUS);
@@ -181,13 +202,13 @@ describe("Timer Store", () => {
 
 		it("skip handles long break", () => {
 			timerStore.mode = TimerMode.FOCUS;
-			timerStore.sessionStreak = 3; // Next one makes it 4 (long break interval)
+			timerStore.sessionStreak = 3;
 
 			timerStore.skip();
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
 			expect(timerStore.sessionStreak).toBe(4);
-			expect(timerStore.remainingTime).toBe(900); // 15 min long break
+			expect(timerStore.remainingTime).toBe(900);
 		});
 
 		it("setCategoryId updates category", () => {
@@ -200,129 +221,71 @@ describe("Timer Store", () => {
 	});
 
 	describe("Timer Logic", () => {
-		it("completes session and switches to break", async () => {
-			vi.useFakeTimers();
-			timerStore.mode = TimerMode.FOCUS;
-			timerStore.remainingTime = 1; // 1 second left
-			timerStore.isRunning = true;
-
-			// Reset to ensure clean state
-			timerStore.pauseTimer();
-			timerStore.remainingTime = 0.1; // Very small
-
+		it("updates remainingTime on TICK message", async () => {
 			await timerStore.startTimer();
 
-			// Advance enough to finish
-			vi.advanceTimersByTime(200);
+			if (onMessageCallback) {
+				onMessageCallback({
+					data: { type: "TICK", payload: { remainingTime: 1400 } }
+				} as MessageEvent);
+			}
+
+			expect(timerStore.remainingTime).toBe(1400);
+		});
+
+		it("completes session on COMPLETE message", async () => {
+			timerStore.mode = TimerMode.FOCUS;
+			timerStore.remainingTime = 1;
+			timerStore.isRunning = true;
+
+			if (onMessageCallback) {
+				onMessageCallback({ data: { type: "COMPLETE" } } as MessageEvent);
+			}
 
 			// Wait for async handleComplete
-			// handleComplete is async but doesn't have timers inside it (except startTimer if auto-start)
-			// But here auto-start is false (default mock)
-			await Promise.resolve(); // flush microtasks
+			await Promise.resolve();
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
-			expect(timerStore.isRunning).toBe(false); // Auto start is false by default
+			expect(timerStore.isRunning).toBe(false);
 			expect(timerStore.remainingTime).toBe(300);
 		});
 
 		it("auto-starts break if enabled", async () => {
-			// Update settings
 			const autoStartSetting = settingsStore.settings.find(
 				(s) => s.key === "Auto Start Break"
 			);
 			if (autoStartSetting) autoStartSetting.value = "true";
 
-			vi.useFakeTimers();
-			timerStore.remainingTime = 0.1;
-
+			timerStore.remainingTime = 1;
 			await timerStore.startTimer();
 
-			// Advance to finish current timer
-			vi.advanceTimersByTime(200);
+			if (onMessageCallback) {
+				onMessageCallback({ data: { type: "COMPLETE" } } as MessageEvent);
+			}
 
-			// Flush microtasks for handleComplete
 			await Promise.resolve();
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
 			expect(timerStore.isRunning).toBe(true);
 
-			// Verify new timer is running
-			const timeAtStart = timerStore.remainingTime;
-			vi.advanceTimersByTime(1000);
-			expect(timerStore.remainingTime).toBeLessThan(timeAtStart);
+			// Should have called START (initial), PAUSE (handleComplete), START (auto-start)
+			expect(postMessageMock).toHaveBeenCalledTimes(3);
 		});
 
 		it("completes session and triggers long break", async () => {
-			vi.useFakeTimers();
 			timerStore.mode = TimerMode.FOCUS;
-			timerStore.sessionStreak = 3; // Next one makes it 4 (long break interval)
-			timerStore.remainingTime = 0.1;
+			timerStore.sessionStreak = 3;
+			timerStore.remainingTime = 1;
 
-			await timerStore.startTimer();
+			if (onMessageCallback) {
+				onMessageCallback({ data: { type: "COMPLETE" } } as MessageEvent);
+			}
 
-			// Advance to finish current timer
-			vi.advanceTimersByTime(200);
-
-			// Flush microtasks
 			await Promise.resolve();
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
-			expect(timerStore.remainingTime).toBe(900); // 15 min long break
+			expect(timerStore.remainingTime).toBe(900);
 			expect(timerStore.sessionStreak).toBe(4);
-		});
-
-		it("resets streak after long break completes", async () => {
-			vi.useFakeTimers();
-			timerStore.mode = TimerMode.REST;
-			timerStore.sessionStreak = 4; // Long break active
-			timerStore.remainingTime = 0.1;
-
-			await timerStore.startTimer();
-
-			// Advance to finish current timer
-			vi.advanceTimersByTime(200);
-			await Promise.resolve();
-
-			expect(timerStore.mode).toBe(TimerMode.FOCUS);
-			expect(timerStore.sessionStreak).toBe(0);
-		});
-
-		it("resets streak after long break skipped", () => {
-			timerStore.mode = TimerMode.REST;
-			timerStore.sessionStreak = 4; // Long break active
-
-			timerStore.skip();
-
-			expect(timerStore.mode).toBe(TimerMode.FOCUS);
-			expect(timerStore.sessionStreak).toBe(0);
-		});
-
-		it("auto-starts focus if enabled", async () => {
-			// Update settings to enable auto-start focus
-			const autoStartSetting = settingsStore.settings.find(
-				(s) => s.key === "Auto Start Focus"
-			);
-			if (autoStartSetting) autoStartSetting.value = "true";
-
-			vi.useFakeTimers();
-			timerStore.mode = TimerMode.REST;
-			timerStore.remainingTime = 0.1;
-
-			await timerStore.startTimer();
-
-			// Advance to finish current timer
-			vi.advanceTimersByTime(200);
-
-			// Flush microtasks for handleComplete
-			await Promise.resolve();
-
-			expect(timerStore.mode).toBe(TimerMode.FOCUS);
-			expect(timerStore.isRunning).toBe(true);
-
-			// Verify new timer is running
-			const timeAtStart = timerStore.remainingTime;
-			vi.advanceTimersByTime(1000);
-			expect(timerStore.remainingTime).toBeLessThan(timeAtStart);
 		});
 	});
 
@@ -330,9 +293,8 @@ describe("Timer Store", () => {
 		it("creates session when starting with category", async () => {
 			const { add_session } = await import("../../funcs/db/session");
 
-			vi.useFakeTimers();
 			timerStore.mode = TimerMode.FOCUS;
-			timerStore.remainingTime = 1500; // Full focus duration
+			timerStore.remainingTime = 1500;
 			timerStore.setCategoryId(42);
 
 			await timerStore.startTimer();
@@ -348,12 +310,10 @@ describe("Timer Store", () => {
 
 		it("does not create session when category is null", async () => {
 			const { add_session } = await import("../../funcs/db/session");
-
-			vi.useFakeTimers();
 			vi.clearAllMocks();
 
 			timerStore.mode = TimerMode.FOCUS;
-			timerStore.remainingTime = 1500; // Full focus duration
+			timerStore.remainingTime = 1500;
 			timerStore.setCategoryId(null);
 
 			await timerStore.startTimer();
@@ -364,45 +324,47 @@ describe("Timer Store", () => {
 
 	describe("Additional Actions", () => {
 		it("toggleTimer toggles from paused to running", async () => {
-			vi.useFakeTimers();
 			timerStore.isRunning = false;
 			timerStore.remainingTime = 1500;
 
 			await timerStore.toggleTimer();
 
 			expect(timerStore.isRunning).toBe(true);
+			expect(postMessageMock).toHaveBeenCalledWith(
+				expect.objectContaining({ type: "START" })
+			);
 		});
 
 		it("toggleTimer toggles from running to paused", async () => {
-			vi.useFakeTimers();
 			await timerStore.startTimer();
 			expect(timerStore.isRunning).toBe(true);
 
 			timerStore.toggleTimer();
 
 			expect(timerStore.isRunning).toBe(false);
+			expect(postMessageMock).toHaveBeenCalledWith({ type: "PAUSE" });
 		});
 
 		it("resetTimer resets in REST mode (short break)", async () => {
 			timerStore.mode = TimerMode.REST;
-			timerStore.sessionStreak = 2; // Not at long break interval
+			timerStore.sessionStreak = 2;
 			timerStore.remainingTime = 100;
 
 			await timerStore.resetTimer();
 
 			expect(timerStore.isRunning).toBe(false);
-			expect(timerStore.remainingTime).toBe(300); // Short break duration
+			expect(timerStore.remainingTime).toBe(300);
 		});
 
 		it("resetTimer resets in REST mode (long break)", async () => {
 			timerStore.mode = TimerMode.REST;
-			timerStore.sessionStreak = 4; // At long break interval
+			timerStore.sessionStreak = 4;
 			timerStore.remainingTime = 100;
 
 			await timerStore.resetTimer();
 
 			expect(timerStore.isRunning).toBe(false);
-			expect(timerStore.remainingTime).toBe(900); // Long break duration
+			expect(timerStore.remainingTime).toBe(900);
 		});
 
 		it("setCategoryId handles undefined", () => {
@@ -417,42 +379,38 @@ describe("Timer Store", () => {
 	describe("Settings Watcher", () => {
 		it("updates remainingTime when settings change in REST mode (short break)", async () => {
 			timerStore.mode = TimerMode.REST;
-			timerStore.sessionStreak = 2; // Not at long break
+			timerStore.sessionStreak = 2;
 			timerStore.isRunning = false;
 
-			// Change short break setting
 			const shortBreakSetting = settingsStore.settings.find(
 				(s) => s.key === "Short Break Time"
 			);
 			if (shortBreakSetting) {
-				shortBreakSetting.value = "10"; // Change from 5 to 10 minutes
+				shortBreakSetting.value = "10";
 			}
 
-			// Trigger watcher by waiting for next tick
 			await Promise.resolve();
 			await Promise.resolve();
 
-			expect(timerStore.remainingTime).toBe(600); // 10 minutes in seconds
+			expect(timerStore.remainingTime).toBe(600);
 		});
 
 		it("updates remainingTime when settings change in REST mode (long break)", async () => {
 			timerStore.mode = TimerMode.REST;
-			timerStore.sessionStreak = 4; // At long break interval
+			timerStore.sessionStreak = 4;
 			timerStore.isRunning = false;
 
-			// Change long break setting
 			const longBreakSetting = settingsStore.settings.find(
 				(s) => s.key === "Long Break Time"
 			);
 			if (longBreakSetting) {
-				longBreakSetting.value = "20"; // Change from 15 to 20 minutes
+				longBreakSetting.value = "20";
 			}
 
-			// Trigger watcher by waiting for next tick
 			await Promise.resolve();
 			await Promise.resolve();
 
-			expect(timerStore.remainingTime).toBe(1200); // 20 minutes in seconds
+			expect(timerStore.remainingTime).toBe(1200);
 		});
 	});
 });

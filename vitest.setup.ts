@@ -35,3 +35,24 @@ try {
 } catch (e) {
     console.warn('Failed to mock window.localStorage', e)
 }
+
+// Mock Worker
+class MockWorker {
+    url: string;
+    onmessage: (event: MessageEvent) => void;
+    
+    constructor(stringUrl: string) {
+        this.url = stringUrl;
+        this.onmessage = () => {};
+    }
+
+    postMessage(msg: any) {
+        // Default no-op
+    }
+
+    terminate() {
+        // Default no-op
+    }
+}
+
+global.Worker = MockWorker as any;
