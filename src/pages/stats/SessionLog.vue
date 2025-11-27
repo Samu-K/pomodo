@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { ChevronDown, ChevronUp, Trash } from "lucide-vue-next";
+import { Check, ChevronDown, ChevronUp, Trash, X } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { get_categories } from "../../funcs/db/categories";
 import { delete_session, get_sessions } from "../../funcs/db/session";
@@ -35,10 +35,7 @@ const processedSessions = computed(() => {
 	const catMap = new Map(cats.map((c) => [c.id, c]));
 
 	return [...sessionsState.data.value]
-		.filter(
-			(s): s is typeof s & { start_time: string } =>
-				!!(s.finished && s.start_time)
-		)
+		.filter((s): s is typeof s & { start_time: string } => !!s.start_time)
 		.map((s) => {
 			const date = new Date(s.start_time);
 			const cat = s.category_id ? catMap.get(s.category_id) : null;
@@ -182,6 +179,12 @@ const handleDelete = (id: number) => {
 
 									<div class="flex items-center gap-6">
 										<span class="text-white font-medium">{{ formatDuration(session.duration) }}</span>
+										<div v-if="session.finished" class="text-green-500" title="Completed">
+											<Check :size="18" />
+										</div>
+										<div v-else class="text-red-500" title="Incomplete">
+											<X :size="18" />
+										</div>
 										<button 
 											v-if="session.id"
 											@click.stop="handleDelete(session.id)"
