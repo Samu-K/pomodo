@@ -15,7 +15,29 @@ const vuetify = createVuetify({
 		}
 	},
 	theme: {
-		defaultTheme: "dark"
+		defaultTheme: "dark",
+		themes: {
+			light: {
+				dark: false,
+				colors: {
+					primary: "#b8744f", // pomodo-orange
+					secondary: "#c75450", // pomodo-red
+					background: "#f5f5f5",
+					surface: "#ffffff",
+					"on-surface": "#1a1a1a"
+				}
+			},
+			dark: {
+				dark: true,
+				colors: {
+					primary: "#b8744f", // pomodo-orange
+					secondary: "#c75450", // pomodo-red
+					background: "#1a1a1a",
+					surface: "#2a2a3a",
+					"on-surface": "#ffffff"
+				}
+			}
+		}
 	}
 });
 

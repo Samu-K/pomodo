@@ -74,11 +74,11 @@ onUnmounted(() => {
 
 <template>
   <section class="mt-10">
-    <h2 class="text-lg font-semibold text-white mb-5">Activity Chart</h2>
+    <h2 class="text-lg font-semibold text-lightText-primary dark:text-white mb-5">Activity Chart</h2>
     
     <div 
       ref="chartContainerRef"
-      class="bg-dark-surface rounded-xl p-6 select-none"
+      class="bg-light-surface dark:bg-dark-surface rounded-xl p-6 select-none"
     >
       
       <div class="flex items-end justify-between h-32 gap-2 mb-2">
@@ -89,19 +89,19 @@ onUnmounted(() => {
           class="w-full h-full flex flex-col justify-end items-center relative cursor-pointer"
         >
           <div 
-            class="absolute -top-10 transition-all duration-300 ease-out bg-dark-bg border border-dark-border px-2 py-1 rounded shadow-lg z-10"
+            class="absolute -top-10 transition-all duration-300 ease-out bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border px-2 py-1 rounded shadow-lg z-10"
             :class="activeDayIndex === index ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'"
           >
             <span class="text-xs text-pomodo-orange font-mono font-bold">
               {{ day.valueDisplay }}h
             </span>
-            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-dark-bg border-r border-b border-dark-border rotate-45"></div>
+            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-light-bg dark:bg-dark-bg border-r border-b border-light-border dark:border-dark-border rotate-45"></div>
           </div>
 
           <div 
             class="w-full rounded-t-md transition-all duration-500 min-h-[4px]"
             :class="[
-               day.isToday ? 'bg-pomodo-orange' : 'bg-dark-bg/50',
+               day.isToday ? 'bg-pomodo-orange' : 'bg-light-border dark:bg-dark-bg/50',
                activeDayIndex === index 
                  ? '!bg-pomodo-orange brightness-110 shadow-[0_0_10px_rgba(249,115,22,0.3)]' 
                  : 'hover:bg-pomodo-orange/70'
@@ -111,14 +111,14 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="flex justify-between gap-2 border-t border-dark-bg/30 pt-2">
+      <div class="flex justify-between gap-2 border-t border-light-border dark:border-dark-bg/30 pt-2">
         <div 
           v-for="(day, index) in chartData" 
           :key="index" 
           class="w-full text-center text-xs font-medium transition-colors"
           :class="[
             activeDayIndex === index ? 'text-white' : '',
-            day.isToday && activeDayIndex !== index ? 'text-pomodo-orange' : 'text-text-muted'
+            day.isToday && activeDayIndex !== index ? 'text-pomodo-orange' : 'text-lightText-muted dark:text-text-muted'
           ]"
         >
           {{ day.label }}

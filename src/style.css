@@ -11,12 +11,12 @@
 	}
 
 	.scrollbar-thin::-webkit-scrollbar-track {
-		background: #2a2a3a;
+		background: theme('colors.dark.surface');
 		border-radius: 3px;
 	}
 
 	.scrollbar-thin::-webkit-scrollbar-thumb {
-		background: #b8744f;
+		background: theme('colors.pomodo.orange');
 		border-radius: 3px;
 	}
 
@@ -27,7 +27,7 @@
 	/* Firefox */
 	.scrollbar-thin {
 		scrollbar-width: thin;
-		scrollbar-color: #b8744f #2a2a3a;
+		scrollbar-color: theme('colors.pomodo.orange') theme('colors.dark.surface');
 	}
 }
 
@@ -35,6 +35,11 @@
 @layer base {
 	body {
 		@apply bg-dark-bg text-white antialiased;
+	}
+
+	/* Light mode override */
+	:not(.dark) body {
+		@apply bg-light-bg text-lightText-primary;
 	}
 
 	/* Remove spinner from number inputs */

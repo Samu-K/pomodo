@@ -4,10 +4,12 @@ import { computed, onMounted, ref } from "vue";
 import CategoryManager from "../../components/timer/CategoryManager.vue";
 
 import { useCategoryStore } from "../../stores/categories";
+import { useThemeStore } from "../../stores/theme";
 import { TimerMode, useTimerStore } from "../../stores/timer";
 
 const timer = useTimerStore();
 const categoryStore = useCategoryStore();
+const themeStore = useThemeStore();
 
 onMounted(() => {
 	if (categoryStore.categories.length === 0) {
@@ -42,42 +44,28 @@ const allowReset = computed(() => {
 	// Focus mode: only if paused
 	return !timer.isRunning && timer.percent < 100;
 });
+
 const categoryStyle = computed(() => {
 	const color = selectedCategory.value?.color;
-	let hexColor = "#888888"; // Default grey
+	const defaultGray = themeStore.getColor("text.secondary");
 
-	if (color) {
-		if (color.startsWith("#")) {
-			hexColor = color;
-		} else {
-			// Map legacy names
-			const colorMap: Record<string, string> = {
-				orange: "#b8744f",
-				red: "#c75450",
-				green: "#43A047",
-				purple: "#8E24AA",
-				"pomodo-orange": "#b8744f"
-			};
-			hexColor = colorMap[color] || "#b8744f";
-		}
-	} else {
+	if (!color) {
 		// No category selected (e.g. deleted while running)
 		return {
-			backgroundColor: "rgba(136, 136, 136, 0.1)",
-			color: "#888888",
-			borderColor: "rgba(136, 136, 136, 0.2)"
+			backgroundColor: themeStore.hexToRgba(defaultGray, 0.1),
+			color: defaultGray,
+			borderColor: themeStore.hexToRgba(defaultGray, 0.2)
 		};
 	}
 
-	// Convert hex to rgba for background
-	const r = parseInt(hexColor.slice(1, 3), 16);
-	const g = parseInt(hexColor.slice(3, 5), 16);
-	const b = parseInt(hexColor.slice(5, 7), 16);
+	// Resolve color using theme store (handles both hex and legacy names)
+	const hexColor = themeStore.resolveColor(color);
 
+	// Convert to rgba for backgrounds
 	return {
-		backgroundColor: `rgba(${r}, ${g}, ${b}, 0.15)`,
+		backgroundColor: themeStore.hexToRgba(hexColor, 0.15),
 		color: hexColor,
-		borderColor: `rgba(${r}, ${g}, ${b}, 0.2)`
+		borderColor: themeStore.hexToRgba(hexColor, 0.2)
 	};
 });
 
@@ -125,7 +113,7 @@ defineExpose({
 <template>
     <div 
         class="flex flex-col h-full relative select-none touch-none transition-colors duration-500"
-        :class="isFocusRunning ? 'bg-black' : 'bg-dark-bg'"
+        :class="isFocusRunning ? 'bg-black' : 'bg-light-bg dark:bg-dark-bg'"
         @mousedown="startHold"
         @touchstart="startHold"
         @mouseup="endHold"

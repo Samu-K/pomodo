@@ -1,16 +1,39 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useTheme } from "vuetify";
 import AppLayout from "./components/AppLayout.vue";
 import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
 import CreateTaskModal from "./components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "./components/task/TaskDetailsModal.vue";
 import { RecurrenceType } from "./defines/recur.ts";
 import { Task } from "./defines/task.ts";
+import { useSettingsStore } from "./stores/settings";
 import { TimerMode, useTimerStore } from "./stores/timer";
 
 const route = useRoute();
 const router = useRouter();
+const settingsStore = useSettingsStore();
+const vuetifyTheme = useTheme();
+
+// Initialize theme on app mount
+onMounted(async () => {
+	// Ensure settings are loaded first
+	if (settingsStore.settings.length === 0) {
+		await settingsStore.fetchSettings();
+	}
+	// Initialize theme from settings
+	await settingsStore.initTheme();
+	vuetifyTheme.global.name.value = settingsStore.theme;
+});
+
+// Watch settings store theme and sync Vuetify theme
+watch(
+	() => settingsStore.theme,
+	(newTheme) => {
+		vuetifyTheme.global.name.value = newTheme;
+	}
+);
 
 // Modal states
 const showCreateTask = ref(false);

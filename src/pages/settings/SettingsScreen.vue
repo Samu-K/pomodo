@@ -4,6 +4,7 @@ import ErrorBoundary from "../../components/ErrorBoundary.vue";
 import SettingSection from "../../components/settings/SettingSection.vue";
 import type { Setting } from "../../funcs/commands";
 import { useSettingsStore } from "../../stores/settings";
+import { useThemeStore } from "../../stores/theme";
 
 interface SectionSettingProps {
 	sectionTitle: string;
@@ -11,6 +12,7 @@ interface SectionSettingProps {
 }
 
 const settingsStore = useSettingsStore();
+const themeStore = useThemeStore();
 
 onMounted(() => {
 	settingsStore.fetchSettings();
@@ -40,12 +42,19 @@ const settingSections = computed<SectionSettingProps[]>(() => {
 	return sections;
 });
 
-const themeOptions = ["Dark", "Light", "Auto"];
-const accentColors = ["#b8744f", "#c75450", "#d4a373", "#4ade80"];
+const themeOptions = ["dark", "light"];
+
+// Use centralized theme colors instead of hardcoded values
+const accentColors = computed(() => [
+	themeStore.getColor("brand.orange"),
+	themeStore.getColor("brand.red"),
+	themeStore.getColor("brand.gold"),
+	themeStore.getColor("utility.successLight")
+]);
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-dark-bg">
+  <div class="flex flex-col h-full bg-light-bg dark:bg-dark-bg">
     <div class="flex-1 overflow-y-auto px-6 py-6">
       <ErrorBoundary v-for="section of settingSections">
         <SettingSection :settings="section.settings" :section-title="section.sectionTitle">
@@ -58,31 +67,28 @@ const accentColors = ["#b8744f", "#c75450", "#d4a373", "#4ade80"];
         </h2>
         
         <!-- Theme Selection -->
-        <div class="flex items-center justify-between py-4 border-b border-dark-border">
+        <div class="flex items-center justify-between py-4 border-b border-light-border dark:border-dark-border">
           <div class="flex-1">
-            <h3 class="text-white font-medium">Theme</h3>
-            <p class="text-xs text-text-muted mt-1">Choose your preferred theme</p>
+            <h3 class="text-lightText-primary dark:text-white font-medium">Theme</h3>
+            <p class="text-xs text-lightText-muted dark:text-text-muted mt-1">Choose your preferred theme</p>
           </div>
-          <select class="bg-dark-surface text-white px-4 py-2 rounded-lg border border-dark-border focus:border-pomodo-orange outline-none">
-            <option v-for="theme in themeOptions" :key="theme" :value="theme">{{ theme }}</option>
-          </select>
-        </div>
-
-        <!-- Accent Color -->
-        <div class="flex items-center justify-between py-4 border-b border-dark-border">
-          <div class="flex-1">
-            <h3 class="text-white font-medium">Accent Color</h3>
-            <p class="text-xs text-text-muted mt-1">Customize app colors</p>
-          </div>
-          <div class="flex gap-2">
-            <button 
-              v-for="(color, index) in accentColors" 
-              :key="color"
-              class="w-8 h-8 rounded-full transition-transform hover:scale-110"
-              :class="index === 0 ? 'ring-2 ring-white ring-offset-2 ring-offset-dark-bg' : ''"
-              :style="`background-color: ${color}`"
-            ></button>
-          </div>
+          <v-select
+            v-model="settingsStore.theme"
+            :items="themeOptions"
+            @update:model-value="(value) => settingsStore.setTheme(value as 'light' | 'dark')"
+            density="compact"
+            variant="outlined"
+            hide-details
+            color="primary"
+            max-width="120"
+          >
+            <template v-slot:selection="{ item }">
+              {{ item.value.charAt(0).toUpperCase() + item.value.slice(1) }}
+            </template>
+            <template v-slot:item="{ item, props }">
+              <v-list-item v-bind="props" :title="item.value.charAt(0).toUpperCase() + item.value.slice(1)" />
+            </template>
+          </v-select>
         </div>
       </section>
     </div>

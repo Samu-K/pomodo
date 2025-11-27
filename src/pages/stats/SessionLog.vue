@@ -119,7 +119,7 @@ const handleDelete = (id: number) => {
 </script>
 
 <template>
-	<div class="flex flex-col h-full bg-dark-bg">
+	<div class="flex flex-col h-full bg-light-bg dark:bg-dark-bg">
 		<div class="flex-1 overflow-y-auto px-6 py-6">
 			<div class="flex items-center justify-between mb-6">
 				<h1 class="text-2xl font-semibold text-pomodo-orange">
@@ -138,11 +138,11 @@ const handleDelete = (id: number) => {
 				</div>
 			</div>
 
-			<div v-if="sessionsState.isLoading.value" class="text-center text-text-secondary mt-10">
+			<div v-if="sessionsState.isLoading.value" class="text-center text-lightText-secondary dark:text-text-secondary mt-10">
 				Loading sessions...
 			</div>
 
-			<div v-else-if="groupedSessions.length === 0" class="text-center text-text-secondary mt-10">
+			<div v-else-if="groupedSessions.length === 0" class="text-center text-lightText-secondary dark:text-text-secondary mt-10">
 				No sessions found for {{ selectedYear }}.
 			</div>
 
@@ -152,33 +152,33 @@ const handleDelete = (id: number) => {
 						v-for="(group, index) in groupedSessions"
 						:key="group.monthName"
 						:value="index"
-						class="mb-2 bg-dark-surface rounded-lg overflow-hidden border border-dark-border"
+						class="mb-2 bg-light-surface dark:bg-dark-surface rounded-lg overflow-hidden border border-light-border dark:border-dark-border"
 						elevation="0"
 					>
-						<v-expansion-panel-title class="bg-dark-surface text-white font-medium">
+						<v-expansion-panel-title class="bg-light-surface dark:bg-dark-surface text-lightText-primary dark:text-white font-medium">
 							{{ group.monthName }}
 							<template v-slot:actions="{ expanded }">
 								<v-icon :icon="expanded ? ChevronUp : ChevronDown" color="primary"></v-icon>
 							</template>
 						</v-expansion-panel-title>
 						
-						<v-expansion-panel-text class="bg-dark-bg">
+						<v-expansion-panel-text class="bg-light-bg dark:bg-dark-bg">
 							<div class="space-y-3 pt-3">
 								<div 
 									v-for="session in group.sessions" 
 									:key="session.id || 0"
-									class="flex items-center justify-between p-3 bg-dark-surface rounded-lg group border border-dark-border"
+									class="flex items-center justify-between p-3 bg-light-surface dark:bg-dark-surface rounded-lg group border border-light-border dark:border-dark-border"
 								>
 									<div class="flex items-center gap-4">
 										<div class="w-3 h-3 rounded-full" :class="session.categoryColor"></div>
 										<div class="flex flex-col">
-											<span class="text-white font-medium">{{ session.categoryName }}</span>
-											<span class="text-text-secondary text-sm">{{ session.formattedDate }}</span>
+											<span class="text-lightText-primary dark:text-white font-medium">{{ session.categoryName }}</span>
+											<span class="text-lightText-secondary dark:text-text-secondary text-sm">{{ session.formattedDate }}</span>
 										</div>
 									</div>
 
 									<div class="flex items-center gap-6">
-										<span class="text-white font-medium">{{ formatDuration(session.duration) }}</span>
+										<span class="text-lightText-primary dark:text-white font-medium">{{ formatDuration(session.duration) }}</span>
 										<div v-if="session.finished" class="text-green-500" title="Completed">
 											<Check :size="18" />
 										</div>

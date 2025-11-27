@@ -71,7 +71,7 @@ const weeklySessionsRaw = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-dark-bg">
+  <div class="flex flex-col h-full bg-light-bg dark:bg-dark-bg">
     <div class="flex-1 overflow-y-auto px-6 py-6">
       <div class="flex items-center justify-between mb-8">
         <!-- Header -->
@@ -81,7 +81,7 @@ const weeklySessionsRaw = computed(() => {
 
         <button 
           @click="router.push('/settings')"
-          class="-mt-2 text-pomodo-orange hover:bg-dark-surface rounded-lg transition-colors"
+          class="-mt-2 text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors"
         >
           <Settings :size="20" />
         </button>
@@ -89,32 +89,32 @@ const weeklySessionsRaw = computed(() => {
 
       <!-- Focus Time Section -->
       <section class="mb-10">
-        <h2 class="text-lg font-semibold text-white mb-5">Focus Time  -  Total {{formatDuration(total_seconds_today)}}</h2>
+        <h2 class="text-lg font-semibold text-lightText-primary dark:text-white mb-5">Focus Time  -  Total {{formatDuration(total_seconds_today)}}</h2>
         
         <div v-for="item in todaysFocusData" :key="item.category" class="flex items-center mb-5">
           <div class="flex items-center gap-3 w-24">
             <div class="w-3 h-3 rounded-full" :class="item.color"></div>
-            <span class="text-white text-sm">{{ item.category }}</span>
+            <span class="text-lightText-primary dark:text-white text-sm">{{ item.category }}</span>
           </div>
-          <div class="flex-1 mx-4 h-1.5 bg-dark-surface rounded-full overflow-hidden">
+          <div class="flex-1 mx-4 h-1.5 bg-light-surface dark:bg-dark-surface rounded-full overflow-hidden">
             <div 
               class="h-full rounded-full transition-all duration-500" 
               :class="item.color"
               :style="`width: ${item.percentage}%`"
             ></div>
           </div>
-          <span class="text-text-secondary text-sm min-w-[60px] text-right">{{ item.time }}</span>
+          <span class="text-lightText-secondary dark:text-text-secondary text-sm min-w-[60px] text-right">{{ item.time }}</span>
         </div>
 
         <div class="flex items-center justify-end">
           <button 
           @click="router.push('/stats/log')"
-          class="text-pomodo-orange hover:bg-dark-surface rounded-lg transition-colors bg-dark-surface px-4 py-2"
+          class="text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors bg-light-surface dark:bg-dark-surface px-4 py-2"
         >
             View session log
         </button>
         </div>
-        <p class="text-text-muted text-center text-sm mt-6">
+        <p class="text-lightText-muted dark:text-text-muted text-center text-sm mt-6">
           {{today_session_count}} focus sessions completed today
         </p>
       </section>

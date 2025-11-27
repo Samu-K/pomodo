@@ -205,7 +205,7 @@ const confirmDelete = () => {
         <v-card class="px-6 py-2" title="Add category">
             <v-text-field label="Name" v-model="newCategory.name"></v-text-field>
             <div class="mb-4">
-                <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
+                <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-3">
                     Color
                 </label>
                 <div class="grid grid-cols-6 gap-2">
@@ -215,7 +215,7 @@ const confirmDelete = () => {
                         @click="newCategory.color = color"
                         :class="[
                             'w-8 h-8 rounded-full transition-all hover:scale-110',
-                            newCategory.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-dark-bg' : ''
+                            newCategory.color === color ? 'ring-2 ring-lightText-primary dark:ring-white ring-offset-2 ring-offset-light-bg dark:ring-offset-dark-bg' : ''
                         ]"
                         :style="`background-color: ${color}`"
                     ></button>

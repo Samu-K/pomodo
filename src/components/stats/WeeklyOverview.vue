@@ -33,31 +33,31 @@ const weeklyStats = computed(() => {
 </script>
 
 <template>
-  <h2 class="text-lg font-semibold text-white mb-5">Weekly Overview</h2>
+  <h2 class="text-lg font-semibold text-lightText-primary dark:text-white mb-5">Weekly Overview</h2>
   
   <div class="grid grid-cols-3 gap-4">
-    <div class="bg-dark-surface rounded-xl p-4 text-center">
+    <div class="bg-light-surface dark:bg-dark-surface rounded-xl p-4 text-center">
       <div class="flex justify-center mb-2">
         <Clock :size="20" class="text-pomodo-orange" />
       </div>
       <div class="text-2xl font-bold text-pomodo-orange mb-1">{{weeklyStats.totalHours}}h</div>
-      <div class="text-xs text-text-muted">Total Focus</div>
+      <div class="text-xs text-lightText-muted dark:text-text-muted">Total Focus</div>
     </div>
     
-    <div class="bg-dark-surface rounded-xl p-4 text-center">
+    <div class="bg-light-surface dark:bg-dark-surface rounded-xl p-4 text-center">
       <div class="flex justify-center mb-2">
         <Target :size="20" class="text-pomodo-red" />
       </div>
       <div class="text-2xl font-bold text-pomodo-red mb-1">{{weeklyStats.completionRate}}%</div>
-      <div class="text-xs text-text-muted">Completion </div>
+      <div class="text-xs text-lightText-muted dark:text-text-muted">Completion </div>
   </div>
     
-    <div class="bg-dark-surface rounded-xl p-4 text-center">
+    <div class="bg-light-surface dark:bg-dark-surface rounded-xl p-4 text-center">
       <div class="flex justify-center mb-2">
         <TrendingUp :size="20" class="text-pomodo-gold" />
       </div>
       <div class="text-2xl font-bold text-pomodo-gold mb-1">{{weeklyStats.dailyAvg}}</div>
-      <div class="text-xs text-text-muted">Avg Sessions</div>
+      <div class="text-xs text-lightText-muted dark:text-text-muted">Avg Sessions</div>
     </div>
   </div>
 </template>

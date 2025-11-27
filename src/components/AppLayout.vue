@@ -49,13 +49,13 @@ const navigateTo = (path: string) => {
 </script>
 
 <template>
-  <div class="flex flex-col h-screen bg-dark-bg">
+  <div class="flex flex-col h-screen bg-light-bg dark:bg-dark-bg">
     <!-- Header -->
-    <header v-if="showBackButton" class="h-12 flex items-center justify-center relative px-6 border-dark-border">
+    <header v-if="showBackButton" class="h-12 flex items-center justify-center relative px-6 border-light-border dark:border-dark-border">
       <button 
         v-if="showBackButton"
         @click="emit('back-click')"
-        class="absolute left-4 w-10 h-10 flex items-center justify-center text-pomodo-orange hover:bg-dark-surface rounded-lg transition-colors"
+        class="absolute left-4 w-10 h-10 flex items-center justify-center text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors"
       >
         <ChevronLeft :size="28" />
       </button>
@@ -70,13 +70,13 @@ const navigateTo = (path: string) => {
     </main>
 
     <!-- Bottom Navigation -->
-    <nav v-if="!hideBottomNav" class="h-20 bg-dark-pure border-t border-dark-border">
+    <nav v-if="!hideBottomNav" class="h-20 bg-light-pure dark:bg-dark-pure border-t border-light-border dark:border-dark-border">
       <div class="h-full flex items-center justify-around px-4">
         <button 
           @click="navigateTo('/')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
-            activeTab === 'timer' ? 'text-pomodo-orange' : 'text-text-muted hover:text-text-secondary'
+            activeTab === 'timer' ? 'text-pomodo-orange' : 'text-lightText-muted dark:text-text-muted hover:text-lightText-secondary dark:hover:text-text-secondary'
           ]"
         >
           <Timer :size="24" />
@@ -87,7 +87,7 @@ const navigateTo = (path: string) => {
           @click="navigateTo('/timeline')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
-            activeTab === 'timeline' ? 'text-pomodo-orange' : 'text-text-muted hover:text-text-secondary'
+            activeTab === 'timeline' ? 'text-pomodo-orange' : 'text-lightText-muted dark:text-text-muted hover:text-lightText-secondary dark:hover:text-text-secondary'
           ]"
         >
           <Calendar :size="24" />
@@ -98,7 +98,7 @@ const navigateTo = (path: string) => {
           @click="navigateTo('/tasks')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
-            activeTab === 'tasks' ? 'text-pomodo-orange' : 'text-text-muted hover:text-text-secondary'
+            activeTab === 'tasks' ? 'text-pomodo-orange' : 'text-lightText-muted dark:text-text-muted hover:text-lightText-secondary dark:hover:text-text-secondary'
           ]"
         >
           <ListTodo :size="24" />
@@ -109,7 +109,7 @@ const navigateTo = (path: string) => {
           @click="navigateTo('/stats')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
-            activeTab === 'stats' ? 'text-pomodo-orange' : 'text-text-muted hover:text-text-secondary'
+            activeTab === 'stats' ? 'text-pomodo-orange' : 'text-lightText-muted dark:text-text-muted hover:text-lightText-secondary dark:hover:text-text-secondary'
           ]"
         >
           <BarChart3 :size="24" />

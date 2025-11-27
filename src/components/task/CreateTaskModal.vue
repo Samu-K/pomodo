@@ -40,7 +40,7 @@ const saveTask = async () => {
 
 <template>
   <div class="fixed inset-0 bg-black/80 flex items-center justify-center  animate-fade-in overflow-auto">
-    <div class="bg-dark-bg rounded-2xl p-6 w-full max-w-md mx-4 animate-scale-in max-h-[85%] border border-dark-border overflow-scroll">
+    <div class="bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full max-w-md mx-4 animate-scale-in max-h-[85%] border border-light-border dark:border-dark-border overflow-scroll">
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-semibold text-pomodo-orange">Create New Task</h2>
@@ -58,7 +58,7 @@ const saveTask = async () => {
       <div class="flex gap-3 mt-4">
         <button 
           @click="emit('close')"
-          class="flex-1 py-3 bg-dark-surface border border-dark-border rounded-lg text-text-secondary font-semibold hover:bg-dark-border transition-colors"
+          class="flex-1 py-3 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg text-lightText-secondary dark:text-text-secondary font-semibold hover:bg-light-border dark:hover:bg-dark-border transition-colors"
         >
           Cancel
         </button>

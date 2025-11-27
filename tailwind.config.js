@@ -1,31 +1,12 @@
+import { tailwindColors } from "./src/defines/theme.config";
+
 /** @type {import('tailwindcss').Config} */
 export default {
 	content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
 	darkMode: "class",
 	theme: {
 		extend: {
-			colors: {
-				// Primary colors from your design
-				pomodo: {
-					orange: "#b8744f",
-					red: "#c75450",
-					gold: "#d4a373",
-					brown: "#8b5a3c",
-				},
-				// Dark theme backgrounds
-				dark: {
-					bg: "#1a1a1a",
-					surface: "#2a2a3a",
-					border: "#3a3a4a",
-					pure: "#0a0a0a",
-				},
-				// Text colors
-				text: {
-					primary: "#ffffff",
-					secondary: "#888888",
-					muted: "#666666",
-				},
-			},
+			colors: tailwindColors,
 			fontFamily: {
 				sans: [
 					"-apple-system",

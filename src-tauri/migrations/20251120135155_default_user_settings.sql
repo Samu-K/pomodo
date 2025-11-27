@@ -14,4 +14,6 @@ INSERT INTO user_settings (key, value, description, data_type, category_id) VALU
 ('Auto Start Focus', 'false','Start focus automatically when break ends', 'boolean', 2),
 ('Sound Alerts', 'true', 'Play sound on focus/break end', 'boolean', 3),
 ('Vibration','true','Vibrate on focus/break end', 'boolean', 3),
-('Push notifications', 'true', 'Push notification on focus/break end', 'boolean', 3);
+('Push notifications', 'true', 'Push notification on focus/break end', 'boolean', 3),
+('Theme', 'dark', 'Application theme (light or dark)', 'string', 3);
+
