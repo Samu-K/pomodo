@@ -116,6 +116,10 @@ const completeHold = () => {
 	endHold();
 	timer.pauseTimer();
 };
+
+defineExpose({
+	holdProgress
+});
 </script>
 
 <template>

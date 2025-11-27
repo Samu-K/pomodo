@@ -1,6 +1,6 @@
 import { createTestingPinia } from "@pinia/testing";
 import { mount, type VueWrapper } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useCategoryStore } from "../../../stores/categories";
 import { useSettingsStore } from "../../../stores/settings";
 import { TimerMode, useTimerStore } from "../../../stores/timer";
@@ -138,17 +138,19 @@ describe("TimerScreen.vue", () => {
 			await wrapper.vm.$nextTick();
 
 			const skipBtn = wrapper.findAll("button")[2];
+			expect(skipBtn.exists()).toBe(true);
 			expect(skipBtn.element.disabled).toBe(false);
 		});
 
-		it("is disabled in Focus mode if running", async () => {
+		it("is hidden in Focus mode if running", async () => {
 			timerStore.mode = TimerMode.FOCUS;
 			timerStore.isRunning = true;
 			timerStore.percent = 50;
 			await wrapper.vm.$nextTick();
 
-			const skipBtn = wrapper.findAll("button")[2];
-			expect(skipBtn.element.disabled).toBe(true);
+			expect(wrapper.findComponent({ name: "SkipForward" }).exists()).toBe(
+				false
+			);
 		});
 
 		it("is always enabled in Rest mode", async () => {
@@ -157,6 +159,7 @@ describe("TimerScreen.vue", () => {
 			await wrapper.vm.$nextTick();
 
 			const skipBtn = wrapper.findAll("button")[2];
+			expect(skipBtn.exists()).toBe(true);
 			expect(skipBtn.element.disabled).toBe(false);
 		});
 	});
@@ -169,17 +172,17 @@ describe("TimerScreen.vue", () => {
 			await wrapper.vm.$nextTick();
 
 			const resetBtn = wrapper.findAll("button")[0];
+			expect(resetBtn.exists()).toBe(true);
 			expect(resetBtn.element.disabled).toBe(false);
 		});
 
-		it("is disabled in Focus mode if running", async () => {
+		it("is hidden in Focus mode if running", async () => {
 			timerStore.mode = TimerMode.FOCUS;
 			timerStore.isRunning = true;
 			timerStore.percent = 50;
 			await wrapper.vm.$nextTick();
 
-			const resetBtn = wrapper.findAll("button")[0];
-			expect(resetBtn.element.disabled).toBe(true);
+			expect(wrapper.findComponent({ name: "RotateCcw" }).exists()).toBe(false);
 		});
 
 		it("is disabled in Rest mode", async () => {
@@ -190,6 +193,58 @@ describe("TimerScreen.vue", () => {
 
 			const resetBtn = wrapper.findAll("button")[0];
 			expect(resetBtn.element.disabled).toBe(true);
+		});
+	});
+
+	describe("Hold to Pause Logic", () => {
+		beforeEach(() => {
+			vi.useFakeTimers();
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it("starts hold progress on mousedown", async () => {
+			timerStore.mode = TimerMode.FOCUS;
+			timerStore.isRunning = true;
+			await wrapper.vm.$nextTick();
+
+			const container = wrapper.find(".flex.flex-col.h-full.relative");
+			await container.trigger("mousedown");
+
+			// Advance time slightly
+			vi.advanceTimersByTime(100);
+
+			expect(wrapper.vm.holdProgress).toBeGreaterThan(0);
+		});
+
+		it("resets hold progress on mouseup", async () => {
+			timerStore.mode = TimerMode.FOCUS;
+			timerStore.isRunning = true;
+			await wrapper.vm.$nextTick();
+
+			const container = wrapper.find(".flex.flex-col.h-full.relative");
+			await container.trigger("mousedown");
+			vi.advanceTimersByTime(1500); // Halfway
+
+			await container.trigger("mouseup");
+
+			expect(wrapper.vm.holdProgress).toBe(0);
+		});
+
+		it("pauses timer after holding for duration", async () => {
+			timerStore.mode = TimerMode.FOCUS;
+			timerStore.isRunning = true;
+			await wrapper.vm.$nextTick();
+
+			const container = wrapper.find(".flex.flex-col.h-full.relative");
+			await container.trigger("mousedown");
+
+			// Advance full duration (3000ms) + a bit buffer
+			vi.advanceTimersByTime(3100);
+
+			expect(timerStore.pauseTimer).toHaveBeenCalled();
 		});
 	});
 });
