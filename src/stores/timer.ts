@@ -124,7 +124,6 @@ export const useTimerStore = defineStore("timer", () => {
 			sessionStreak.value = sessionStreak.value + 1;
 			if (sessionStreak.value === long_break_interval.value) {
 				remainingTime.value = long_break_time.value;
-				sessionStreak.value = 0;
 			} else {
 				remainingTime.value = restDuration.value;
 			}
@@ -133,6 +132,9 @@ export const useTimerStore = defineStore("timer", () => {
 				startTimer();
 			}
 		} else {
+			if (sessionStreak.value >= long_break_interval.value) {
+				sessionStreak.value = 0;
+			}
 			mode.value = TimerMode.FOCUS;
 			remainingTime.value = focusDuration.value;
 			if (focus_auto_start.value) {
@@ -207,11 +209,13 @@ export const useTimerStore = defineStore("timer", () => {
 			mode.value = TimerMode.REST;
 			if (sessionStreak.value === long_break_interval.value) {
 				remainingTime.value = long_break_time.value;
-				sessionStreak.value = 0;
 			} else {
 				remainingTime.value = restDuration.value;
 			}
 		} else {
+			if (sessionStreak.value >= long_break_interval.value) {
+				sessionStreak.value = 0;
+			}
 			mode.value = TimerMode.FOCUS;
 			remainingTime.value = focusDuration.value;
 		}

@@ -20,13 +20,55 @@ describe("Timer Store", () => {
 
 		// Mock settings before initializing timer store to avoid fetchSettings call
 		settingsStore.settings = [
-			{ key: "Focus Duration", value: "25" },
-			{ key: "Short Break Time", value: "5" },
-			{ key: "Long Break Time", value: "15" },
-			{ key: "Long Break Interval", value: "4" },
-			{ key: "Auto Start Break", value: "false" },
-			{ key: "Auto Start Focus", value: "false" }
-		] as { key: string; value: string }[];
+			{
+				id: 1,
+				key: "Focus Duration",
+				value: "25",
+				description: "Focus duration",
+				category_id: 1,
+				data_type: "number"
+			},
+			{
+				id: 2,
+				key: "Short Break Time",
+				value: "5",
+				description: "Short break duration",
+				category_id: 1,
+				data_type: "number"
+			},
+			{
+				id: 3,
+				key: "Long Break Time",
+				value: "15",
+				description: "Long break duration",
+				category_id: 1,
+				data_type: "number"
+			},
+			{
+				id: 4,
+				key: "Long Break Interval",
+				value: "4",
+				description: "Long break interval",
+				category_id: 1,
+				data_type: "number"
+			},
+			{
+				id: 5,
+				key: "Auto Start Break",
+				value: "false",
+				description: "Auto start break",
+				category_id: 1,
+				data_type: "boolean"
+			},
+			{
+				id: 6,
+				key: "Auto Start Focus",
+				value: "false",
+				description: "Auto start focus",
+				category_id: 1,
+				data_type: "boolean"
+			}
+		];
 		settingsStore.isLoading = false;
 		settingsStore.fetchSettings = vi.fn();
 
@@ -144,7 +186,7 @@ describe("Timer Store", () => {
 			timerStore.skip();
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
-			expect(timerStore.sessionStreak).toBe(0);
+			expect(timerStore.sessionStreak).toBe(4);
 			expect(timerStore.remainingTime).toBe(900); // 15 min long break
 		});
 
@@ -226,6 +268,32 @@ describe("Timer Store", () => {
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
 			expect(timerStore.remainingTime).toBe(900); // 15 min long break
+			expect(timerStore.sessionStreak).toBe(4);
+		});
+
+		it("resets streak after long break completes", async () => {
+			vi.useFakeTimers();
+			timerStore.mode = TimerMode.REST;
+			timerStore.sessionStreak = 4; // Long break active
+			timerStore.remainingTime = 0.1;
+
+			await timerStore.startTimer();
+
+			// Advance to finish current timer
+			vi.advanceTimersByTime(200);
+			await Promise.resolve();
+
+			expect(timerStore.mode).toBe(TimerMode.FOCUS);
+			expect(timerStore.sessionStreak).toBe(0);
+		});
+
+		it("resets streak after long break skipped", () => {
+			timerStore.mode = TimerMode.REST;
+			timerStore.sessionStreak = 4; // Long break active
+
+			timerStore.skip();
+
+			expect(timerStore.mode).toBe(TimerMode.FOCUS);
 			expect(timerStore.sessionStreak).toBe(0);
 		});
 	});

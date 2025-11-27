@@ -146,8 +146,16 @@ defineExpose({
         </div>
 
         <div v-else class="flex-1 flex flex-col items-center justify-center px-6 gap-10 z-10">
-      <div v-if="!isFocusRunning" class="text-pomodo-orange text-2xl ">
-        {{timer.sessionStreak}} / {{timer.long_break_interval}}
+      <div v-if="!isFocusRunning" class="flex gap-3 mb-2">
+        <div 
+            v-for="i in timer.long_break_interval" 
+            :key="i"
+            class="w-3 h-3 rounded-full border border-pomodo-orange transition-all duration-300"
+            :class="{
+                'bg-pomodo-orange': i <= timer.sessionStreak,
+                'bg-transparent': i > timer.sessionStreak
+            }"
+        ></div>
       </div>
             <v-progress-circular 
                 :model-value="timer.percent" 

@@ -88,6 +88,26 @@ describe("TimerScreen.vue", () => {
 		expect(wrapper.text()).toContain("25:00");
 	});
 
+	it("renders session streak as circles", async () => {
+		timerStore.long_break_interval = 4;
+		timerStore.sessionStreak = 2;
+		await wrapper.vm.$nextTick();
+
+		const circles = wrapper.findAll(
+			".rounded-full.border.border-pomodo-orange"
+		);
+		// We expect 4 circles total
+		expect(circles.length).toBe(4);
+
+		// First 2 should be filled (bg-pomodo-orange)
+		expect(circles[0].classes()).toContain("bg-pomodo-orange");
+		expect(circles[1].classes()).toContain("bg-pomodo-orange");
+
+		// Last 2 should be empty (bg-transparent)
+		expect(circles[2].classes()).toContain("bg-transparent");
+		expect(circles[3].classes()).toContain("bg-transparent");
+	});
+
 	it("shows CategoryManager when timer is reset and not running", async () => {
 		expect(wrapper.findComponent({ name: "CategoryManager" }).exists()).toBe(
 			true
