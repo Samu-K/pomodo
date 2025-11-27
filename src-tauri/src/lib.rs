@@ -71,6 +71,7 @@ tauri_commands! {
     settings::get_settings_for_category(cat_id: i64) -> SettingGetVec
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder =
         tauri_specta::Builder::<tauri::Wry>::new().commands(tauri_specta::collect_commands![
@@ -98,7 +99,7 @@ pub fn run() {
             settings_get_settings_for_category,
         ]);
 
-    #[cfg(debug_assertions)]
+    #[cfg(all(debug_assertions, not(mobile)))]
     builder
         .export(
             specta_typescript::Typescript::default()
