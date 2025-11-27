@@ -2,34 +2,21 @@
 import { Check, Minus, Plus, X } from "lucide-vue-next";
 import { ref } from "vue";
 
+import { useThemeStore } from "../../stores/theme";
+
 const emit = defineEmits<{
 	close: [];
 }>();
 
+const themeStore = useThemeStore();
+
 // Form data
 const categoryName = ref("");
-const selectedColor = ref("#b8744f");
+const selectedColor = ref(themeStore.categoryColors[0]);
 const dailyGoal = ref(4);
 const trackStatistics = ref(true);
 
-const colorOptions = [
-	"#b8744f", // pomodo-orange
-	"#c75450", // pomodo-red
-	"#d4a373", // pomodo-gold
-	"#8b5a3c", // pomodo-brown
-	"#E53935", // Red
-	"#D81B60", // Pink
-	"#8E24AA", // Purple
-	"#5E35B1", // Deep Purple
-	"#3949AB", // Indigo
-	"#1E88E5", // Blue
-	"#039BE5", // Light Blue
-	"#00ACC1", // Cyan
-	"#00897B", // Teal
-	"#43A047", // Green
-	"#7CB342", // Light Green
-	"#FDD835" // Yellow
-];
+const colorOptions = themeStore.categoryColors;
 </script>
 
 <template>

@@ -6,6 +6,7 @@ import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import { useCategoryStore } from "../../../stores/categories";
+import { useThemeStore } from "../../../stores/theme";
 import { useTimerStore } from "../../../stores/timer";
 import CategoryManager from "../CategoryManager.vue";
 
@@ -392,6 +393,10 @@ describe("CategoryManager.vue", () => {
 	});
 
 	it("sets color when creating a new category", async () => {
+		// Setup theme store with colors
+		const themeStore = useThemeStore();
+		themeStore.categoryColors = ["#ff0000", "#00ff00"];
+
 		// Open dialog and add modal
 		await wrapper.findComponent({ name: "VBtn" }).trigger("click");
 		const plusIcon = wrapper.find(".lucide-plus-circle");
@@ -402,13 +407,13 @@ describe("CategoryManager.vue", () => {
 		const nameInput = inputs[0];
 		await nameInput.setValue("New Cat");
 
-		// Find and set color select
-		const selects = wrapper.findAllComponents({ name: "VSelect" });
-		expect(selects.length).toBeGreaterThan(0);
+		// Find color buttons
+		// The buttons are rendered in the grid. We can find them by their class.
+		const colorButtons = wrapper.findAll(".rounded-full.transition-all");
+		expect(colorButtons.length).toBeGreaterThan(0);
 
-		// Simulate selecting a color
-		const colorSelect = selects[0];
-		await colorSelect.setValue("purple");
+		// Click the first color button
+		await colorButtons[0].trigger("click");
 
 		// Click Create
 		const buttons = wrapper.findAll("button");
@@ -418,7 +423,7 @@ describe("CategoryManager.vue", () => {
 		expect(categoryStore.createCategory).toHaveBeenCalledWith(
 			expect.objectContaining({
 				name: "New Cat",
-				color: "purple"
+				color: "#ff0000"
 			})
 		);
 	});

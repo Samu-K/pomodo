@@ -26,10 +26,13 @@ const catEditMode = ref(false);
 const showDeleteConfirm = ref(false);
 const categoryToDelete = ref<Category | null>(null);
 
+import { useThemeStore } from "../../stores/theme";
+
+const themeStore = useThemeStore();
+
 // Edit Mode State (Deep Copy)
 const editableCategories = ref<Category[]>([]);
 const newCategory = ref<Category>({ name: "", color: "none", id: 0 });
-const categoryColors = ["green", "purple", "orange", "red", "none"];
 
 // --- Logic ---
 
@@ -201,7 +204,23 @@ const confirmDelete = () => {
     <v-dialog v-model="showAddCategoryModal" width="auto" persistent>
         <v-card class="px-6 py-2" title="Add category">
             <v-text-field label="Name" v-model="newCategory.name"></v-text-field>
-            <v-select v-model="newCategory.color" :items="categoryColors" label="Color"></v-select>
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
+                    Color
+                </label>
+                <div class="grid grid-cols-6 gap-2">
+                    <button
+                        v-for="color in themeStore.categoryColors"
+                        :key="color"
+                        @click="newCategory.color = color"
+                        :class="[
+                            'w-8 h-8 rounded-full transition-all hover:scale-110',
+                            newCategory.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-dark-bg' : ''
+                        ]"
+                        :style="`background-color: ${color}`"
+                    ></button>
+                </div>
+            </div>
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn text="Cancel" @click="showAddCategoryModal = false"></v-btn>

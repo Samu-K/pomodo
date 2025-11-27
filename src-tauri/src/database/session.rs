@@ -158,10 +158,10 @@ impl SessionActions {
      *                      D E L E T E
      * ########################################################################
      */
-    pub async fn delete_session(&self, session_id: i64) -> NoReturn {
+    pub async fn delete_session(&self, sessionId: i64) -> NoReturn {
         let sql = "DELETE FROM sessions WHERE id = $1";
 
-        let _res = sqlx::query(sql).bind(session_id).execute(&*self.db).await?;
+        let _res = sqlx::query(sql).bind(sessionId).execute(&*self.db).await?;
 
         Ok(())
     }

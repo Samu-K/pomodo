@@ -2,10 +2,10 @@ pub mod database;
 
 use chrono::NaiveDate;
 use paste::paste;
+use specta::specta;
 use std::sync::Arc;
 use tauri::Manager as _;
 use tauri::State;
-use specta::specta;
 
 use crate::database::{
     category::CategoryActions,
@@ -63,7 +63,7 @@ tauri_commands! {
     session::set_session_complete(id: i64) -> NoReturn,
     session::set_session_category(session_id: i64, cat_id: i64) -> NoReturn,
     session::set_session_length(session_id: i64, len: u16) -> NoReturn,
-    session::delete_session(session_id: i64) -> NoReturn,
+    session::delete_session(sessionId: i64) -> NoReturn,
     settings::get_setting_value(key: String) -> StringReturn,
     settings::get_all_settings() -> SettingGetVec,
     settings::set_setting_value(value: String, id: i64) -> NoReturn,
@@ -72,8 +72,8 @@ tauri_commands! {
 }
 
 pub fn run() {
-    let builder = tauri_specta::Builder::<tauri::Wry>::new()
-        .commands(tauri_specta::collect_commands![
+    let builder =
+        tauri_specta::Builder::<tauri::Wry>::new().commands(tauri_specta::collect_commands![
             categories_add_category,
             categories_get_categories,
             categories_get_category_by_name,

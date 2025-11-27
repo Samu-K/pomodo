@@ -8,9 +8,34 @@ const add_session = async (session: Session) => {
 };
 
 const delete_session = async (session_id: number) => {
-	const res = await commands.sessionDeleteSession(session_id);
-	if (res.status === "error") throw new Error(res.error.message);
-	return res.data;
+	console.log(
+		`[delete_session] Attempting to delete session with ID: ${session_id}, type: ${typeof session_id}`
+	);
+	try {
+		const res = await commands.sessionDeleteSession(session_id);
+		console.log(`[delete_session] Backend response status:`, res.status);
+		if (res.status === "error") {
+			console.error(
+				`[delete_session] Backend error for session ${session_id}:`,
+				res.error
+			);
+			console.error(`[delete_session] Error message:`, res.error.message);
+			return null; // Return null instead of throwing
+		}
+		console.log(`[delete_session] Successfully deleted session ${session_id}`);
+		return res.data;
+	} catch (error) {
+		// The commands wrapper throws errors in some cases (see commands.ts line 140)
+		console.error(
+			`[delete_session] Exception thrown while deleting session ${session_id}:`,
+			error
+		);
+		if (error instanceof Error) {
+			console.error(`[delete_session] Error message:`, error.message);
+			console.error(`[delete_session] Error stack:`, error.stack);
+		}
+		return null;
+	}
 };
 
 const delete_latest_session = async () => {

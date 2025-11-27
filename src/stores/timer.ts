@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import type { Session } from "../funcs/commands";
 import {
 	add_session,
-	delete_latest_session,
+	delete_session,
 	set_newest_session_complete
 } from "../funcs/db/session";
 import { useSettingsStore } from "./settings";
@@ -70,6 +70,7 @@ export const useTimerStore = defineStore("timer", () => {
 	const mode = ref<TimerMode>(TimerMode.FOCUS);
 	const isRunning = ref(false);
 	const categoryId = ref<number | null>(null);
+	const currentSessionId = ref<number | null>(null);
 	let endTime: number | undefined;
 
 	// --- Worker ---
@@ -124,6 +125,7 @@ export const useTimerStore = defineStore("timer", () => {
 		pauseTimer();
 		if (mode.value === TimerMode.FOCUS) {
 			await set_newest_session_complete(); // Mark DB entry as finished
+			currentSessionId.value = null; // Session is complete, don't delete on reset
 			sessionStreak.value = sessionStreak.value + 1;
 			if (sessionStreak.value === long_break_interval.value) {
 				remainingTime.value = long_break_time.value;
@@ -165,7 +167,8 @@ export const useTimerStore = defineStore("timer", () => {
 					created_at: null,
 					last_modified: null
 				};
-				await add_session(new_session);
+				const newId = await add_session(new_session);
+				currentSessionId.value = newId;
 			}
 		}
 
@@ -190,7 +193,26 @@ export const useTimerStore = defineStore("timer", () => {
 		pauseTimer();
 		// if we reset a running focus session, delete it from DB
 		if (mode.value === TimerMode.FOCUS) {
-			await delete_latest_session();
+			if (currentSessionId.value) {
+				try {
+					console.log(
+						`Attempting to delete session ID: ${currentSessionId.value}`
+					);
+					await delete_session(currentSessionId.value);
+					console.log(
+						`Successfully deleted session ID: ${currentSessionId.value}`
+					);
+				} catch (error) {
+					console.error(
+						`Failed to delete session ${currentSessionId.value}:`,
+						error
+					);
+					console.error("Error details:", JSON.stringify(error, null, 2));
+					// Continue with reset even if deletion fails
+				} finally {
+					currentSessionId.value = null;
+				}
+			}
 		}
 		if (mode.value === TimerMode.FOCUS) {
 			remainingTime.value = focusDuration.value;
@@ -207,6 +229,8 @@ export const useTimerStore = defineStore("timer", () => {
 		pauseTimer();
 		// switch modes immediately
 		if (mode.value === TimerMode.FOCUS) {
+			// Clear the session ID since we're abandoning this session
+			currentSessionId.value = null;
 			sessionStreak.value = sessionStreak.value + 1;
 			mode.value = TimerMode.REST;
 			if (sessionStreak.value === long_break_interval.value) {

@@ -6,7 +6,7 @@ import { TimerMode, useTimerStore } from "../timer";
 // Mock DB functions
 vi.mock("../../funcs/db/session", () => ({
 	add_session: vi.fn(),
-	delete_latest_session: vi.fn(),
+	delete_session: vi.fn(),
 	set_newest_session_complete: vi.fn()
 }));
 
@@ -292,6 +292,7 @@ describe("Timer Store", () => {
 	describe("Database Integration", () => {
 		it("creates session when starting with category", async () => {
 			const { add_session } = await import("../../funcs/db/session");
+			vi.mocked(add_session).mockResolvedValue(123); // Return mock ID
 
 			timerStore.mode = TimerMode.FOCUS;
 			timerStore.remainingTime = 1500;
@@ -306,6 +307,25 @@ describe("Timer Store", () => {
 					finished: false
 				})
 			);
+		});
+
+		it("resets session using currentSessionId", async () => {
+			const { add_session, delete_session } = await import(
+				"../../funcs/db/session"
+			);
+			vi.mocked(add_session).mockResolvedValue(123);
+
+			timerStore.mode = TimerMode.FOCUS;
+			timerStore.remainingTime = 1500;
+			timerStore.setCategoryId(42);
+
+			await timerStore.startTimer();
+			expect(timerStore.isRunning).toBe(true);
+
+			await timerStore.resetTimer();
+
+			expect(delete_session).toHaveBeenCalledWith(123);
+			expect(timerStore.isRunning).toBe(false);
 		});
 
 		it("does not create session when category is null", async () => {
