@@ -24,7 +24,7 @@ class MockWorker {
 		onMessageCallback = callback;
 	}
 
-	get onmessage() {
+	get onmessage(): ((e: MessageEvent) => void) | null {
 		return onMessageCallback;
 	}
 

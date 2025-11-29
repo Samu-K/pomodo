@@ -62,20 +62,21 @@ describe("TimerScreen.vue", () => {
 		settingsStore.isLoading = false;
 
 		// Manually set state
-		timerStore.isReady = true;
-		timerStore.mode = TimerMode.FOCUS;
-		timerStore.sessionStreak = 0;
-		timerStore.long_break_interval = 4;
-		timerStore.percent = 100;
-		timerStore.formattedTime = "25:00";
-		timerStore.isRunning = false;
-		timerStore.categoryId = null;
+		const writableTimerStore = timerStore as any;
+		writableTimerStore.isReady = true;
+		writableTimerStore.mode = TimerMode.FOCUS;
+		writableTimerStore.sessionStreak = 0;
+		writableTimerStore.long_break_interval = 4;
+		writableTimerStore.percent = 100;
+		writableTimerStore.formattedTime = "25:00";
+		writableTimerStore.isRunning = false;
+		writableTimerStore.categoryId = null;
 
 		categoryStore.categories = [{ id: 1, name: "Work", color: "red" }];
 	});
 
 	it("shows loading spinner when not ready", async () => {
-		timerStore.isReady = false;
+		(timerStore as any).isReady = false;
 		await wrapper.vm.$nextTick();
 
 		const progress = wrapper.findComponent({ name: "VProgressCircular" });
@@ -89,7 +90,7 @@ describe("TimerScreen.vue", () => {
 	});
 
 	it("renders session streak as circles", async () => {
-		timerStore.long_break_interval = 4;
+		(timerStore as any).long_break_interval = 4;
 		timerStore.sessionStreak = 2;
 		await wrapper.vm.$nextTick();
 
@@ -138,8 +139,8 @@ describe("TimerScreen.vue", () => {
 	});
 
 	it("shows REST mode correctly", async () => {
-		timerStore.mode = TimerMode.REST;
-		timerStore.formattedTime = "05:00";
+		(timerStore as any).mode = TimerMode.REST;
+		(timerStore as any).formattedTime = "05:00";
 		await wrapper.vm.$nextTick();
 
 		expect(wrapper.text()).toContain("REST");
@@ -152,9 +153,9 @@ describe("TimerScreen.vue", () => {
 
 	describe("Skip Button Logic", () => {
 		it("is enabled in Focus mode if paused", async () => {
-			timerStore.mode = TimerMode.FOCUS;
-			timerStore.isRunning = false;
-			timerStore.percent = 50;
+			(timerStore as any).mode = TimerMode.FOCUS;
+			(timerStore as any).isRunning = false;
+			(timerStore as any).percent = 50;
 			await wrapper.vm.$nextTick();
 
 			const skipBtn = wrapper.findAll("button")[2];
@@ -163,9 +164,9 @@ describe("TimerScreen.vue", () => {
 		});
 
 		it("is hidden in Focus mode if running", async () => {
-			timerStore.mode = TimerMode.FOCUS;
-			timerStore.isRunning = true;
-			timerStore.percent = 50;
+			(timerStore as any).mode = TimerMode.FOCUS;
+			(timerStore as any).isRunning = true;
+			(timerStore as any).percent = 50;
 			await wrapper.vm.$nextTick();
 
 			expect(wrapper.findComponent({ name: "SkipForward" }).exists()).toBe(
@@ -174,8 +175,8 @@ describe("TimerScreen.vue", () => {
 		});
 
 		it("is always enabled in Rest mode", async () => {
-			timerStore.mode = TimerMode.REST;
-			timerStore.isRunning = true; // Even if running
+			(timerStore as any).mode = TimerMode.REST;
+			(timerStore as any).isRunning = true; // Even if running
 			await wrapper.vm.$nextTick();
 
 			const skipBtn = wrapper.findAll("button")[2];
@@ -186,9 +187,9 @@ describe("TimerScreen.vue", () => {
 
 	describe("Reset Button Logic", () => {
 		it("is enabled in Focus mode if paused and not full", async () => {
-			timerStore.mode = TimerMode.FOCUS;
-			timerStore.isRunning = false;
-			timerStore.percent = 50;
+			(timerStore as any).mode = TimerMode.FOCUS;
+			(timerStore as any).isRunning = false;
+			(timerStore as any).percent = 50;
 			await wrapper.vm.$nextTick();
 
 			const resetBtn = wrapper.findAll("button")[0];
@@ -197,18 +198,18 @@ describe("TimerScreen.vue", () => {
 		});
 
 		it("is hidden in Focus mode if running", async () => {
-			timerStore.mode = TimerMode.FOCUS;
-			timerStore.isRunning = true;
-			timerStore.percent = 50;
+			(timerStore as any).mode = TimerMode.FOCUS;
+			(timerStore as any).isRunning = true;
+			(timerStore as any).percent = 50;
 			await wrapper.vm.$nextTick();
 
 			expect(wrapper.findComponent({ name: "RotateCcw" }).exists()).toBe(false);
 		});
 
 		it("is disabled in Rest mode", async () => {
-			timerStore.mode = TimerMode.REST;
-			timerStore.isRunning = false;
-			timerStore.percent = 50;
+			(timerStore as any).mode = TimerMode.REST;
+			(timerStore as any).isRunning = false;
+			(timerStore as any).percent = 50;
 			await wrapper.vm.$nextTick();
 
 			const resetBtn = wrapper.findAll("button")[0];
@@ -236,7 +237,7 @@ describe("TimerScreen.vue", () => {
 			// Advance time slightly
 			vi.advanceTimersByTime(100);
 
-			expect(wrapper.vm.holdProgress).toBeGreaterThan(0);
+			expect((wrapper.vm as any).holdProgress).toBeGreaterThan(0);
 		});
 
 		it("resets hold progress on mouseup", async () => {
@@ -250,7 +251,7 @@ describe("TimerScreen.vue", () => {
 
 			await container.trigger("mouseup");
 
-			expect(wrapper.vm.holdProgress).toBe(0);
+			expect((wrapper.vm as any).holdProgress).toBe(0);
 		});
 
 		it("pauses timer after holding for duration", async () => {

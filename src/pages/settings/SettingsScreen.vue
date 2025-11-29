@@ -4,7 +4,7 @@ import ErrorBoundary from "../../components/ErrorBoundary.vue";
 import SettingSection from "../../components/settings/SettingSection.vue";
 import type { Setting } from "../../funcs/commands";
 import { useSettingsStore } from "../../stores/settings";
-import { useThemeStore } from "../../stores/theme";
+
 
 interface SectionSettingProps {
 	sectionTitle: string;
@@ -12,7 +12,7 @@ interface SectionSettingProps {
 }
 
 const settingsStore = useSettingsStore();
-const themeStore = useThemeStore();
+
 
 onMounted(() => {
 	settingsStore.fetchSettings();
@@ -44,13 +44,7 @@ const settingSections = computed<SectionSettingProps[]>(() => {
 
 const themeOptions = ["dark", "light"];
 
-// Use centralized theme colors instead of hardcoded values
-const accentColors = computed(() => [
-	themeStore.getColor("brand.orange"),
-	themeStore.getColor("brand.red"),
-	themeStore.getColor("brand.gold"),
-	themeStore.getColor("utility.successLight")
-]);
+
 </script>
 
 <template>

@@ -178,7 +178,7 @@ const handleDelete = (id: number) => {
 									</div>
 
 									<div class="flex items-center gap-6">
-										<span class="text-lightText-primary dark:text-white font-medium">{{ formatDuration(session.duration) }}</span>
+										<span class="text-lightText-primary dark:text-white font-medium">{{ formatDuration(session.duration ?? 0) }}</span>
 										<div v-if="session.finished" class="text-green-500" title="Completed">
 											<Check :size="18" />
 										</div>
