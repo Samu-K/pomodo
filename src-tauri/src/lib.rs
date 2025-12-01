@@ -109,6 +109,8 @@ pub fn run() {
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_haptics::init())
+        .plugin(tauri_plugin_keep_screen_on::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {

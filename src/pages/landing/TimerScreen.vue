@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { invoke } from "@tauri-apps/api/core";
 import { Pause, Play, RotateCcw, SkipForward } from "lucide-vue-next";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import CategoryManager from "../../components/timer/CategoryManager.vue";
 
 import { useCategoryStore } from "../../stores/categories";
@@ -16,6 +17,32 @@ onMounted(() => {
 		categoryStore.fetchCategories();
 	}
 });
+
+// Keep Screen On Logic
+watch(
+	() => [timer.isRunning, timer.mode],
+	async ([isRunning, mode]) => {
+		try {
+			if (isRunning && mode === TimerMode.FOCUS) {
+				await invoke("plugin:keep-screen-on|enable");
+			} else {
+				await invoke("plugin:keep-screen-on|disable");
+			}
+		} catch (e) {
+			console.error("KeepScreenOn error:", e);
+		}
+	},
+	{ immediate: true }
+);
+
+// Haptics Helper
+const haptic = async (style: "light" | "medium" | "heavy" = "medium") => {
+	try {
+		await invoke("plugin:haptics|impact", { style });
+	} catch (e) {
+		// Ignore errors (e.g. on desktop)
+	}
+};
 
 const selectedCategory = computed(() => {
 	if (!timer.categoryId) return null;
@@ -102,6 +129,7 @@ const endHold = () => {
 
 const completeHold = () => {
 	endHold();
+	haptic("heavy");
 	timer.pauseTimer();
 };
 
@@ -184,7 +212,7 @@ defineExpose({
 
         <div v-if="!isFocusRunning" class="flex items-center justify-center gap-8 w-full pb-8 z-10">
             <button 
-                @click="timer.resetTimer"
+                @click="haptic('medium'); timer.resetTimer()"
                 class="w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary flex items-center justify-center"
                 :disabled="!allowReset"
             >
@@ -192,7 +220,7 @@ defineExpose({
             </button>
             
             <button 
-                @click="timer.toggleTimer"
+                @click="haptic('heavy'); timer.toggleTimer()"
                 :disabled="timer.mode === TimerMode.FOCUS && !selectedCategory"
                 class="w-20 h-20 rounded-full text-white flex items-center justify-center transition-transform"
                 :class="[
@@ -211,7 +239,7 @@ defineExpose({
                 class="w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary flex items-center justify-center"
                 :disabled="!allowSkip"
                 :class="{'opacity-50': !allowSkip}"
-                @click="timer.skip"
+                @click="haptic('medium'); timer.skip()"
             >
                 <SkipForward :size="20" />
             </button>

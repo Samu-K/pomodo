@@ -3038,6 +3038,7 @@ dependencies = [
  "syn 2.0.106",
  "tauri",
  "tauri-build",
+ "tauri-plugin-keep-screen-on",
  "tauri-plugin-opener",
  "tauri-specta",
  "tokio",
@@ -4376,6 +4377,18 @@ dependencies = [
  "tauri-utils",
  "toml 0.9.5",
  "walkdir",
+]
+
+[[package]]
+name = "tauri-plugin-keep-screen-on"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78455e6e7c7b1636084393b2b70289b1f8adb8ea5e9731c634b50961344420c3"
+dependencies = [
+ "serde",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
