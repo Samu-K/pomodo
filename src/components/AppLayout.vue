@@ -65,7 +65,7 @@ const navigateTo = (path: string) => {
     <main class="flex-1 overflow-hidden">
       <router-view 
         @add-task="emit('add-task')"
-        @task-details="(task: any) => emit('task-details', task as Task)"
+        @task-details="(task: Task) => emit('task-details', task)"
       />
     </main>
 

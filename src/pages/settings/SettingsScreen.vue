@@ -5,14 +5,12 @@ import SettingSection from "../../components/settings/SettingSection.vue";
 import type { Setting } from "../../funcs/commands";
 import { useSettingsStore } from "../../stores/settings";
 
-
 interface SectionSettingProps {
 	sectionTitle: string;
 	settings: Array<Setting>;
 }
 
 const settingsStore = useSettingsStore();
-
 
 onMounted(() => {
 	settingsStore.fetchSettings();
@@ -43,8 +41,6 @@ const settingSections = computed<SectionSettingProps[]>(() => {
 });
 
 const themeOptions = ["dark", "light"];
-
-
 </script>
 
 <template>

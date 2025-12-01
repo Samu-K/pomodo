@@ -10,6 +10,10 @@ import { useThemeStore } from "../../../stores/theme";
 import { useTimerStore } from "../../../stores/timer";
 import CategoryManager from "../CategoryManager.vue";
 
+type WritableThemeStore = ReturnType<typeof useThemeStore> & {
+	categoryColors: string[];
+};
+
 // Mock Tauri API
 vi.mock("@tauri-apps/api/core", () => ({
 	invoke: vi.fn()
@@ -395,7 +399,7 @@ describe("CategoryManager.vue", () => {
 	it("sets color when creating a new category", async () => {
 		// Setup theme store with colors
 		const themeStore = useThemeStore();
-		(themeStore as any).categoryColors = ["#ff0000", "#00ff00"];
+		(themeStore as WritableThemeStore).categoryColors = ["#ff0000", "#00ff00"];
 
 		// Open dialog and add modal
 		await wrapper.findComponent({ name: "VBtn" }).trigger("click");
