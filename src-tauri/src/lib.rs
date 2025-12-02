@@ -71,6 +71,18 @@ tauri_commands! {
     settings::get_settings_for_category(cat_id: i64) -> SettingGetVec
 }
 
+#[tauri::command]
+#[specta::specta]
+async fn close_splashscreen(app: tauri::AppHandle) {
+    if let Some(splashscreen) = app.get_webview_window("splashscreen") {
+        splashscreen.close().unwrap();
+    }
+    if let Some(main_window) = app.get_webview_window("main") {
+        main_window.show().unwrap();
+        main_window.set_focus().unwrap();
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder =
@@ -97,6 +109,7 @@ pub fn run() {
             settings_set_setting_value,
             settings_get_setting_categories,
             settings_get_settings_for_category,
+            close_splashscreen,
         ]);
 
     #[cfg(all(debug_assertions, not(mobile)))]

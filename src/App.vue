@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Window } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
 import { useSwipe } from "@vueuse/core";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -30,18 +30,9 @@ onMounted(async () => {
 
 	// Close splashscreen after a short delay
 	try {
-		const main = await Window.getByLabel("main");
-		const splash = await Window.getByLabel("splashscreen");
-
 		// Small delay to ensure UI is rendered
 		setTimeout(async () => {
-			if (main) {
-				await main.show();
-				await main.setFocus();
-			}
-			if (splash) {
-				await splash.close();
-			}
+			await invoke("close_splashscreen");
 		}, 1500);
 	} catch (e) {
 		console.error("Splashscreen error:", e);

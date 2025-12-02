@@ -180,6 +180,9 @@ async settingsGetSettingsForCategory(catId: number) : Promise<Result<Setting[], 
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async closeSplashscreen() : Promise<void> {
+    await TAURI_INVOKE("close_splashscreen");
 }
 }
 
