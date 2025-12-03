@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { invoke } from "@tauri-apps/api/core";
 import { useTheme } from "vuetify";
 import AppLayout from "./components/AppLayout.vue";
+import SplashScreen from "./components/SplashScreen.vue";
 import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
 import CreateTaskModal from "./components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "./components/task/TaskDetailsModal.vue";
@@ -15,6 +17,7 @@ const route = useRoute();
 const router = useRouter();
 const settingsStore = useSettingsStore();
 const vuetifyTheme = useTheme();
+const isLoading = ref(true);
 
 // Initialize theme on app mount
 onMounted(async () => {
@@ -25,6 +28,8 @@ onMounted(async () => {
 	// Initialize theme from settings
 	await settingsStore.initTheme();
 	vuetifyTheme.global.name.value = settingsStore.theme;
+	isLoading.value = false;
+	await invoke("close_splashscreen");
 });
 
 // Watch settings store theme and sync Vuetify theme
@@ -78,6 +83,7 @@ const openTaskDetails = (task: Task) => {
 </script>
 
 <template>
+  <SplashScreen v-if="isLoading" />
   <AppLayout
     :header-title="route.name?.toString() || 'Pomodo'"
     :show-back-button="showBackButton"
