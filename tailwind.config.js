@@ -55,10 +55,6 @@ export default {
 			spacing: {
 				18: "4.5rem",
 				88: "22rem",
-				"safe-top": "var(--safe-area-inset-top)",
-				"safe-bottom": "var(--safe-area-inset-bottom)",
-				"safe-left": "var(--safe-area-inset-left)",
-				"safe-right": "var(--safe-area-inset-right)",
 			},
 			fontSize: {
 				timer: [

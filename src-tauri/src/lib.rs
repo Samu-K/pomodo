@@ -112,7 +112,6 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_safe_area_insets_css::init())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
             tauri::async_runtime::block_on(async move {

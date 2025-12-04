@@ -36,6 +36,13 @@
 	body {
 		@apply bg-dark-bg text-white antialiased overflow-hidden;
 		overscroll-behavior: none;
+		padding-top: env(safe-area-inset-top, 0px);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+		padding-left: env(safe-area-inset-left, 0px);
+		padding-right: env(safe-area-inset-right, 0px);
+		height: 100vh; /* Fallback */
+		height: 100dvh;
+		width: 100vw;
 	}
 
 	/* Light mode override */
@@ -114,5 +121,5 @@
 
 /* Ensure the app takes full height */
 #app {
-	@apply h-screen overflow-hidden;
+	@apply h-full w-full overflow-hidden;
 }

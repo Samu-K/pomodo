@@ -43,7 +43,7 @@ describe("Settings Store", () => {
 					key: "Theme",
 					value: "Dark",
 					category_id: 1,
-					description: "Theme setting",
+					description: null,
 					data_type: "string"
 				},
 				{
@@ -51,7 +51,7 @@ describe("Settings Store", () => {
 					key: "Notifications",
 					value: "true",
 					category_id: 2,
-					description: "Notifications setting",
+					description: null,
 					data_type: "boolean"
 				}
 			];
@@ -95,7 +95,7 @@ describe("Settings Store", () => {
 					key: "Theme",
 					value: "Light",
 					category_id: 1,
-					description: "Theme setting",
+					description: null,
 					data_type: "string"
 				}
 			];
@@ -116,7 +116,7 @@ describe("Settings Store", () => {
 					key: "Notifications",
 					value: "false",
 					category_id: 2,
-					description: "Notifications setting",
+					description: null,
 					data_type: "boolean"
 				}
 			];
@@ -139,7 +139,7 @@ describe("Settings Store", () => {
 					key: "Volume",
 					value: "50",
 					category_id: 3,
-					description: "Volume setting",
+					description: null,
 					data_type: "number"
 				}
 			];
@@ -157,7 +157,7 @@ describe("Settings Store", () => {
 					key: "Theme",
 					value: "Light",
 					category_id: 1,
-					description: "Theme setting",
+					description: null,
 					data_type: "string"
 				}
 			];
