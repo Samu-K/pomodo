@@ -6,7 +6,7 @@ import {
 	ListTodo,
 	Timer
 } from "lucide-vue-next";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Task } from "../defines/task.ts";
 
@@ -18,7 +18,7 @@ interface Props {
 	hideBottomNav?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
 	showHeader: true,
 	headerTitle: "Pomodo",
 	showBackButton: false,
@@ -46,10 +46,73 @@ const activeTab = computed(() => {
 const navigateTo = (path: string) => {
 	router.push(path);
 };
+
+// Swipe Logic
+const touchStart = ref({ x: 0, y: 0 });
+const minSwipeDistance = 50;
+const maxVerticalDistance = 50; // To prevent scrolling from triggering swipe
+
+const handleTouchStart = (e: TouchEvent) => {
+	touchStart.value = {
+		x: e.changedTouches[0].screenX,
+		y: e.changedTouches[0].screenY
+	};
+};
+
+const handleTouchEnd = (e: TouchEvent) => {
+	const touchEnd = {
+		x: e.changedTouches[0].screenX,
+		y: e.changedTouches[0].screenY
+	};
+
+	const xDiff = touchStart.value.x - touchEnd.x;
+	const yDiff = touchStart.value.y - touchEnd.y;
+
+	// Check if it's a horizontal swipe and not a vertical scroll
+	if (
+		Math.abs(xDiff) > minSwipeDistance &&
+		Math.abs(yDiff) < maxVerticalDistance
+	) {
+		if (xDiff > 0) {
+			// Swipe Left (Next)
+			handleSwipeLeft();
+		} else {
+			// Swipe Right (Previous/Back)
+			handleSwipeRight();
+		}
+	}
+};
+
+const mainTabs = ["/", "/timeline", "/tasks", "/stats"];
+
+const handleSwipeLeft = () => {
+	// If we are on a sub-page (like settings), do nothing or handle differently?
+	// For now, only switch tabs if we are on one of the main tabs
+	const currentIndex = mainTabs.indexOf(route.path);
+	if (currentIndex !== -1 && currentIndex < mainTabs.length - 1) {
+		router.push(mainTabs[currentIndex + 1]);
+	}
+};
+
+const handleSwipeRight = () => {
+	if (props.showBackButton) {
+		emit("back-click");
+		return;
+	}
+
+	const currentIndex = mainTabs.indexOf(route.path);
+	if (currentIndex !== -1 && currentIndex > 0) {
+		router.push(mainTabs[currentIndex - 1]);
+	}
+};
 </script>
 
 <template>
-  <div class="flex flex-col h-screen bg-light-bg dark:bg-dark-bg">
+  <div 
+    class="flex flex-col h-screen bg-light-bg dark:bg-dark-bg"
+    @touchstart="handleTouchStart"
+    @touchend="handleTouchEnd"
+  >
     <!-- Header -->
     <header v-if="showBackButton" class="h-12 flex items-center justify-center relative px-6 border-light-border dark:border-dark-border">
       <button 

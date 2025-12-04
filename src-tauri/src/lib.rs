@@ -3,7 +3,7 @@ use chrono::NaiveDate;
 use paste::paste;
 use specta::specta;
 use std::sync::Arc;
-use std::time::Duration;
+
 use tauri::Manager as _;
 use tauri::State;
 use tokio::time::sleep;
@@ -72,18 +72,6 @@ tauri_commands! {
     settings::get_settings_for_category(cat_id: i64) -> SettingGetVec
 }
 
-#[tauri::command]
-#[specta]
-async fn close_splashscreen(window: tauri::Window) {
-    sleep(Duration::from_secs(10)).await;
-    if let Some(splashscreen) = window.get_webview_window("splashscreen") {
-        splashscreen.close().unwrap();
-    }
-    if let Some(main_window) = window.get_webview_window("main") {
-        main_window.show().unwrap();
-    }
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder =
@@ -110,7 +98,6 @@ pub fn run() {
             settings_set_setting_value,
             settings_get_setting_categories,
             settings_get_settings_for_category,
-            close_splashscreen,
         ]);
 
     #[cfg(all(debug_assertions, not(mobile)))]
@@ -123,14 +110,10 @@ pub fn run() {
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
-            #[cfg(mobile)]
-            if let Some(window) = app.get_webview_window("main") {
-                window.show().unwrap();
-            }
-
             tauri::async_runtime::block_on(async move {
                 let db = Arc::new(database::create_database(Some(app)).await);
                 let sa = SessionActions::new(db.clone());

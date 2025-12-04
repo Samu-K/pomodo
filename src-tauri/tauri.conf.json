@@ -21,15 +21,7 @@
 				"decorations": true,
 				"transparent": false,
 				"center": true,
-				"visible": false
-			},
-			{
-				"width": 400,
-				"height": 200,
-				"decorations": false,
-				"url": "splashscreen.html",
-				"label": "splashscreen",
-				"center": true
+				"visible": true
 			}
 		],
 		"security": {

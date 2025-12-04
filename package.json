@@ -20,6 +20,7 @@
     "@mdi/js": "^7.4.47",
     "@tanstack/vue-query": "^5.90.7",
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-notification": "~2",
     "@tauri-apps/plugin-opener": "^2",
     "apexcharts": "^5.3.6",
     "date-fns": "^4.1.0",

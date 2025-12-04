@@ -1,3 +1,8 @@
+import {
+	isPermissionGranted,
+	requestPermission,
+	sendNotification
+} from "@tauri-apps/plugin-notification";
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
 import type { Session } from "../funcs/commands";
@@ -23,6 +28,9 @@ export const useTimerStore = defineStore("timer", () => {
 	}
 
 	const focusDuration = computed(() => {
+		if (import.meta.env.VITE_DEV_MODE === "true") {
+			return 10;
+		}
 		const val = settingsStore.settings.find(
 			(s) => s.key === "Focus Duration"
 		)?.value;
@@ -30,6 +38,9 @@ export const useTimerStore = defineStore("timer", () => {
 	});
 
 	const restDuration = computed(() => {
+		if (import.meta.env.VITE_DEV_MODE === "true") {
+			return 5;
+		}
 		const val = settingsStore.settings.find(
 			(s) => s.key === "Short Break Time"
 		)?.value;
@@ -123,8 +134,44 @@ export const useTimerStore = defineStore("timer", () => {
 
 	const handleComplete = async () => {
 		pauseTimer();
+
+		// Check for notifications
+		const notificationsEnabled = settingsStore.settings.find(
+			(s) => s.key === "Push notifications"
+		)?.value;
+
+		if (notificationsEnabled === "true") {
+			try {
+				let permissionGranted = await isPermissionGranted();
+				if (!permissionGranted) {
+					const permission = await requestPermission();
+					permissionGranted = permission === "granted";
+				}
+
+				if (permissionGranted) {
+					if (mode.value === TimerMode.FOCUS) {
+						sendNotification({
+							title: "Focus Session Complete",
+							body: "Great job! Time for a break."
+						});
+					} else {
+						sendNotification({
+							title: "Break Finished",
+							body: "Time to get back to work!"
+						});
+					}
+				}
+			} catch (error) {
+				console.error("Error in notification logic:", error);
+			}
+		}
+
 		if (mode.value === TimerMode.FOCUS) {
-			await set_newest_session_complete(); // Mark DB entry as finished
+			try {
+				await set_newest_session_complete(); // Mark DB entry as finished
+			} catch (e) {
+				console.error("Error marking session complete:", e);
+			}
 			currentSessionId.value = null; // Session is complete, don't delete on reset
 			sessionStreak.value = sessionStreak.value + 1;
 			if (sessionStreak.value === long_break_interval.value) {

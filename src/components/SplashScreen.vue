@@ -4,7 +4,7 @@
 <template>
   <div class="splash-container">
     <h1>Pomodo</h1>
-    <img src="/icon.png" alt="Pomodo Logo" class="logo">
+    <img src="/transparent_logo.svg" alt="Pomodo Logo" class="logo">
   </div>
 </template>
 

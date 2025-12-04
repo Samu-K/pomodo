@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { invoke } from "@tauri-apps/api/core";
+
 import { useTheme } from "vuetify";
 import AppLayout from "./components/AppLayout.vue";
 import SplashScreen from "./components/SplashScreen.vue";
@@ -28,8 +28,11 @@ onMounted(async () => {
 	// Initialize theme from settings
 	await settingsStore.initTheme();
 	vuetifyTheme.global.name.value = settingsStore.theme;
+
+	// Minimum splash screen duration of 2 seconds
+	await new Promise((resolve) => setTimeout(resolve, 2000));
+
 	isLoading.value = false;
-	await invoke("close_splashscreen");
 });
 
 // Watch settings store theme and sync Vuetify theme
@@ -85,6 +88,7 @@ const openTaskDetails = (task: Task) => {
 <template>
   <SplashScreen v-if="isLoading" />
   <AppLayout
+    v-else
     :header-title="route.name?.toString() || 'Pomodo'"
     :show-back-button="showBackButton"
     :show-settings-button="false"
@@ -93,7 +97,6 @@ const openTaskDetails = (task: Task) => {
     @add-task="handleAddTask"
     @task-details="openTaskDetails"
   >
-    <!-- Content rendered by AppLayout via router-view -->
   </AppLayout>
   
   <!-- Modals -->
