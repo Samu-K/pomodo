@@ -38,8 +38,22 @@ describe("Settings Store", () => {
 	describe("fetchSettings", () => {
 		it("fetches settings and categories successfully", async () => {
 			const mockSettings = [
-				{ id: 1, key: "Theme", value: "Dark", category_id: 1 },
-				{ id: 2, key: "Notifications", value: "true", category_id: 2 }
+				{
+					id: 1,
+					key: "Theme",
+					value: "Dark",
+					category_id: 1,
+					description: "Theme setting",
+					data_type: "string"
+				},
+				{
+					id: 2,
+					key: "Notifications",
+					value: "true",
+					category_id: 2,
+					description: "Notifications setting",
+					data_type: "boolean"
+				}
 			];
 			const mockCategories = [
 				{ id: 1, name: "Appearance" },
@@ -76,7 +90,14 @@ describe("Settings Store", () => {
 		it("updates setting optimistically and calls DB", async () => {
 			// Setup initial state
 			settingsStore.settings = [
-				{ id: 1, key: "Theme", value: "Light", category_id: 1 }
+				{
+					id: 1,
+					key: "Theme",
+					value: "Light",
+					category_id: 1,
+					description: "Theme setting",
+					data_type: "string"
+				}
 			];
 
 			await settingsStore.updateSetting(1, "Dark");
@@ -90,7 +111,14 @@ describe("Settings Store", () => {
 
 		it("handles boolean values correctly", async () => {
 			settingsStore.settings = [
-				{ id: 2, key: "Notifications", value: "false", category_id: 2 }
+				{
+					id: 2,
+					key: "Notifications",
+					value: "false",
+					category_id: 2,
+					description: "Notifications setting",
+					data_type: "boolean"
+				}
 			];
 
 			await settingsStore.updateSetting(2, true);
@@ -106,7 +134,14 @@ describe("Settings Store", () => {
 
 		it("handles number values correctly", async () => {
 			settingsStore.settings = [
-				{ id: 3, key: "Volume", value: "50", category_id: 3 }
+				{
+					id: 3,
+					key: "Volume",
+					value: "50",
+					category_id: 3,
+					description: "Volume setting",
+					data_type: "number"
+				}
 			];
 
 			await settingsStore.updateSetting(3, 75);
@@ -117,7 +152,14 @@ describe("Settings Store", () => {
 
 		it("does nothing if setting id is not found", async () => {
 			settingsStore.settings = [
-				{ id: 1, key: "Theme", value: "Light", category_id: 1 }
+				{
+					id: 1,
+					key: "Theme",
+					value: "Light",
+					category_id: 1,
+					description: "Theme setting",
+					data_type: "string"
+				}
 			];
 
 			await settingsStore.updateSetting(999, "Dark");

@@ -114,26 +114,29 @@ const handleSwipeRight = () => {
     @touchend="handleTouchEnd"
   >
     <!-- Header -->
-    <header v-if="showBackButton" class="h-12 flex items-center justify-center relative px-6 border-light-border dark:border-dark-border">
-      <button 
-        v-if="showBackButton"
-        @click="emit('back-click')"
-        class="absolute left-4 w-10 h-10 flex items-center justify-center text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors"
-      >
-        <ChevronLeft :size="28" />
-      </button>
+    <header v-if="showBackButton" class="pt-safe-top h-auto w-full bg-light-bg dark:bg-dark-bg border-light-border dark:border-dark-border">
+      <div class="h-12 w-full relative flex items-center justify-center px-6">
+        <button 
+          v-if="showBackButton"
+          @click="emit('back-click')"
+          class="absolute left-4 w-10 h-10 flex items-center justify-center text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors"
+        >
+          <ChevronLeft :size="28" />
+        </button>
+        <h1 class="text-lg font-semibold text-lightText-primary dark:text-text-primary">{{ headerTitle }}</h1>
+      </div>
     </header>
 
     <!-- Main Content -->
     <main class="flex-1 overflow-hidden">
       <router-view 
         @add-task="emit('add-task')"
-        @task-details="(task) => emit('task-details', task)"
+        @task-details="(task: any) => emit('task-details', task)"
       />
     </main>
 
     <!-- Bottom Navigation -->
-    <nav v-if="!hideBottomNav" class="h-20 bg-light-pure dark:bg-dark-pure border-t border-light-border dark:border-dark-border">
+    <nav v-if="!hideBottomNav" class="pb-safe-bottom h-auto bg-light-pure dark:bg-dark-pure border-t border-light-border dark:border-dark-border touch-none">
       <div class="h-full flex items-center justify-around px-4">
         <button 
           @click="navigateTo('/')"

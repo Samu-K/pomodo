@@ -21,18 +21,21 @@ const isLoading = ref(true);
 
 // Initialize theme on app mount
 onMounted(async () => {
-	// Ensure settings are loaded first
-	if (settingsStore.settings.length === 0) {
-		await settingsStore.fetchSettings();
+	try {
+		// Ensure settings are loaded first
+		if (settingsStore.settings.length === 0) {
+			await settingsStore.fetchSettings();
+		}
+		// Initialize theme from settings
+		await settingsStore.initTheme();
+		vuetifyTheme.global.name.value = settingsStore.theme;
+	} catch (e) {
+		console.error("Failed to initialize app:", e);
+	} finally {
+		// Minimum splash screen duration of 2 seconds
+		await new Promise((resolve) => setTimeout(resolve, 2000));
+		isLoading.value = false;
 	}
-	// Initialize theme from settings
-	await settingsStore.initTheme();
-	vuetifyTheme.global.name.value = settingsStore.theme;
-
-	// Minimum splash screen duration of 2 seconds
-	await new Promise((resolve) => setTimeout(resolve, 2000));
-
-	isLoading.value = false;
 });
 
 // Watch settings store theme and sync Vuetify theme

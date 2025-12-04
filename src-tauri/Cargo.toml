@@ -35,4 +35,5 @@ quote = "1.0.40"
 specta = { version = "=2.0.0-rc.22", features = ["chrono", "serde"] }
 specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
+tauri-plugin-safe-area-insets-css = "0.2.0"
 

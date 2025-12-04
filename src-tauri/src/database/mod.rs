@@ -34,7 +34,7 @@ pub async fn create_database(app: Option<&App>) -> Db {
     .expect("failed to create database");
 
     let db = SqlitePoolOptions::new()
-        .connect(app_dir.to_str().unwrap())
+        .connect(format!("sqlite:{}", app_dir.to_str().unwrap()).as_str())
         .await
         .unwrap();
 

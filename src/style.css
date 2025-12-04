@@ -34,7 +34,8 @@
 /* Global styles */
 @layer base {
 	body {
-		@apply bg-dark-bg text-white antialiased;
+		@apply bg-dark-bg text-white antialiased overflow-hidden;
+		overscroll-behavior: none;
 	}
 
 	/* Light mode override */

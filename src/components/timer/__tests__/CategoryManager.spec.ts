@@ -395,7 +395,10 @@ describe("CategoryManager.vue", () => {
 	it("sets color when creating a new category", async () => {
 		// Setup theme store with colors
 		const themeStore = useThemeStore();
-		themeStore.categoryColors = ["#ff0000", "#00ff00"];
+		vi.spyOn(themeStore, "categoryColors", "get").mockReturnValue([
+			"#ff0000",
+			"#00ff00"
+		]);
 
 		// Open dialog and add modal
 		await wrapper.findComponent({ name: "VBtn" }).trigger("click");

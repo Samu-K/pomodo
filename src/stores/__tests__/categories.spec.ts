@@ -60,7 +60,7 @@ describe("Category Store", () => {
 
 		it("createCategory adds a category and refreshes", async () => {
 			const newCategory = { id: 0, name: "New", color: "green" };
-			vi.mocked(add_category).mockResolvedValue(undefined);
+			vi.mocked(add_category).mockResolvedValue(1);
 			vi.mocked(get_categories).mockResolvedValue([
 				{ id: 1, name: "New", color: "green" }
 			]);

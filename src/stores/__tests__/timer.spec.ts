@@ -20,7 +20,7 @@ class MockWorker {
 		postMessageMock(data);
 	}
 
-	set onmessage(callback: (e: MessageEvent) => void) {
+	set onmessage(callback: ((e: MessageEvent) => void) | null) {
 		onMessageCallback = callback;
 	}
 

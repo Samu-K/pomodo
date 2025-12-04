@@ -22,7 +22,7 @@ export default defineConfig(async () => ({
 	clearScreen: false,
 	// 2. tauri expects a fixed port, fail if that port is not available
 	server: {
-	    host: host || false, // Listen on all addresses if TAURI_DEV_HOST is set, otherwise use localhost
+	    host: "0.0.0.0", // Listen on all addresses
 	    port: 1420, // Ensure this matches your tauri.conf.json
 	    strictPort: true,
 	    hmr: host
