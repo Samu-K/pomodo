@@ -4,8 +4,10 @@ use paste::paste;
 use specta::specta;
 use std::sync::Arc;
 
+use tauri::Emitter;
 use tauri::Manager as _;
 use tauri::State;
+#[cfg(not(mobile))]
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
@@ -30,6 +32,7 @@ pub struct AppState {
 }
 
 pub struct TrayState {
+    #[cfg(not(mobile))]
     pub toggle_item: MenuItem<tauri::Wry>,
 }
 
@@ -41,11 +44,14 @@ async fn update_tray(
     title: String,
     toggle_text: Option<String>,
 ) -> Result<(), String> {
-    if let Some(tray) = app.tray_by_id("main") {
-        let _ = tray.set_tooltip(Some(title));
-    }
-    if let Some(text) = toggle_text {
-        let _ = state.toggle_item.set_text(text);
+    #[cfg(not(mobile))]
+    {
+        if let Some(tray) = app.tray_by_id("main") {
+            let _ = tray.set_tooltip(Some(title));
+        }
+        if let Some(text) = toggle_text {
+            let _ = state.toggle_item.set_text(text);
+        }
     }
     Ok(())
 }
@@ -144,7 +150,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
-            tauri::async_runtime::block_on(async move {
+            tauri::async_runtime::block_on(async {
                 let db = Arc::new(database::create_database(Some(app)).await);
                 let sa = SessionActions::new(db.clone());
                 let sta = SettingActions::new(db.clone());
@@ -157,51 +163,57 @@ pub fn run() {
             });
 
             // System Tray
-            let toggle_i = MenuItem::with_id(app, "toggle", "Start Focus", true, None::<&str>)?;
-            let open_i = MenuItem::with_id(app, "open", "Open", true, None::<&str>)?;
-            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&toggle_i, &open_i, &quit_i])?;
+            #[cfg(not(mobile))]
+            {
+                let toggle_i = MenuItem::with_id(app, "toggle", "Start Focus", true, None::<&str>)?;
+                let open_i = MenuItem::with_id(app, "open", "Open", true, None::<&str>)?;
+                let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+                let menu = Menu::with_items(app, &[&toggle_i, &open_i, &quit_i])?;
 
-            let _tray = TrayIconBuilder::new()
-                .id("main")
-                .icon(app.default_window_icon().unwrap().clone())
-                .menu(&menu)
-                .show_menu_on_left_click(false)
-                .on_menu_event(|app, event| match event.id().as_ref() {
-                    "quit" => {
-                        app.exit(0);
-                    }
-                    "open" => {
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
+                let _tray = TrayIconBuilder::with_id("main")
+                    .icon(app.default_window_icon().unwrap().clone())
+                    .menu(&menu)
+                    .show_menu_on_left_click(false)
+                    .on_menu_event(|app, event| match event.id().as_ref() {
+                        "quit" => {
+                            app.exit(0);
                         }
-                    }
-                    "toggle" => {
-                        let _ = app.emit("tray_toggle", ());
-                    }
-                    _ => {}
-                })
-                .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click {
-                        button: MouseButton::Left,
-                        ..
-                    } = event
-                    {
-                        let app = tray.app_handle();
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
+                        "open" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
                         }
-                    }
-                })
-                .build(app)?;
+                        "toggle" => {
+                            let _ = app.emit("tray_toggle", ());
+                        }
+                        _ => {}
+                    })
+                    .on_tray_icon_event(|tray, event| {
+                        if let TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            ..
+                        } = event
+                        {
+                            let app = tray.app_handle();
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                    })
+                    .build(app)?;
 
-            app.manage(TrayState {
-                toggle_item: toggle_i,
-            });
+                app.manage(TrayState {
+                    toggle_item: toggle_i,
+                });
+            }
+
+            #[cfg(mobile)]
+            app.manage(TrayState {});
 
             // Window Close Event
+            #[cfg(not(mobile))]
             if let Some(window) = app.get_webview_window("main") {
                 let window_clone = window.clone();
                 window.on_window_event(move |event| {
