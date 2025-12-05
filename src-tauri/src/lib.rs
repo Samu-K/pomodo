@@ -6,6 +6,11 @@ use std::sync::Arc;
 
 use tauri::Manager as _;
 use tauri::State;
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
+    WindowEvent,
+};
 use tokio::time::sleep;
 
 use crate::database::{
@@ -22,6 +27,27 @@ pub struct AppState {
     pub categories: CategoryActions,
     pub session: SessionActions,
     pub settings: SettingActions,
+}
+
+pub struct TrayState {
+    pub toggle_item: MenuItem<tauri::Wry>,
+}
+
+#[tauri::command]
+#[specta]
+async fn update_tray(
+    app: tauri::AppHandle,
+    state: State<'_, TrayState>,
+    title: String,
+    toggle_text: Option<String>,
+) -> Result<(), String> {
+    if let Some(tray) = app.tray_by_id("main") {
+        let _ = tray.set_tooltip(Some(title));
+    }
+    if let Some(text) = toggle_text {
+        let _ = state.toggle_item.set_text(text);
+    }
+    Ok(())
 }
 
 macro_rules! tauri_commands {
@@ -97,7 +123,9 @@ pub fn run() {
             settings_get_all_settings,
             settings_set_setting_value,
             settings_get_setting_categories,
+            settings_get_setting_categories,
             settings_get_settings_for_category,
+            update_tray
         ]);
 
     #[cfg(all(debug_assertions, not(mobile)))]
@@ -125,8 +153,65 @@ pub fn run() {
                     categories: ca,
                     session: sa,
                     settings: sta,
-                })
+                });
             });
+
+            // System Tray
+            let toggle_i = MenuItem::with_id(app, "toggle", "Start Focus", true, None::<&str>)?;
+            let open_i = MenuItem::with_id(app, "open", "Open", true, None::<&str>)?;
+            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&toggle_i, &open_i, &quit_i])?;
+
+            let _tray = TrayIconBuilder::new()
+                .id("main")
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    "open" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "toggle" => {
+                        let _ = app.emit("tray_toggle", ());
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
+            app.manage(TrayState {
+                toggle_item: toggle_i,
+            });
+
+            // Window Close Event
+            if let Some(window) = app.get_webview_window("main") {
+                let window_clone = window.clone();
+                window.on_window_event(move |event| {
+                    if let WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        let _ = window_clone.hide();
+                    }
+                });
+            }
+
             Ok(())
         })
         .run(tauri::generate_context!())
