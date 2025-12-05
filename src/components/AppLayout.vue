@@ -109,7 +109,7 @@ const handleSwipeRight = () => {
 
 <template>
   <div 
-    class="flex flex-col h-full bg-light-bg dark:bg-dark-bg pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
+    class="flex flex-col h-[100dvh] bg-light-bg dark:bg-dark-bg pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
     @touchstart="handleTouchStart"
     @touchend="handleTouchEnd"
   >
