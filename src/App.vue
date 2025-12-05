@@ -72,6 +72,18 @@ const selectedTask = ref<Task>({
 
 const timer = useTimerStore();
 
+watch(
+	[() => timer.isRunning, () => timer.mode],
+	([isRunning, mode]) => {
+		if (isRunning && mode === TimerMode.FOCUS) {
+			document.body.classList.add("focus-mode");
+		} else {
+			document.body.classList.remove("focus-mode");
+		}
+	},
+	{ immediate: true }
+);
+
 const hideBottomNav = computed(() => {
 	return timer.isRunning && timer.mode === TimerMode.FOCUS;
 });
