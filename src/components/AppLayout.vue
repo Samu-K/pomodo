@@ -133,8 +133,8 @@ const handleSwipeRight = () => {
     </main>
 
     <!-- Bottom Navigation -->
-    <nav v-if="!hideBottomNav" class="bg-light-pure dark:bg-dark-pure border-t border-light-border dark:border-dark-border touch-none pb-[env(safe-area-inset-bottom)]">
-      <div class="h-20 flex items-center justify-around px-4">
+    <nav v-if="!hideBottomNav" class="bg-light-pure dark:bg-dark-pure border-t border-light-border dark:border-dark-border touch-none">
+      <div class="h-16 flex items-center justify-around px-4 pb-2">
         <button 
           @click="navigateTo('/')"
           :class="[
