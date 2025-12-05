@@ -309,8 +309,9 @@ describe("CategoryManager.vue", () => {
 
 	it("handles opening edit mode when categories is null", async () => {
 		// Set categories to null to test edge case
-		// @ts-expect-error - Intentionally testing invalid null state
-		categoryStore.categories = null;
+		// Intentionally testing invalid null state
+		// biome-ignore lint/suspicious/noExplicitAny: testing invalid state
+		(categoryStore as any).categories = null;
 
 		// Open dialog
 		await wrapper.findComponent({ name: "VBtn" }).trigger("click");
