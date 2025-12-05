@@ -7,6 +7,11 @@ const props = defineProps<{
 	sectionTitle: string;
 	settings: Array<Setting>;
 }>();
+
+const emit =
+	defineEmits<
+		(e: "change", id: number, value: string | number | boolean) => void
+	>();
 </script>
 <template>
   <section class="mb-8">
@@ -14,7 +19,7 @@ const props = defineProps<{
       {{props.sectionTitle}}
     </h2>
     <ErrorBoundary v-for="stt in settings">
-      <SettingBox :setting="stt"/>
+      <SettingBox :setting="stt" @change="(id, val) => emit('change', id, val)"/>
     </ErrorBoundary>
   </section>
 </template>

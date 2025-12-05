@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { Check, ChevronDown, ChevronUp, Trash, X } from "lucide-vue-next";
+import {
+	Check,
+	ChevronDown,
+	ChevronLeft,
+	ChevronUp,
+	Trash,
+	X
+} from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { get_categories } from "../../funcs/db/categories";
 import { delete_session, get_sessions } from "../../funcs/db/session";
 import { formatDuration } from "../../funcs/stats/date_handling";
 
 const queryClient = useQueryClient();
+const router = useRouter();
 
 const categoriesState = useQuery({
 	queryKey: ["categories"],
@@ -122,9 +131,17 @@ const handleDelete = (id: number) => {
 	<div class="flex flex-col h-full bg-light-bg dark:bg-dark-bg">
 		<div class="flex-1 overflow-y-auto px-6 py-6">
 			<div class="flex items-center justify-between mb-6">
-				<h1 class="text-2xl font-semibold text-pomodo-orange">
-					Session Log
-				</h1>
+				<div class="flex items-center gap-2">
+					<button 
+						@click="router.back()"
+						class="w-8 h-8 flex items-center justify-center text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors"
+					>
+						<ChevronLeft :size="24" />
+					</button>
+					<h1 class="text-2xl font-semibold text-pomodo-orange">
+						Session Log
+					</h1>
+				</div>
 				<div class="w-32">
 					<v-select
 						v-model="selectedYear"

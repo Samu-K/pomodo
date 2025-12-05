@@ -18,5 +18,8 @@ export default defineConfig({
                 inline: ['vuetify'],
             },
         },
+        env: {
+            VITE_DEV_MODE: 'false',
+        },
     },
 })

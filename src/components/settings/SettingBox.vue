@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Setting } from "../../funcs/commands";
-import { useSettingsStore } from "../../stores/settings";
 
 const props = defineProps<{
 	setting: Setting;
 }>();
 
+const emit =
+	defineEmits<
+		(e: "change", id: number, value: string | number | boolean) => void
+	>();
+
 if (!props.setting) {
 	throw Error(`Error with setting definition: ${props.setting}`);
 }
-
-const settingsStore = useSettingsStore();
 
 const value_ref = computed({
 	get: () => {
@@ -24,7 +26,7 @@ const value_ref = computed({
 	},
 	set: (newValue) => {
 		if (newValue === undefined || newValue === null) return;
-		settingsStore.updateSetting(props.setting.id, newValue);
+		emit("change", props.setting.id, newValue);
 	}
 });
 </script>

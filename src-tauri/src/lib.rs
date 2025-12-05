@@ -104,13 +104,15 @@ pub fn run() {
     builder
         .export(
             specta_typescript::Typescript::default()
-                .bigint(specta_typescript::BigIntExportBehavior::Number),
+                .bigint(specta_typescript::BigIntExportBehavior::Number)
+                .header("// @ts-nocheck"),
             "../src/funcs/commands.ts",
         )
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_haptics::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {

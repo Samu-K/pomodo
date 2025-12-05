@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import {
+	isPermissionGranted,
+	requestPermission
+} from "@tauri-apps/plugin-notification";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -28,6 +32,12 @@ onMounted(async () => {
 	// Initialize theme from settings
 	await settingsStore.initTheme();
 	vuetifyTheme.global.name.value = settingsStore.theme;
+
+	// Request notification permissions
+	const permissionGranted = await isPermissionGranted();
+	if (!permissionGranted) {
+		await requestPermission();
+	}
 
 	// Minimum splash screen duration of 2 seconds
 	await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -67,7 +77,7 @@ const hideBottomNav = computed(() => {
 });
 
 const showBackButton = computed(() => {
-	return route.path === "/settings" || route.path === "/stats/log";
+	return false;
 });
 
 const handleBackClick = () => {
