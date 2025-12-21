@@ -4,12 +4,16 @@ import { computed, onMounted, ref } from "vue";
 import CategoryManager from "../../components/timer/CategoryManager.vue";
 
 import { useCategoryStore } from "../../stores/categories";
+import { useSettingsStore } from "../../stores/settings";
 import { useThemeStore } from "../../stores/theme";
 import { TimerMode, useTimerStore } from "../../stores/timer";
 
 const timer = useTimerStore();
 const categoryStore = useCategoryStore();
 const themeStore = useThemeStore();
+const settingsStore = useSettingsStore();
+
+const isDark = computed(() => settingsStore.theme === 'dark');
 
 onMounted(() => {
 	if (categoryStore.categories.length === 0) {
@@ -112,7 +116,7 @@ defineExpose({
 
 <template>
     <div 
-        class="flex flex-col h-full relative select-none touch-none transition-colors duration-500"
+        class="flex flex-col h-full relative select-none touch-none transition-colors duration-500 -mt-4"
         :class="isFocusRunning ? 'bg-black' : 'bg-light-bg dark:bg-dark-bg'"
         @mousedown="startHold"
         @touchstart="startHold"
@@ -185,7 +189,12 @@ defineExpose({
         <div v-if="!isFocusRunning" class="flex items-center justify-center gap-8 w-full pb-8 z-10">
             <button 
                 @click="timer.resetTimer"
-                class="w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary flex items-center justify-center"
+                class="w-12 h-12 rounded-full flex items-center justify-center transition-colors"
+                :class="[
+                    isDark 
+                        ? 'bg-dark-surface border border-dark-border text-text-secondary' 
+                        : 'bg-transparent border-[3px] border-black text-black'
+                ]"
                 :disabled="!allowReset"
             >
                 <RotateCcw :size="20" :class="{'opacity-50': !allowReset}"/>
@@ -208,9 +217,14 @@ defineExpose({
             </button>
             
             <button 
-                class="w-12 h-12 rounded-full bg-dark-surface border border-dark-border text-text-secondary flex items-center justify-center"
+                class="w-12 h-12 rounded-full flex items-center justify-center transition-colors"
+                :class="[
+                    {'opacity-50': !allowSkip},
+                    isDark 
+                        ? 'bg-dark-surface border border-dark-border text-text-secondary' 
+                        : 'bg-transparent border-[3px] border-black text-black'
+                ]"
                 :disabled="!allowSkip"
-                :class="{'opacity-50': !allowSkip}"
                 @click="timer.skip"
             >
                 <SkipForward :size="20" />

@@ -194,7 +194,7 @@ const goToNextDate = () => {
 <template>
   <div class="flex flex-col h-full bg-dark-bg relative">
     <!-- Header with Date Navigation -->
-    <div class="px-6 py-4 border-b border-dark-border mb-2">
+    <div class="px-6 py-4 border-b border-dark-border mb-2 ">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <button class="w-8 h-8 rounded-full border border-pomodo-orange text-pomodo-orange hover:bg-pomodo-orange hover:text-white transition-colors flex items-center justify-center"

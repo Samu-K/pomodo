@@ -33,12 +33,14 @@
 
 /* Global styles */
 @layer base {
+	html {
+		height: 100%;
+	}
 	body {
 		@apply bg-dark-bg text-white antialiased overflow-hidden;
 		overscroll-behavior: none;
-		height: 100vh; /* Fallback */
-		height: 100dvh;
-		width: 100vw;
+		height: 100%;
+		width: 100%;
 	}
 
 	body.focus-mode {

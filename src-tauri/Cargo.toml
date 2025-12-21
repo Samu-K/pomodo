@@ -26,7 +26,7 @@ tauri-plugin-haptics = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1.47.1", features = ["macros"] }
-sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio", "chrono"] }
+sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio", "chrono" ] }
 fs = "0.0.5"
 futures = "0.3.31"
 chrono = { version = "0.4.41", features = ["serde"] }
@@ -37,4 +37,5 @@ specta = { version = "=2.0.0-rc.22", features = ["chrono", "serde"] }
 specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 tauri-plugin-safe-area-insets-css = "0.2.0"
+objc = "0.2"
 

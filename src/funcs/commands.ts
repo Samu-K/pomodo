@@ -180,6 +180,14 @@ async settingsGetSettingsForCategory(catId: number) : Promise<Result<Setting[], 
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async updateTray(title: string, toggleText: string | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_tray", { title, toggleText }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

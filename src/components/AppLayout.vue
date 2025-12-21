@@ -109,23 +109,29 @@ const handleSwipeRight = () => {
 
 <template>
   <div 
-    class="flex flex-col h-[100dvh] bg-light-bg dark:bg-dark-bg pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
+    class="fixed inset-0 flex flex-col w-screen"
     @touchstart="handleTouchStart"
     @touchend="handleTouchEnd"
   >
     <!-- Header -->
-    <header v-if="showBackButton" class="h-12 flex items-center justify-center relative px-6 border-light-border dark:border-dark-border">
+    <header 
+      v-if="showBackButton" 
+      class="pt-[env(safe-area-inset-top)] min-h-12 flex items-center justify-center relative px-6 border-light-border dark:border-dark-border"
+    >
       <button 
         v-if="showBackButton"
         @click="emit('back-click')"
-        class="absolute left-4 w-10 h-10 flex items-center justify-center text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors"
+        class="absolute bottom-1 left-4 w-10 h-10 flex items-center justify-center text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors"
       >
         <ChevronLeft :size="28" />
       </button>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-hidden">
+    <main 
+      class="flex-1 overflow-hidden pt-14"
+      :class="hideBottomNav ? 'bg-black' : 'bg-light-bg dark:bg-dark-bg'"
+    >
       <router-view 
         @add-task="emit('add-task')"
         @task-details="(task: Task) => emit('task-details', task)"
@@ -133,8 +139,8 @@ const handleSwipeRight = () => {
     </main>
 
     <!-- Bottom Navigation -->
-    <nav v-if="!hideBottomNav" class="bg-light-pure dark:bg-dark-pure border-t border-light-border dark:border-dark-border touch-none">
-      <div class="h-16 flex items-center justify-around px-4 pb-2">
+    <nav v-if="!hideBottomNav" class="bg-light-pure dark:bg-dark-pure border-t border-light-border dark:border-dark-border touch-none pb-[env(safe-area-inset-bottom)]">
+      <div class="h-16 flex items-center justify-around px-4">
         <button 
           @click="navigateTo('/')"
           :class="[

@@ -13,7 +13,6 @@ use tauri::{
     tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
     WindowEvent,
 };
-use tokio::time::sleep;
 
 use crate::database::{
     category::CategoryActions,
@@ -129,7 +128,6 @@ pub fn run() {
             settings_get_all_settings,
             settings_set_setting_value,
             settings_get_setting_categories,
-            settings_get_setting_categories,
             settings_get_settings_for_category,
             update_tray
         ]);
@@ -148,19 +146,31 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_haptics::init())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_safe_area_insets_css::init())
+        // .plugin(tauri_plugin_safe_area_insets_css::init())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
             tauri::async_runtime::block_on(async {
-                let db = Arc::new(database::create_database(Some(app)).await);
-                let sa = SessionActions::new(db.clone());
-                let sta = SettingActions::new(db.clone());
-                let ca = CategoryActions::new(db.clone());
-                app.manage(AppState {
-                    categories: ca,
-                    session: sa,
-                    settings: sta,
-                });
+                println!("Setup: starting async block");
+                match database::create_database(Some(app)).await {
+                    Ok(db) => {
+                        println!("Setup: database created, managing state");
+                        let db = Arc::new(db);
+                        let sa = SessionActions::new(db.clone());
+                        let sta = SettingActions::new(db.clone());
+                        let ca = CategoryActions::new(db.clone());
+                        app.manage(AppState {
+                            categories: ca,
+                            session: sa,
+                            settings: sta,
+                        });
+                        println!("Setup: state managed");
+                    }
+                    Err(e) => {
+                        eprintln!("Error creating database: {e}");
+                        // Force a visible log for the user
+                        println!("CRITICAL ERROR: {e}");
+                    }
+                }
             });
 
             // System Tray
@@ -223,6 +233,25 @@ pub fn run() {
                         let _ = window_clone.hide();
                     }
                 });
+            }
+
+            // Disable content inset adjustment on iOS
+            #[cfg(mobile)]
+            if let Some(window) = app.get_webview_window("main") {
+                window
+                    .with_webview(|webview| {
+                        #[cfg(target_os = "ios")]
+                        unsafe {
+                            use objc::runtime::{Object, Sel};
+                            use objc::{msg_send, sel, sel_impl};
+
+                            let wk_webview = webview.inner() as *mut Object;
+                            let scroll_view: *mut Object = msg_send![wk_webview, scrollView];
+                            let () = msg_send![scroll_view, setContentInsetAdjustmentBehavior: 2];
+                            // 2 = UIScrollViewContentInsetAdjustmentNever
+                        }
+                    })
+                    .expect("failed to run on UI thread");
             }
 
             Ok(())
