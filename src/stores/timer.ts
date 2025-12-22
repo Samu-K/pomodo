@@ -82,6 +82,7 @@ export const useTimerStore = defineStore("timer", () => {
 	const mode = ref<TimerMode>(TimerMode.FOCUS);
 	const isRunning = ref(false);
 	const categoryId = ref<number | null>(null);
+	const taskId = ref<number | null>(null);
 	const currentSessionId = ref<number | null>(null);
 	let endTime: number | undefined;
 
@@ -243,6 +244,7 @@ export const useTimerStore = defineStore("timer", () => {
 					duration: focusDuration.value,
 					finished: false,
 					category_id: categoryId.value,
+					task_id: taskId.value, // Include task ID
 					notes: null,
 					created_at: null,
 					last_modified: null
@@ -324,11 +326,18 @@ export const useTimerStore = defineStore("timer", () => {
 			}
 			mode.value = TimerMode.FOCUS;
 			remainingTime.value = focusDuration.value;
+			if (focus_auto_start.value) {
+				startTimer();
+			}
 		}
 	};
 
 	const setCategoryId = (id: number | null | undefined) => {
 		categoryId.value = id ?? null;
+	};
+
+	const setTaskId = (id: number | null) => {
+		taskId.value = id;
 	};
 
 	// --- Helpers ---
@@ -360,6 +369,7 @@ export const useTimerStore = defineStore("timer", () => {
 		mode,
 		sessionStreak,
 		categoryId,
+		taskId,
 		long_break_interval,
 		isReady,
 
@@ -373,6 +383,7 @@ export const useTimerStore = defineStore("timer", () => {
 		toggleTimer,
 		resetTimer,
 		skip,
-		setCategoryId
+		setCategoryId,
+		setTaskId
 	};
 });

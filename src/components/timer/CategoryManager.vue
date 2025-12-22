@@ -115,6 +115,11 @@ const confirmDelete = () => {
 	showDeleteConfirm.value = false;
 	categoryToDelete.value = null;
 };
+
+// Expose showDialog so parent can open the dialog programmatically
+defineExpose({
+	showDialog
+});
 </script>
 
 <template>

@@ -2,22 +2,62 @@
 import { Pause, Play, RotateCcw, SkipForward } from "lucide-vue-next";
 import { computed, onMounted, ref } from "vue";
 import CategoryManager from "../../components/timer/CategoryManager.vue";
+import TaskManager from "../../components/timer/TaskManager.vue";
 
 import { useCategoryStore } from "../../stores/categories";
 import { useSettingsStore } from "../../stores/settings";
+import { useTasks } from "../../stores/task";
 import { useThemeStore } from "../../stores/theme";
 import { TimerMode, useTimerStore } from "../../stores/timer";
+import type { Task } from "../../defines/task";
 
 const timer = useTimerStore();
 const categoryStore = useCategoryStore();
 const themeStore = useThemeStore();
 const settingsStore = useSettingsStore();
+const tasksStore = useTasks();
 
-const isDark = computed(() => settingsStore.theme === 'dark');
+const showTaskManager = ref(false);
+const categoryManagerRef = ref<InstanceType<typeof CategoryManager> | null>(null);
 
-onMounted(() => {
+const handleSelectCategory = () => {
+	// Open category manager dialog programmatically
+	if (categoryManagerRef.value?.showDialog !== undefined) {
+		categoryManagerRef.value.showDialog = true;
+	}
+};
+
+const selectedTask = computed(() => {
+	if (!timer.taskId) return null;
+	// Try to find in expanded tasks first (most likely for Today)
+	return (
+		tasksStore.expandedTasks.find((t) => t.id === timer.taskId) ||
+		tasksStore.tasks.find((t) => t.id === timer.taskId) ||
+		null
+	);
+});
+
+const handleTaskSelect = (task: Task) => {
+	timer.setTaskId(task.id);
+	if (task.category_id) {
+		timer.setCategoryId(task.category_id);
+	}
+	showTaskManager.value = false;
+};
+
+const handleTaskClear = () => {
+	timer.setTaskId(null);
+	showTaskManager.value = false;
+};
+
+const isDark = computed(() => settingsStore.theme === "dark");
+
+onMounted(async () => {
 	if (categoryStore.categories.length === 0) {
-		categoryStore.fetchCategories();
+		await categoryStore.fetchCategories();
+	}
+	if (tasksStore.tasks.length === 0) {
+		await tasksStore.fetchTasks();
 	}
 });
 
@@ -51,14 +91,14 @@ const allowReset = computed(() => {
 
 const categoryStyle = computed(() => {
 	const color = selectedCategory.value?.color;
-	const defaultGray = themeStore.getColor("text.secondary");
+	const pomodoOrange = themeStore.getColor("pomodo.orange") || "#FF6B35";
 
 	if (!color) {
-		// No category selected (e.g. deleted while running)
+		// No category color - use pomodo orange as default
 		return {
-			backgroundColor: themeStore.hexToRgba(defaultGray, 0.1),
-			color: defaultGray,
-			borderColor: themeStore.hexToRgba(defaultGray, 0.2)
+			backgroundColor: themeStore.hexToRgba(pomodoOrange, 0.15),
+			color: pomodoOrange,
+			borderColor: themeStore.hexToRgba(pomodoOrange, 0.3)
 		};
 	}
 
@@ -69,7 +109,7 @@ const categoryStyle = computed(() => {
 	return {
 		backgroundColor: themeStore.hexToRgba(hexColor, 0.15),
 		color: hexColor,
-		borderColor: themeStore.hexToRgba(hexColor, 0.2)
+		borderColor: themeStore.hexToRgba(hexColor, 0.3)
 	};
 });
 
@@ -165,20 +205,41 @@ defineExpose({
                 {{ timer.formattedTime }}
             </div>
 
-            <div class="w-64 h-22" v-if="timer.mode === TimerMode.FOCUS">
-                <div v-if="showCategorySelector" class="flex items-center justify-center">
-                    <CategoryManager 
-                        :selectedCategory="selectedCategory"
-                        @select="(cat) => timer.setCategoryId(cat.id)"
-                    />
-                </div>
-                <div v-else 
-                     class="flex items-center justify-center px-6 py-2 rounded-full border transition-all -mt-5 mx-auto w-fit"
-                     :style="categoryStyle">
-                    <span class="text-lg font-medium tracking-wide truncate max-w-[200px]">
-                        {{ selectedCategory ? selectedCategory.name : "No category selected" }}
-                    </span>
-                </div>
+            <div class="w-72 h-22 mb-8 flex justify-center" v-if="timer.mode === TimerMode.FOCUS">
+                <!-- Show task/category info if selected, otherwise show "Select Focus" button -->
+                <v-btn 
+                     @click="showTaskManager = true" 
+                     variant="outlined"
+                     :color="selectedCategory?.color || 'orange'"
+                     class="px-6 py-3 mx-auto block"
+                     :class="showCategorySelector ? '' : '-mt-5'">
+                    <template v-if="timer.taskId && selectedTask">
+                        <span class="font-semibold tracking-wider">{{ selectedTask.title }}</span>
+                    </template>
+                    <template v-else-if="selectedCategory">
+                        <span class="font-medium tracking-wide">{{ selectedCategory.name }}</span>
+                    </template>
+                    <template v-else>
+                        <span>Select Focus</span>
+                    </template>
+                </v-btn>
+            </div>
+            
+            <TaskManager 
+                v-if="showTaskManager" 
+                :selectedTaskId="timer.taskId"
+                @select="handleTaskSelect" 
+                @clear="handleTaskClear"
+                @selectCategory="handleSelectCategory"
+                @close="showTaskManager = false"
+            />
+            
+            <div class="absolute" style="width: 0; height: 0; overflow: hidden;">
+                <CategoryManager 
+                    ref="categoryManagerRef"
+                    :selectedCategory="selectedCategory"
+                    @select="(cat) => timer.setCategoryId(cat.id)"
+                />
             </div>
             
             <div v-if="isFocusRunning" class="text-text-muted text-sm animate-pulse">

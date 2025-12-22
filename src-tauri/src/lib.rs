@@ -1,5 +1,5 @@
 pub mod database;
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
 use paste::paste;
 use specta::specta;
 use std::sync::Arc;
@@ -18,16 +18,18 @@ use crate::database::{
     category::CategoryActions,
     decls::{
         Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, Session, SessionGetVec,
-        SettingCatGetVec, SettingGetVec, StringReturn,
+        SettingCatGetVec, SettingGetVec, StringReturn, Task, TaskGetVec,
     },
     session::SessionActions,
     settings::SettingActions,
+    task::TaskActions,
 };
 
 pub struct AppState {
     pub categories: CategoryActions,
     pub session: SessionActions,
     pub settings: SettingActions,
+    pub tasks: TaskActions,
 }
 
 pub struct TrayState {
@@ -95,12 +97,17 @@ tauri_commands! {
     session::set_session_complete(id: i64) -> NoReturn,
     session::set_session_category(session_id: i64, cat_id: i64) -> NoReturn,
     session::set_session_length(session_id: i64, len: u16) -> NoReturn,
-    session::delete_session(sessionId: i64) -> NoReturn,
+    session::delete_session(session_id: i64) -> NoReturn,
     settings::get_setting_value(key: String) -> StringReturn,
     settings::get_all_settings() -> SettingGetVec,
     settings::set_setting_value(value: String, id: i64) -> NoReturn,
     settings::get_setting_categories() -> SettingCatGetVec,
-    settings::get_settings_for_category(cat_id: i64) -> SettingGetVec
+    settings::get_settings_for_category(cat_id: i64) -> SettingGetVec,
+    tasks::add_task(task: Task) -> IdReturn,
+    tasks::get_tasks() -> TaskGetVec,
+    tasks::update_task(task: Task) -> NoReturn,
+    tasks::delete_task(id: i64) -> NoReturn,
+    tasks::complete_task_instance(parent_task_id: i64, date: NaiveDateTime) -> IdReturn
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -129,6 +136,11 @@ pub fn run() {
             settings_set_setting_value,
             settings_get_setting_categories,
             settings_get_settings_for_category,
+            tasks_add_task,
+            tasks_get_tasks,
+            tasks_update_task,
+            tasks_delete_task,
+            tasks_complete_task_instance,
             update_tray
         ]);
 
@@ -158,10 +170,12 @@ pub fn run() {
                         let sa = SessionActions::new(db.clone());
                         let sta = SettingActions::new(db.clone());
                         let ca = CategoryActions::new(db.clone());
+                        let ta = TaskActions::new(db.clone());
                         app.manage(AppState {
                             categories: ca,
                             session: sa,
                             settings: sta,
+                            tasks: ta,
                         });
                         println!("Setup: state managed");
                     }

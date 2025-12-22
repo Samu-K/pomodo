@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { Task } from "../../defines/task.ts";
-import { updateTask } from "../../funcs/task.ts";
+import { useTasks } from "../../stores/task";
 import TaskEditBlock from "./TaskEditBlock.vue";
 
 const emit = defineEmits<{
@@ -12,13 +12,22 @@ const props = defineProps<{
 	selTask: Task;
 }>();
 
+const taskStore = useTasks();
+
 const saveAndExit = () => {
-	updateTask(props.selTask, recurrenceChanged.value);
+	taskStore.updateTask(props.selTask, recurrenceChanged.value);
 	emit("close");
 };
 
 const exitWithoutSave = () => {
-	emit("close");
+    emit("close");
+};
+
+const deleteTask = async () => {
+    if (confirm("Are you sure you want to delete this task?")) {
+        await taskStore.deleteTask(props.selTask.id);
+        emit("close");
+    }
 };
 
 const recurrenceChanged = ref(false);
@@ -40,7 +49,13 @@ watch(
     
       <TaskEditBlock :selTask="props.selTask" />
 
-      <div class="flex gap-3 mt-8 ">
+      <div class="flex gap-3 mt-8">
+        <button 
+          @click="deleteTask"
+          class="px-4 py-2 bg-dark-surface border border-red-500/30 text-red-500 rounded-lg font-semibold hover:bg-red-500/10 transition-colors"
+        >
+          Delete
+        </button>
         <button 
           @click="exitWithoutSave"
           class="flex-1 py-2 bg-dark-surface border border-dark-border rounded-lg text-text-secondary font-semibold hover:bg-dark-border transition-colors"

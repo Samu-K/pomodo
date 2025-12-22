@@ -1,23 +1,24 @@
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
 import { X } from "lucide-vue-next";
 import { ref } from "vue";
 import { RecurrenceType } from "../../defines/recur.ts";
 import { Task } from "../../defines/task.ts";
-import { createTaskWithRecurrence } from "../../funcs/task.ts";
 import TaskEditBlock from "./TaskEditBlock.vue";
+import { useTasks } from "../../stores/task";
 
 const emit = defineEmits<{
 	close: [];
 }>();
 
 const curDate = ref<Date>(new Date());
+const tasksStore = useTasks();
 
 const newTask = ref<Task>({
 	id: 0,
 	title: "",
 	category: "",
-	cycles: 0,
+	category_id: null,
+	cycles: 1,
 	startTime: curDate.value,
 	recurrence: {
 		type: RecurrenceType.NONE
@@ -27,13 +28,7 @@ const newTask = ref<Task>({
 });
 
 const saveTask = async () => {
-	let ret = await createTaskWithRecurrence(newTask.value);
-	await invoke("task_get_tasks")
-		.then((tasks) => console.log(tasks))
-		.catch((error) => console.error(error));
-	await invoke("task_get_rules_for_task", { task_id: ret.task_id })
-		.then((rules) => console.log(rules))
-		.catch((error) => console.error(error));
+	await tasksStore.addTask(newTask.value);
 	emit("close");
 };
 </script>
