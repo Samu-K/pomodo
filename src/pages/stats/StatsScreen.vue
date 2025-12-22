@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
 import { Settings } from "lucide-vue-next";
-import { computed, type Ref, ref } from "vue";
+import { computed, onMounted, type Ref, ref } from "vue";
 import { useRouter } from "vue-router";
 import WeeklyFocusChart from "../../components/stats/WeeklyFocusChart.vue";
 import WeeklyOverview from "../../components/stats/WeeklyOverview.vue";
@@ -12,8 +12,36 @@ import {
 	isSameWeek,
 	isToday
 } from "../../funcs/stats/date_handling";
+import { useTasks } from "../../stores/task";
+import { CheckCircle, ListTodo, TrendingUp } from "lucide-vue-next";
 
 const router = useRouter();
+const tasksStore = useTasks();
+
+// Task Stats Logic
+const taskStats = computed(() => {
+	const total = tasksStore.expandedTasks.length;
+	const completed = tasksStore.expandedTasks.filter(t => t.completed).length;
+	const pending = total - completed;
+	const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+	return {
+		total,
+		completed,
+		pending,
+		rate
+	};
+});
+
+onMounted(() => {
+	const now = new Date();
+	const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+	const endOfDay = new Date(now.setHours(23, 59, 59, 999));
+	
+	tasksStore.fetchTasks().then(() => {
+		tasksStore.expandTasksForRange(startOfDay, endOfDay);
+	});
+});
 
 const categoriesState = useQuery({
 	queryKey: ["categories"],
@@ -89,7 +117,8 @@ const weeklySessionsRaw = computed(() => {
 
       <!-- Focus Time Section -->
       <section class="mb-10">
-        <h2 class="text-lg font-semibold text-lightText-primary dark:text-white mb-5">Focus Time  -  Total {{formatDuration(total_seconds_today)}}</h2>
+        <h2 class="text-lg font-semibold text-lightText-primary dark:text-white mb-1">Focus Time  -  Total {{formatDuration(total_seconds_today)}}</h2>
+        <h2 class="text-base font-medium text-lightText-primary dark:text-white mb-5">Tasks Done - Total {{taskStats.completed}}</h2>
         
         <div v-for="item in todaysFocusData" :key="item.category" class="flex items-center mb-5">
           <div class="flex items-center gap-3 w-24">
@@ -119,30 +148,45 @@ const weeklySessionsRaw = computed(() => {
         </p>
       </section>
 
-      <!-- Completed Tasks Section -->
-      <!--
-      <section class="mb-10">
-        <h2 class="text-lg font-semibold text-white mb-5">Completed Tasks</h2>
-        
-        <div class="space-y-3">
-          <div 
-            v-for="task in completedTasks" 
-            :key="task.id"
-            class="flex items-center justify-between p-3 bg-dark-surface rounded-lg"
-          >
-            <div class="flex items-center gap-3">
-              <CheckCircle :size="18" class="text-green-500" />
-              <span class="text-white">{{ task.name }}</span>
-            </div>
-            <span class="text-text-secondary text-sm">{{ task.duration }}</span>
-          </div>
-        </div>
-      </section>
-      -->
-
       <!-- Weekly Overview -->
       <section>
         <WeeklyOverview :data="weeklySessionsRaw"/>
+        
+        <!-- Task Stats (Row 2) -->
+        <div class="grid grid-cols-3 gap-4 mt-4">
+          <!-- Completed Card -->
+          <div class="bg-light-surface dark:bg-dark-surface rounded-xl p-4 text-center">
+            <div class="flex justify-center mb-2">
+              <CheckCircle :size="20" class="text-green-500" />
+            </div>
+            <div class="text-2xl font-bold text-green-500 mb-1">
+              {{ taskStats.completed }}
+            </div>
+            <div class="text-xs text-lightText-muted dark:text-text-muted">Done</div>
+          </div>
+
+          <!-- Pending Card -->
+          <div class="bg-light-surface dark:bg-dark-surface rounded-xl p-4 text-center">
+            <div class="flex justify-center mb-2">
+              <ListTodo :size="20" class="text-pomodo-orange" />
+            </div>
+            <div class="text-2xl font-bold text-pomodo-orange mb-1">
+              {{ taskStats.pending }}
+            </div>
+            <div class="text-xs text-lightText-muted dark:text-text-muted">To Do</div>
+          </div>
+
+          <!-- Rate Card -->
+          <div class="bg-light-surface dark:bg-dark-surface rounded-xl p-4 text-center">
+            <div class="flex justify-center mb-2">
+              <TrendingUp :size="20" class="text-blue-500" />
+            </div>
+            <div class="text-2xl font-bold text-blue-500 mb-1">
+              {{ taskStats.rate }}%
+            </div>
+            <div class="text-xs text-lightText-muted dark:text-text-muted">Completion</div>
+          </div>
+        </div>
       </section>
 
       <!-- Week Chart Preview -->

@@ -31,7 +31,7 @@ onMounted(async () => {
 	}
 	// Initialize theme from settings
 	await settingsStore.initTheme();
-	vuetifyTheme.global.name.value = settingsStore.theme;
+	vuetifyTheme.global.name.value = settingsStore.resolvedTheme;
 
 	// Request notification permissions
 	const permissionGranted = await isPermissionGranted();
@@ -47,7 +47,7 @@ onMounted(async () => {
 
 // Watch settings store theme and sync Vuetify theme
 watch(
-	() => settingsStore.theme,
+	() => settingsStore.resolvedTheme,
 	(newTheme) => {
 		vuetifyTheme.global.name.value = newTheme;
 	}

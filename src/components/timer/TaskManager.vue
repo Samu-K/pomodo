@@ -53,27 +53,27 @@ const clearTask = () => {
 <template>
   <v-dialog v-model="dialogOpen" max-width="400" class="mx-4">
     <v-card class="rounded-2xl">
-      <v-card-title class="text-pomodo-orange font-semibold">
-        Today's Focus
+      <v-card-title class="font-semibold ">
+        Select Task
       </v-card-title>
       
-      <v-card-text class="px-12" style="height: 300px">
+      <v-card-text class="px-6 overflow-y-auto" style="max-height: 50vh">
         <div v-if="filteredTasks.length === 0" class="text-center text-text-muted py-8">
           No tasks scheduled for today.
         </div>
         
-        <div v-else class="flex flex-col">
+        <div v-else class="flex flex-col py-2">
           <v-btn
             v-for="task in filteredTasks"
             :key="task.id + '_' + task.startTime.toISOString()"
             @click="selectTask(task)"
             variant="tonal"
-            class="mt-4 task-btn"
+            class="mt-3 task-btn"
             :color="selectedTaskId === task.id ? 'orange' : undefined"
           >
             <div class="flex flex-col items-center w-full py-2">
-              <span class="font-medium">{{ task.title }}</span>
-              <span class="text-xs opacity-70" v-if="task.category">{{ task.category }}</span>
+              <span class="font-medium text-center break-words w-full px-2" style="line-height: 1.3">{{ task.title }}</span>
+              <span class="text-xs opacity-70 mt-1" v-if="task.category">{{ task.category }}</span>
             </div>
           </v-btn>
         </div>

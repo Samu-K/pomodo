@@ -57,7 +57,11 @@ const settingSections = computed<SectionSettingProps[]>(() => {
 	return sections;
 });
 
-const themeOptions = ["dark", "light"];
+const themeOptions = [
+	{ value: "system", label: "Use system" },
+	{ value: "dark", label: "Dark" },
+	{ value: "light", label: "Light" }
+];
 
 const handleSettingChange = (id: number, value: string | number | boolean) => {
 	const settingIndex = draftSettings.value.findIndex((s) => s.id === id);
@@ -73,7 +77,7 @@ const handleSettingChange = (id: number, value: string | number | boolean) => {
 	}
 };
 
-const handleThemeChange = (value: "light" | "dark") => {
+const handleThemeChange = (value: "light" | "dark" | "system") => {
 	settingsStore.setTheme(value);
 };
 
@@ -180,21 +184,17 @@ onBeforeRouteLeave((to, _from, next) => {
             <p class="text-xs text-lightText-muted dark:text-text-muted mt-1">Choose your preferred theme</p>
           </div>
           <v-select
-            v-model="settingsStore.theme"
+            :model-value="settingsStore.theme"
             :items="themeOptions"
-            @update:model-value="(value) => handleThemeChange(value as 'light' | 'dark')"
+            item-title="label"
+            item-value="value"
+            @update:model-value="(value) => handleThemeChange(value as 'light' | 'dark' | 'system')"
             density="compact"
             variant="outlined"
             hide-details
             color="primary"
-            max-width="120"
+            max-width="150"
           >
-            <template v-slot:selection="{ item }">
-              {{ item.value.charAt(0).toUpperCase() + item.value.slice(1) }}
-            </template>
-            <template v-slot:item="{ item, props }">
-              <v-list-item v-bind="props" :title="item.value.charAt(0).toUpperCase() + item.value.slice(1)" />
-            </template>
           </v-select>
         </div>
       </section>

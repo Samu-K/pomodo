@@ -6,11 +6,15 @@ import { Task } from "../../defines/task.ts";
 import { useTasks } from "../../stores/task";
 import TaskEditBlock from "./TaskEditBlock.vue";
 
+const props = defineProps<{
+  initialDate?: Date;
+}>();
+
 const emit = defineEmits<{
 	close: [];
 }>();
 
-const curDate = ref<Date>(new Date());
+const curDate = ref<Date>(props.initialDate || new Date());
 const tasksStore = useTasks();
 
 const newTask = ref<Task>({
@@ -41,7 +45,7 @@ const saveTask = async () => {
         <h2 class="text-xl font-semibold text-pomodo-orange">Create New Task</h2>
         <button 
           @click="emit('close')"
-          class="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white transition-colors"
+          class="w-8 h-8 flex items-center justify-center text-lightText-muted dark:text-text-muted hover:text-lightText-primary dark:hover:text-white transition-colors"
         >
           <X :size="20" />
         </button>

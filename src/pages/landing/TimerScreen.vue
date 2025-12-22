@@ -212,7 +212,7 @@ defineExpose({
                      @click="showTaskManager = true" 
                      variant="outlined"
                      :color="selectedCategory?.color || 'orange'"
-                     class="px-6 py-3 mx-auto block"
+                     class="px-6 mx-auto block"
                      :class="showCategorySelector ? '' : '-mt-5'">
                     <template v-if="timer.taskId && selectedTask">
                         <span class="font-semibold tracking-wider">{{ selectedTask.title }}</span>
@@ -221,7 +221,7 @@ defineExpose({
                         <span class="font-medium tracking-wide">{{ selectedCategory.name }}</span>
                     </template>
                     <template v-else>
-                        <span>Select Focus</span>
+                        <span>Select Task</span>
                     </template>
                 </v-btn>
             </div>

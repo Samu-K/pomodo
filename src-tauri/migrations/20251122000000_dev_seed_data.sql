@@ -158,3 +158,128 @@ VALUES ('2025-10-05 10:00:00', 1500, 1, 2, 'Notes with emojis 🚀 and SQL injec
 INSERT INTO sessions (start_time, duration, finished, category_id, notes) 
 VALUES ('2025-11-01 09:00:00', 0, 0, 5, 'Started and immediately stopped');
 
+-- ---------------------------------------------------------
+-- 4. Seed Tasks
+-- ---------------------------------------------------------
+INSERT INTO tasks (title, category_id, estimated_pomodoros, start_datetime, is_completed, created_at)
+WITH RECURSIVE 
+    -- A. Generate Dates (Sept 1 - Nov 20)
+    task_dates(dt) AS (
+        SELECT datetime('2025-09-01 09:00:00')
+        UNION ALL
+        SELECT datetime(dt, '+1 day') FROM task_dates WHERE dt < '2025-11-20 09:00:00'
+    ),
+    
+    -- B. Valid Dates (Exclude Gap Day: Oct 10)
+    valid_task_dates(dt) AS (
+        SELECT dt FROM task_dates 
+        WHERE date(dt) != '2025-10-10'
+    ),
+
+    -- C. Generate Daily Load (0 to 3 tasks per day)
+    -- We'll use a random multiplier to decide how many rows to generate per day
+    daily_tasks(dt, i) AS (
+        SELECT dt, 1 FROM valid_task_dates
+        UNION ALL
+        SELECT dt, i + 1 FROM daily_tasks WHERE i < (abs(random()) % 4) -- 0 to 3 tasks
+    )
+
+SELECT 
+    -- TITLE
+    'Task ' || date(dt) || ' #' || i as title,
+
+    -- CATEGORY: 1, 2, 3, or 5. (Exclude 4)
+    CASE (abs(random()) % 4)
+        WHEN 0 THEN 1 -- Work
+        WHEN 1 THEN 2 -- School
+        WHEN 2 THEN 3 -- Project 1
+        WHEN 3 THEN 5 -- Other
+    END as category_id,
+
+    -- ESTIMATED POMODOROS: 1-4
+    (abs(random()) % 4) + 1 as estimated_pomodoros,
+
+    -- START TIME: Random offset from 9am
+    datetime(dt, '+' || (abs(random()) % 8) || ' hours') as start_datetime,
+
+    -- COMPLETED: 80% chance
+    CASE WHEN (abs(random()) % 10) < 8 THEN 1 ELSE 0 END as is_completed,
+
+    CURRENT_TIMESTAMP
+FROM daily_tasks;
+
+-- Edge Cases
+INSERT INTO tasks (title, category_id, estimated_pomodoros, start_datetime, is_completed) VALUES
+('Super Long Task Title That Goes On And On And On For Testing Layout Wrapping And Overflow Issues In The UI ' || 
+ 'Because We Need To Be Sure It Does Not Break Anything', 1, 5, '2025-09-02 10:00:00', 0),
+('🚀 Start Mars Mission (Critical)', 2, 10, '2025-09-05 14:00:00', 1),
+('Uncategorized Floating Task', NULL, 1, '2025-09-12 12:00:00', 0);
+
+-- ---------------------------------------------------------
+-- 5. Seed Tasks: Current Week
+-- ---------------------------------------------------------
+INSERT INTO tasks (title, category_id, estimated_pomodoros, start_datetime, is_completed, created_at)
+WITH RECURSIVE 
+    -- 1. Define Week Start (Monday)
+    week_start(dt) AS (
+        SELECT date('now', '-6 days', 'weekday 1')
+    ),
+
+    -- 2. Generate 7 Days
+    week_dates(dt) AS (
+        SELECT dt FROM week_start
+        UNION ALL
+        SELECT date(dt, '+1 day') FROM week_dates WHERE dt < date((SELECT dt FROM week_start), '+6 days')
+    ),
+
+    -- 3. Define Gap Day (same logic as sessions: Sat or Sun, never Today)
+    gap_config(gap_dt) AS (
+        SELECT CASE 
+            WHEN date('now') = date((SELECT dt FROM week_start), '+6 days') 
+            THEN date((SELECT dt FROM week_start), '+5 days') 
+            ELSE date((SELECT dt FROM week_start), '+6 days')
+        END
+    ),
+
+    -- 4. Assign Daily Task Count (3-6 tasks)
+    daily_task_targets(dt, target_count) AS (
+        SELECT 
+            w.dt,
+            CASE 
+                WHEN w.dt = g.gap_dt THEN 0
+                ELSE 3 + (abs(random()) % 4) -- 3 to 6 tasks
+            END
+        FROM week_dates w, gap_config g
+    ),
+
+    -- 5. Slot Generator (Max 6)
+    slots(i) AS (
+        SELECT 1 UNION ALL SELECT i + 1 FROM slots WHERE i < 6
+    )
+
+SELECT 
+    -- TITLE
+    'Current Week Task ' || date(dt) || ' #' || i,
+
+    -- CATEGORY: 1, 2, 3, or 5
+    CASE (abs(random()) % 4)
+        WHEN 0 THEN 1 -- Work
+        WHEN 1 THEN 2 -- School
+        WHEN 2 THEN 3 -- Project 1
+        WHEN 3 THEN 5 -- Other
+    END,
+
+    -- ESTIMATED POMODOROS: 1-4
+    (abs(random()) % 4) + 1,
+
+    -- START TIME: 09:00 to 17:00
+    datetime(dt, '+' || (9 + abs(random()) % 9) || ' hours', '+' || (abs(random()) % 60) || ' minutes'),
+
+    -- COMPLETED: 50% chance (mix for testing)
+    CASE WHEN (abs(random()) % 2) = 0 THEN 1 ELSE 0 END,
+
+    CURRENT_TIMESTAMP
+FROM daily_task_targets t
+CROSS JOIN slots s
+WHERE s.i <= t.target_count;
+

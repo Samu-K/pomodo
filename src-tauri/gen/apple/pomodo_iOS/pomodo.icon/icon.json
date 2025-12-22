@@ -1,0 +1,66 @@
+{
+  "fill" : {
+    "automatic-gradient" : "extended-srgb:0.00000,0.47843,1.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "blend-mode" : "normal",
+      "blur-material" : null,
+      "hidden" : false,
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "pomodo_stem.svg",
+          "name" : "pomodo_stem",
+          "position" : {
+            "scale" : 2.65,
+            "translation-in-points" : [
+              0.8903999999999996,
+              -300.8671875
+            ]
+          }
+        },
+        {
+          "glass" : true,
+          "image-name" : "pomodo_p.svg",
+          "name" : "pomodo_p",
+          "position" : {
+            "scale" : 2.65,
+            "translation-in-points" : [
+              -279.1557580191827,
+              30.97499949891337
+            ]
+          }
+        },
+        {
+          "glass" : true,
+          "image-name" : "pomodo_d.svg",
+          "name" : "pomodo_d",
+          "position" : {
+            "scale" : 2.65,
+            "translation-in-points" : [
+              93.91227830499975,
+              80
+            ]
+          }
+        }
+      ],
+      "lighting" : "individual",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.4
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.45
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

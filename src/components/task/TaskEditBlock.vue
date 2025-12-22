@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { mdiClockOutline } from "@mdi/js";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import {
 	CustomRecurrence,
@@ -12,10 +12,85 @@ import {
 	RepeatUntilType
 } from "../../defines/recur.ts";
 import { Task } from "../../defines/task.ts";
+import { useCategoryStore } from "../../stores/categories.ts";
+import { useSettingsStore } from "../../stores/settings.ts";
 
 const props = defineProps<{
 	selTask: Task;
 }>();
+
+const settingsStore = useSettingsStore();
+
+// Get timer settings from settings store
+const focusDuration = computed(() => {
+	const val = settingsStore.settings.find(
+		(s) => s.key === "Focus Duration"
+	)?.value;
+	return val ? Number(val) : 25; // Default to 25 minutes
+});
+
+const shortBreakTime = computed(() => {
+	const val = settingsStore.settings.find(
+		(s) => s.key === "Short Break Time"
+	)?.value;
+	return val ? Number(val) : 5; // Default to 5 minutes
+});
+
+const longBreakTime = computed(() => {
+	const val = settingsStore.settings.find(
+		(s) => s.key === "Long Break Time"
+	)?.value;
+	return val ? Number(val) : 15; // Default to 15 minutes
+});
+
+const longBreakInterval = computed(() => {
+	const val = settingsStore.settings.find(
+		(s) => s.key === "Long Break Interval"
+	)?.value;
+	return val ? Number(val) : 4; // Default to every 4 pomodoros
+});
+
+/**
+ * Calculate total task duration in minutes, including rest breaks.
+ * @param cycles - Number of pomodoro cycles
+ * @returns Total duration in minutes (focus time + break time)
+ */
+const calculateTaskDuration = (cycles: number): number => {
+	if (cycles <= 0) return 0;
+	if (cycles === 1) return focusDuration.value; // Single cycle, no breaks
+
+	// Focus time
+	const totalFocusTime = cycles * focusDuration.value;
+
+	// Calculate number of breaks (between each focus session)
+	const totalBreaks = cycles - 1;
+
+	// How many long breaks occur?
+	// Long break happens after every longBreakInterval cycles
+	const longBreaksCount = Math.floor(cycles / longBreakInterval.value);
+	const shortBreaksCount = totalBreaks - longBreaksCount;
+
+	// Total break time
+	const totalBreakTime =
+		shortBreaksCount * shortBreakTime.value +
+		longBreaksCount * longBreakTime.value;
+
+	return totalFocusTime + totalBreakTime;
+};
+
+const formatDuration = (minutes: number): string => {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  if (h === 0) return `${m} minutes`;
+  if (m === 0) return `${h} hours`;
+  return `${h}h ${m}m`;
+};
+
+const estimatedDurationString = computed(() => {
+  const cycles = props.selTask.cycles || 1;
+  const totalMinutes = calculateTaskDuration(cycles);
+  return formatDuration(totalMinutes);
+});
 
 watch(
 	() => props.selTask.recurrence.type,
@@ -52,7 +127,17 @@ watch(
 	}
 );
 
-const categories = ["work", "study", "personal"];
+const categoryStore = useCategoryStore();
+
+// Fetch categories on mount if not already loaded
+onMounted(async () => {
+	if (settingsStore.settings.length === 0) {
+		await settingsStore.fetchSettings();
+	}
+	if (categoryStore.categories.length === 0) {
+		await categoryStore.fetchCategories();
+	}
+});
 
 /**
  * Checks if a given day ID is in the selectedDays array.
@@ -101,10 +186,19 @@ const selectedDate = computed({
 		return props.selTask.startTime ? new Date(props.selTask.startTime) : null;
 	},
 	set: (value: Date | null) => {
-		if (value && selectedTime.value) {
-			const dateStr = value.toLocaleString().split(",")[0];
-			const combinedDateTime = new Date(`${dateStr}, ${selectedTime.value}:00`);
-			props.selTask.startTime = combinedDateTime;
+		if (value) {
+			const current = props.selTask.startTime
+				? new Date(props.selTask.startTime)
+				: new Date();
+			// Create new date preserving the time from current
+			const newDateTime = new Date(value);
+			newDateTime.setHours(
+				current.getHours(),
+				current.getMinutes(),
+				current.getSeconds(),
+				0
+			);
+			props.selTask.startTime = newDateTime;
 		}
 	}
 });
@@ -116,10 +210,11 @@ const selectedTime = computed({
 			: "";
 	},
 	set: (value: string) => {
-		if (value && selectedDate.value) {
-			const dateStr = selectedDate.value.toLocaleString().split(",")[0];
-			const combinedDateTime = new Date(`${dateStr}, ${value}:00`);
-			props.selTask.startTime = combinedDateTime;
+		if (value && props.selTask.startTime) {
+			const [hours, minutes] = value.split(":").map(Number);
+			const newDateTime = new Date(props.selTask.startTime);
+			newDateTime.setHours(hours, minutes, 0, 0);
+			props.selTask.startTime = newDateTime;
 		}
 	}
 });
@@ -137,7 +232,7 @@ const onMinuteSelected = () => {
       <div class="space-y-3">
         <!-- Task Name -->
         <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
             Task Name *
           </label>
           <v-text-field
@@ -149,19 +244,22 @@ const onMinuteSelected = () => {
 
         <!-- Category -->
         <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
             Category
           </label>
           <v-select 
             label="Category"
-            v-model="props.selTask.category"
-            :items="categories"
+            v-model="props.selTask.category_id"
+            :items="categoryStore.categories"
+            item-title="name"
+            item-value="id"
+            clearable
           >
           </v-select>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider">
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider">
             Estimated Pomodoros
           </label>
         </div>
@@ -172,12 +270,15 @@ const onMinuteSelected = () => {
           :hideInput="false"
           :inset="false"
           v-model="props.selTask.cycles"
-          class="w-[50%]"
+          class="w-[50%] "
         ></v-number-input>
+        <p class="text-xs text-light dark:text-text-secondary opacity-80 pl-1 -pt-12">
+          ≈ {{ estimatedDurationString }}
+        </p>
 
         <!-- Schedule For -->
         <div>
-          <h2>Scheduling</h2>
+          <h2 class="text-lightText-primary dark:text-text-primary">Scheduling</h2>
         </div>
         <!-- Date -->
         <v-date-input
@@ -208,7 +309,7 @@ const onMinuteSelected = () => {
 
         <!-- recurrence -->
         <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
             Repeat 
           </label>
           <v-select 
@@ -222,7 +323,7 @@ const onMinuteSelected = () => {
           v-if="selTask.recurrence.type === RecurrenceType.CUSTOM"
         >
             <div class="flex gap-1 items-center justify-start">
-              <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+              <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
                 Repeat every
               </label>
               <v-number-input
@@ -245,7 +346,7 @@ const onMinuteSelected = () => {
             >
               <div class="rounded-lg">
                   
-                  <h2 class="mb-4">
+                  <h2 class="mb-4 text-lightText-primary dark:text-text-primary">
                     Repeat on 
                   </h2>
                   
@@ -255,10 +356,10 @@ const onMinuteSelected = () => {
                       :key="day.id"
                       @click="toggleDay(day.id)"
                       :class="[
-                        'w-10 h-10 flex items-center justify-center rounded-full font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-400',
+                        'w-10 h-10 flex items-center justify-center rounded-full font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-light-bg dark:focus:ring-offset-gray-800 focus:ring-pomodo-orange',
                         isSelected(day.id) 
-                          ? 'bg-blue-300 text-gray-900' 
-                          : 'bg-white/10 text-blue-300 hover:bg-white/20'
+                          ? 'bg-pomodo-orange text-white' 
+                          : 'bg-light-surface dark:bg-white/10 text-pomodo-orange dark:text-blue-300 hover:bg-light-border dark:hover:bg-white/20'
                       ]"
                     >
                       {{ day.label }}
@@ -280,7 +381,7 @@ const onMinuteSelected = () => {
 
         </div>
         <div v-if="selTask.recurrence.type !== RecurrenceType.NONE">
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 pt-8">
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2 pt-8">
             Repeat until 
           </label>
           <v-radio-group v-model="(props.selTask.recurrence as CustomRecurrence).repeatUntilType" >

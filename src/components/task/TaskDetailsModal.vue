@@ -14,8 +14,8 @@ const props = defineProps<{
 
 const taskStore = useTasks();
 
-const saveAndExit = () => {
-	taskStore.updateTask(props.selTask, recurrenceChanged.value);
+const saveAndExit = async () => {
+	await taskStore.updateTask(props.selTask, recurrenceChanged.value);
 	emit("close");
 };
 
@@ -43,7 +43,7 @@ watch(
   <div class="fixed inset-0 bg-black/80 flex items-center justify-center  animate-fade-in overflow-auto"
     @click="emit('close')" 
   >
-    <div class="bg-dark-bg rounded-2xl p-6 w-full max-w-md mx-4 animate-scale-in max-h-[85%] border border-dark-border overflow-scroll"
+    <div class="bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full max-w-md mx-4 animate-scale-in max-h-[85%] border border-light-border dark:border-dark-border overflow-scroll"
       @click.stop
     >
     
@@ -52,13 +52,13 @@ watch(
       <div class="flex gap-3 mt-8">
         <button 
           @click="deleteTask"
-          class="px-4 py-2 bg-dark-surface border border-red-500/30 text-red-500 rounded-lg font-semibold hover:bg-red-500/10 transition-colors"
+          class="px-4 py-2 bg-light-surface dark:bg-dark-surface border border-red-500/30 text-red-500 rounded-lg font-semibold hover:bg-red-500/10 transition-colors"
         >
           Delete
         </button>
         <button 
           @click="exitWithoutSave"
-          class="flex-1 py-2 bg-dark-surface border border-dark-border rounded-lg text-text-secondary font-semibold hover:bg-dark-border transition-colors"
+          class="flex-1 py-2 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg text-lightText-secondary dark:text-text-secondary font-semibold hover:bg-light-border dark:hover:bg-dark-border transition-colors"
         >
           Close 
         </button>
