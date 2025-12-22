@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import {
 	type CustomRecurrence,
 	CustomRecurrenceType,
@@ -10,7 +9,7 @@ import {
 } from "../defines/recur.ts";
 import type { Task } from "../defines/task.ts";
 
-const cycleLen = 25;
+const _cycleLen = 25;
 
 export interface DatabaseCategory {
 	id: number;
@@ -141,18 +140,11 @@ export function getRecurrenceString(task: Task): string | undefined {
 		task.recurrence,
 		task.startTime
 	);
-	// Note: older backend might have wanted until separately.
-	// Our new schema stores a single string.
-	// rrule.js usually puts UNTIL inside the string string if we want compatible iCal.
-	// buildRRuleAndUntil returns them split.
-	// Let's combine them if needed or strictly return the RRULE part.
-	// The previous code returned { rrule, untilIso }.
-	// If we want a standard RRULE string that includes UNTIL, we should append it.
 
 	let finalRule = rrule;
 	if (untilIso) {
 		// Remove hyphens/colons for standard iCal format: YYYYMMDDTHHMMSSZ
-		const formattedUntil = untilIso.replace(/[-:]/g, "").split(".")[0] + "Z";
+		const formattedUntil = `${untilIso.replace(/[-:]/g, "").split(".")[0]}Z`;
 		finalRule += `;UNTIL=${formattedUntil}`;
 	}
 	return finalRule;

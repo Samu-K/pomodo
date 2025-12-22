@@ -61,11 +61,6 @@ impl TaskActions {
         parent_task_id: i64,
         date: NaiveDateTime,
     ) -> IdReturn {
-        // Fetch parent task to copy basic details usually, but for "exception" logic
-        // we mainly just need to record that this specific instance is done.
-        // However, the UI might want to see it as a completed task in history.
-        // So we copy the title/category from the parent.
-
         let parent_task: Task = query_as("SELECT * FROM tasks WHERE id = ?")
             .bind(parent_task_id)
             .fetch_one(&*self.db)

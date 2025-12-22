@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
-import { useTasks } from "../../stores/task";
+import { computed, ref, watch } from "vue";
 import type { Task } from "../../defines/task";
+import { useTasks } from "../../stores/task";
 
 const props = defineProps<{
 	selectedTaskId: number | null;

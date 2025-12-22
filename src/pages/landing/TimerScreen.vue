@@ -3,13 +3,12 @@ import { Pause, Play, RotateCcw, SkipForward } from "lucide-vue-next";
 import { computed, onMounted, ref } from "vue";
 import CategoryManager from "../../components/timer/CategoryManager.vue";
 import TaskManager from "../../components/timer/TaskManager.vue";
-
+import type { Task } from "../../defines/task";
 import { useCategoryStore } from "../../stores/categories";
 import { useSettingsStore } from "../../stores/settings";
 import { useTasks } from "../../stores/task";
 import { useThemeStore } from "../../stores/theme";
 import { TimerMode, useTimerStore } from "../../stores/timer";
-import type { Task } from "../../defines/task";
 
 const timer = useTimerStore();
 const categoryStore = useCategoryStore();
@@ -18,7 +17,9 @@ const settingsStore = useSettingsStore();
 const tasksStore = useTasks();
 
 const showTaskManager = ref(false);
-const categoryManagerRef = ref<InstanceType<typeof CategoryManager> | null>(null);
+const categoryManagerRef = ref<InstanceType<typeof CategoryManager> | null>(
+	null
+);
 
 const handleSelectCategory = () => {
 	// Open category manager dialog programmatically

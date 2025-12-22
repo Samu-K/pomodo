@@ -1,6 +1,9 @@
 import { createTestingPinia } from "@pinia/testing";
 import { mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createVuetify } from "vuetify";
+import * as components from "vuetify/components";
+import * as directives from "vuetify/directives";
 import { useCategoryStore } from "../../../stores/categories";
 import { useSettingsStore } from "../../../stores/settings";
 import { TimerMode, useTimerStore } from "../../../stores/timer";
@@ -20,6 +23,70 @@ vi.mock("lucide-vue-next", () => ({
 	MinusCircle: { template: '<svg class="lucide-minus-circle"></svg>' }
 }));
 
+// Mock ResizeObserver & others
+vi.stubGlobal(
+	"ResizeObserver",
+	class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	}
+);
+vi.stubGlobal(
+	"IntersectionObserver",
+	class IntersectionObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	}
+);
+vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>
+	setTimeout(cb, 0)
+);
+vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id));
+vi.stubGlobal("CSS", { supports: () => false });
+
+Object.defineProperty(window, "matchMedia", {
+	writable: true,
+	value: vi.fn().mockImplementation((query) => ({
+		matches: false,
+		media: query,
+		onchange: null,
+		addListener: vi.fn(),
+		removeListener: vi.fn(),
+		addEventListener: vi.fn(),
+		removeEventListener: vi.fn(),
+		dispatchEvent: vi.fn()
+	}))
+});
+
+// Mock window dimensions
+Object.defineProperty(window, "innerWidth", {
+	writable: true,
+	configurable: true,
+	value: 1024
+});
+Object.defineProperty(window, "innerHeight", {
+	writable: true,
+	configurable: true,
+	value: 768
+});
+Object.defineProperty(document.documentElement, "clientWidth", {
+	writable: true,
+	configurable: true,
+	value: 1024
+});
+Object.defineProperty(document.documentElement, "clientHeight", {
+	writable: true,
+	configurable: true,
+	value: 768
+});
+
+const vuetify = createVuetify({
+	components,
+	directives
+});
+
 // Global Stubs
 const globalStubs = {
 	VProgressCircular: {
@@ -32,6 +99,12 @@ const globalStubs = {
 		template: '<div class="category-manager"></div>',
 		props: ["selectedCategory"],
 		emits: ["select"]
+	},
+	TaskManager: {
+		name: "TaskManager",
+		template: '<div class="task-manager"></div>',
+		props: ["selectedTaskId"],
+		emits: ["select", "clear", "selectCategory", "close"]
 	}
 };
 
@@ -48,7 +121,8 @@ describe("TimerScreen.vue", () => {
 					createTestingPinia({
 						createSpy: vi.fn,
 						stubActions: true // Use stubs for actions, treat store as state container
-					})
+					}),
+					vuetify
 				],
 				stubs: globalStubs
 			}
@@ -132,7 +206,11 @@ describe("TimerScreen.vue", () => {
 	});
 
 	it("disables play button if no category selected in FOCUS mode", async () => {
-		const playBtn = wrapper.findAll("button")[1]; // The middle big button
+		// Find buttons in the control section (reset, play, skip)
+		const buttons = wrapper.findAll("button");
+		// The play button is the 2nd native button (after the VBtn for task selection which is index 0)
+		// Control buttons: reset=[1], play=[2], skip=[3]
+		const playBtn = buttons[2];
 		expect(playBtn.element.disabled).toBe(true);
 	});
 
@@ -140,7 +218,9 @@ describe("TimerScreen.vue", () => {
 		timerStore.categoryId = 1;
 		await wrapper.vm.$nextTick();
 
-		const playBtn = wrapper.findAll("button")[1];
+		const buttons = wrapper.findAll("button");
+		// Control buttons: reset=[1], play=[2], skip=[3]
+		const playBtn = buttons[2];
 		expect(playBtn.element.disabled).toBe(false);
 	});
 
@@ -148,7 +228,9 @@ describe("TimerScreen.vue", () => {
 		timerStore.categoryId = 1;
 		await wrapper.vm.$nextTick();
 
-		const playBtn = wrapper.findAll("button")[1];
+		const buttons = wrapper.findAll("button");
+		// Control buttons: reset=[1], play=[2], skip=[3]
+		const playBtn = buttons[2];
 		await playBtn.trigger("click");
 
 		expect(timerStore.toggleTimer).toHaveBeenCalled();
@@ -164,7 +246,9 @@ describe("TimerScreen.vue", () => {
 		expect(wrapper.text()).toContain("05:00");
 
 		// Play button should be enabled in REST mode even without category
-		const playBtn = wrapper.findAll("button")[1];
+		const buttons = wrapper.findAll("button");
+		// In REST mode, there's no VBtn for task selection, so: reset=[0], play=[1], skip=[2]
+		const playBtn = buttons[1];
 		expect(playBtn.element.disabled).toBe(false);
 	});
 
@@ -176,7 +260,9 @@ describe("TimerScreen.vue", () => {
 			timerStore.remainingTime = 750;
 			await wrapper.vm.$nextTick();
 
-			const skipBtn = wrapper.findAll("button")[2];
+			const buttons = wrapper.findAll("button");
+			// Control buttons in FOCUS mode: VBtn=[0], reset=[1], play=[2], skip=[3]
+			const skipBtn = buttons[3];
 			expect(skipBtn.exists()).toBe(true);
 			expect(skipBtn.element.disabled).toBe(false);
 		});

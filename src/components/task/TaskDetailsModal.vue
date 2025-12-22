@@ -20,14 +20,14 @@ const saveAndExit = () => {
 };
 
 const exitWithoutSave = () => {
-    emit("close");
+	emit("close");
 };
 
 const deleteTask = async () => {
-    if (confirm("Are you sure you want to delete this task?")) {
-        await taskStore.deleteTask(props.selTask.id);
-        emit("close");
-    }
+	if (confirm("Are you sure you want to delete this task?")) {
+		await taskStore.deleteTask(props.selTask.id);
+		emit("close");
+	}
 };
 
 const recurrenceChanged = ref(false);

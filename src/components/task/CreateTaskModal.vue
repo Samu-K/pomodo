@@ -3,8 +3,8 @@ import { X } from "lucide-vue-next";
 import { ref } from "vue";
 import { RecurrenceType } from "../../defines/recur.ts";
 import { Task } from "../../defines/task.ts";
-import TaskEditBlock from "./TaskEditBlock.vue";
 import { useTasks } from "../../stores/task";
+import TaskEditBlock from "./TaskEditBlock.vue";
 
 const emit = defineEmits<{
 	close: [];

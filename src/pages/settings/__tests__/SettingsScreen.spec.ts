@@ -147,13 +147,6 @@ describe("SettingsScreen.vue", () => {
 	});
 
 	it("Leaving page WITH NO pending changes DOES NOT open prompt modal", async () => {
-		// We need to mock the router/navigation guard behavior
-		// Since onBeforeRouteLeave is a composition API hook, it's tricky to trigger directly without a real router.
-		// However, we can check the internal state `hasUnsavedChanges` which drives the guard logic.
-		// Or better, we can mock the `next` function and manually call the guard if we could access it,
-		// but accessing the guard registered via `onBeforeRouteLeave` in a unit test is hard.
-		// A common approach is to rely on the component's state that the guard uses.
-
 		// Let's verify the state is correct.
 		await wrapper.vm.$nextTick();
 		// accessing internal state for testing
@@ -161,25 +154,6 @@ describe("SettingsScreen.vue", () => {
 			false
 		);
 	});
-
-	// To properly test onBeforeRouteLeave, we might need to use a real router instance or a more complex setup.
-	// For now, let's try to simulate the logic by checking the internal state that the guard would check.
-	// If we really want to test the hook, we can try to use `vue-router` mock or similar, but let's stick to state verification first.
-	// Actually, let's try to mock the router and use `router.push` if possible, but `onBeforeRouteLeave` only triggers on actual navigation.
-	// A workaround is to expose the guard logic or trust that `onBeforeRouteLeave` works if `hasUnsavedChanges` is correct.
-
-	// Let's try to verify the modal visibility state based on `hasUnsavedChanges`.
-	// The component logic:
-	// onBeforeRouteLeave((to, _from, next) => {
-	// 	if (hasUnsavedChanges.value) { ... showModal = true ... } else { next() }
-	// });
-
-	// We can't easily trigger the hook. Let's verify the logic by manually setting the state if possible,
-	// or by extracting the logic. But we can't change the code.
-	// We will assume the hook is registered. We can try to mock `onBeforeRouteLeave` from `vue-router`?
-	// No, `vi.mock` is hoisted.
-
-	// Let's rely on checking `hasUnsavedChanges` and `showUnsavedChangesModal` state.
 
 	it("Leaving page WITH pending changes DOES open modal (simulated)", async () => {
 		await wrapper.vm.$nextTick();
@@ -190,9 +164,6 @@ describe("SettingsScreen.vue", () => {
 		expect((wrapper.vm as unknown as SettingsComponent).hasUnsavedChanges).toBe(
 			true
 		);
-
-		// We can't trigger the route leave easily in unit test without a router.
-		// But we can verify that IF the modal is shown, it works.
 	});
 
 	it("Modal works correctly (Save)", async () => {

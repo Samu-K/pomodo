@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { Plus, Check, MoreVertical, Calendar } from "lucide-vue-next";
-import { useTasks } from "../../stores/task";
-import { useCategoryStore } from "../../stores/categories";
-import type { Task } from "../../defines/task";
+import { Calendar, Check, MoreVertical, Plus } from "lucide-vue-next";
+import { computed, onMounted, ref } from "vue";
 import CreateTaskModal from "../../components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
+import type { Task } from "../../defines/task";
+import { useCategoryStore } from "../../stores/categories";
+import { useTasks } from "../../stores/task";
 
 const tasksStore = useTasks();
 const categoryStore = useCategoryStore();
@@ -15,66 +15,62 @@ const showDetailsModal = ref(false);
 const selectedTask = ref<Task | null>(null);
 
 onMounted(async () => {
-    if (tasksStore.tasks.length === 0) {
-        await tasksStore.fetchTasks();
-    }
-    if (categoryStore.categories.length === 0) {
-        await categoryStore.fetchCategories();
-    }
+	if (tasksStore.tasks.length === 0) {
+		await tasksStore.fetchTasks();
+	}
+	if (categoryStore.categories.length === 0) {
+		await categoryStore.fetchCategories();
+	}
 });
 
 // Group tasks by category
 const groupedTasks = computed(() => {
-    const groups: { categoryId: number | null; name: string; tasks: Task[] }[] = [];
-    
-    // 1. Existing Categories
-    categoryStore.categories.forEach(cat => {
-        const tasks = tasksStore.tasks.filter(t => t.category_id === cat.id && !t.completed);
-        if (tasks.length > 0) {
-            groups.push({
-                categoryId: cat.id,
-                name: cat.name,
-                tasks: tasks
-            });
-        }
-    });
+	const groups: { categoryId: number | null; name: string; tasks: Task[] }[] =
+		[];
 
-    // 2. Uncategorized
-    const uncategorized = tasksStore.tasks.filter(t => !t.category_id && !t.completed);
-    if (uncategorized.length > 0) {
-        groups.push({
-            categoryId: null,
-            name: "Uncategorized",
-            tasks: uncategorized
-        });
-    }
+	// 1. Existing Categories
+	categoryStore.categories.forEach((cat) => {
+		const tasks = tasksStore.tasks.filter(
+			(t) => t.category_id === cat.id && !t.completed
+		);
+		if (tasks.length > 0) {
+			groups.push({
+				categoryId: cat.id,
+				name: cat.name,
+				tasks: tasks
+			});
+		}
+	});
 
-    // 3. Completed (Optional, maybe collapsible)
-    // For now, let's keep it simple and maybe add a toggle later.
-    // The user asked for "Management", so maybe showing completed is good, but let's hide them for cleaner view first.
-    
-    return groups;
+	// 2. Uncategorized
+	const uncategorized = tasksStore.tasks.filter(
+		(t) => !t.category_id && !t.completed
+	);
+	if (uncategorized.length > 0) {
+		groups.push({
+			categoryId: null,
+			name: "Uncategorized",
+			tasks: uncategorized
+		});
+	}
+
+	// 3. Completed (Optional, maybe collapsible)
+	// For now, let's keep it simple and maybe add a toggle later.
+	// The user asked for "Management", so maybe showing completed is good, but let's hide them for cleaner view first.
+
+	return groups;
 });
 
 const openDetails = (task: Task) => {
-    selectedTask.value = task;
-    showDetailsModal.value = true;
+	selectedTask.value = task;
+	showDetailsModal.value = true;
 };
 
 const handleTaskComplete = async (task: Task) => {
-    // Toggle completion
-    const updated = { ...task, completed: !task.completed };
-    // We use updateTask in store which handles single instance vs series if needed, 
-    // but here we are editing the RULE (the main task definition).
-    // If it's a recurring task, marking the RULE complete kills the series? 
-    // Usually "Task Manager" manages the DEFINITIONS.
-    // If I check the box here, it implies "I am done with this task definition forever" or "I did it today"?
-    // "Task Manager" usually implies Definitions. 
-    // Let's assume for now checks here mean "Archiving/Completing the Project/Task".
-    // Or if it's a simple task, it marks it done.
-    await tasksStore.updateTask(updated, false);
+	// Toggle completion
+	const updated = { ...task, completed: !task.completed };
+	await tasksStore.updateTask(updated, false);
 };
-
 </script>
 
 <template>
