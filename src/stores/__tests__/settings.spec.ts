@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSettingsStore } from "../settings";
+import { useUIStore } from "../ui";
 
 // Mock DB functions
 vi.mock("../../funcs/db/settings", () => ({
@@ -17,10 +18,12 @@ import {
 
 describe("Settings Store", () => {
 	let settingsStore: ReturnType<typeof useSettingsStore>;
+	let uiStore: ReturnType<typeof useUIStore>;
 
 	beforeEach(() => {
 		setActivePinia(createPinia());
 		settingsStore = useSettingsStore();
+		uiStore = useUIStore();
 	});
 
 	afterEach(() => {
@@ -75,14 +78,13 @@ describe("Settings Store", () => {
 			expect(get_settings_categories).toHaveBeenCalledTimes(1);
 		});
 
-		it("handles errors gracefully (optional, depending on store implementation)", async () => {
-			// The current store implementation doesn't have explicit error handling (try/finally only),
-			// but we can at least ensure isLoading is reset.
+		it("handles errors gracefully and sets ui store error", async () => {
 			vi.mocked(get_settings).mockRejectedValue(new Error("DB Error"));
 
-			await expect(settingsStore.fetchSettings()).rejects.toThrow("DB Error");
+			await settingsStore.fetchSettings();
 
 			expect(settingsStore.isLoading).toBe(false);
+			expect(uiStore.errorMessage).toBe("DB Error");
 		});
 	});
 

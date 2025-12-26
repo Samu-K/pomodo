@@ -16,6 +16,7 @@ interface Props {
 	showBackButton?: boolean;
 	showSettingsButton?: boolean;
 	hideBottomNav?: boolean;
+	isMiniMode?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -23,7 +24,8 @@ const props = withDefaults(defineProps<Props>(), {
 	headerTitle: "Pomodo",
 	showBackButton: false,
 	showSettingsButton: true,
-	hideBottomNav: false
+	hideBottomNav: false,
+	isMiniMode: false
 });
 
 const emit = defineEmits<{
@@ -129,8 +131,11 @@ const handleSwipeRight = () => {
 
     <!-- Main Content -->
     <main 
-      class="flex-1 overflow-hidden pt-14"
-      :class="hideBottomNav ? 'bg-black' : 'bg-light-bg dark:bg-dark-bg'"
+      class="flex-1 overflow-hidden"
+      :class="[
+        hideBottomNav || isMiniMode ? 'bg-black' : 'bg-light-bg dark:bg-dark-bg',
+        isMiniMode ? 'pt-0' : 'pt-14'
+      ]"
     >
       <router-view 
         @add-task="emit('add-task')"
@@ -139,9 +144,10 @@ const handleSwipeRight = () => {
     </main>
 
     <!-- Bottom Navigation -->
-    <nav v-if="!hideBottomNav" class="bg-light-pure dark:bg-dark-pure border-t border-light-border dark:border-dark-border touch-none pb-[env(safe-area-inset-bottom)]">
+    <nav v-if="!hideBottomNav && !isMiniMode" class="bg-light-pure dark:bg-dark-pure border-t border-light-border dark:border-dark-border touch-none pb-[env(safe-area-inset-bottom)]">
       <div class="h-16 flex items-center justify-around px-4">
         <button 
+          data-testid="nav-timer"
           @click="navigateTo('/')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
@@ -153,6 +159,7 @@ const handleSwipeRight = () => {
         </button>
         
         <button 
+          data-testid="nav-timeline"
           @click="navigateTo('/timeline')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
@@ -164,6 +171,7 @@ const handleSwipeRight = () => {
         </button>
         
         <button 
+          data-testid="nav-tasks"
           @click="navigateTo('/tasks')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
@@ -175,6 +183,7 @@ const handleSwipeRight = () => {
         </button>
         
         <button 
+          data-testid="nav-stats"
           @click="navigateTo('/stats')"
           :class="[
             'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',

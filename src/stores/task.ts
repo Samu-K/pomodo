@@ -1,40 +1,31 @@
-import { invoke } from "@tauri-apps/api/core";
 import { defineStore } from "pinia";
 import { RRule } from "rrule";
 import { ref } from "vue";
 import { RecurrenceType } from "../defines/recur";
 import type { Task } from "../defines/task";
-import type { Category } from "../funcs/commands";
 import { getRecurrenceString } from "../funcs/task";
+import { fromUTCString, toUTCISOString } from "../funcs/stats/date_handling";
+import { useUIStore } from "./ui";
+import * as db from "../funcs/db/tasks";
+import { commands } from "../funcs/commands";
 
-// Database schema for tasks (matches backend)
-interface DatabaseTask {
-    id: number;
-    title: string;
-    category_id: number | null;
-    estimated_pomodoros: number | null;
-    start_datetime: string | null;
-    recurrence_rule: string | null;
-    is_completed: boolean;
-    parent_task_id: number | null;
-    created_at: string | null;
-}
 
-function toLocalISOString(date: Date): string {
-    const offset = date.getTimezoneOffset() * 60000;
-    const localTime = new Date(date.getTime() - offset);
-    return localTime.toISOString().slice(0, 19);
-}
+
+
 
 export const useTasks = defineStore("tasks", () => {
     const tasks = ref<Task[]>([]);
     const expandedTasks = ref<Task[]>([]);
 
+    const ui = useUIStore();
+
     async function fetchTasks() {
         try {
-            const fetched = await invoke<DatabaseTask[]>("tasks_get_tasks");
-            // Fetch categories to map names
-            const categories = await invoke<Category[]>("categories_get_categories");
+            const fetched = await db.getTasks();
+            // Fetch categories to map names (using commands directly for now as it's a simple read)
+            const catRes = await commands.categoriesGetCategories();
+            if (catRes.status === "error") throw new Error(catRes.error.message);
+            const categories = catRes.data;
             const catMap = new Map(categories.map((c) => [c.id, c.name]));
 
             tasks.value = fetched.map((t) => ({
@@ -43,7 +34,7 @@ export const useTasks = defineStore("tasks", () => {
                 category: t.category_id ? catMap.get(t.category_id) || "" : "",
                 category_id: t.category_id,
                 cycles: t.estimated_pomodoros || 1,
-                startTime: t.start_datetime ? new Date(t.start_datetime) : new Date(),
+                startTime: fromUTCString(t.start_datetime),
                 completed: t.is_completed,
                 recurrence_rule: t.recurrence_rule ?? undefined,
                 recurrence: { type: RecurrenceType.NONE }, // Default recurrence for UI compatibility
@@ -51,101 +42,111 @@ export const useTasks = defineStore("tasks", () => {
                 parent_task_id: t.parent_task_id ?? undefined
             }));
 
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+
             expandTasksForRange(
-                new Date(),
+                startOfToday,
                 new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
             );
-        } catch (e) {
+        } catch (e: any) {
             console.error("Failed to fetch tasks", e);
+            ui.setError(e.message || "Failed to fetch tasks");
         }
     }
 
     async function addTask(task: Task) {
-        // Resolve category
-        let categoryId = task.category_id;
-        if (!categoryId && task.category) {
-            try {
-                // Try to find category by name (requires backend command or fetching all)
-                // Let's assume we can fetch all and find
-                const cats = await invoke<Category[]>("categories_get_categories");
+        try {
+            // Resolve category
+            let categoryId = task.category_id;
+            if (!categoryId && task.category) {
+                const catRes = await commands.categoriesGetCategories();
+                if (catRes.status === "error") throw new Error(catRes.error.message);
+                const cats = catRes.data;
                 const existing = cats.find((c) => c.name === task.category);
                 if (existing) {
                     categoryId = existing.id;
                 } else {
-                    // Create new
-                    categoryId = (await invoke("categories_add_category", {
-                        cat: { id: 0, name: task.category }
-                    })) as number;
+                    const addRes = await commands.categoriesAddCategory({ id: 0, name: task.category, color: "pomodo-orange" });
+                    if (addRes.status === "error") throw new Error(addRes.error.message);
+                    categoryId = addRes.data;
                 }
-            } catch (e) {
-                console.error("Error resolving category", e);
             }
+
+            const rrule = getRecurrenceString(task);
+
+            const payload = {
+                id: 0,
+                title: task.title,
+                category_id: categoryId,
+                estimated_pomodoros: task.cycles,
+                start_datetime: toUTCISOString(task.startTime),
+                recurrence_rule: rrule ?? null,
+                is_completed: false,
+                parent_task_id: null,
+                created_at: null
+            };
+
+            await db.addTask(payload);
+            await fetchTasks();
+        } catch (e: any) {
+            console.error("Error adding task", e);
+            ui.setError(e.message || "Failed to add task");
         }
-
-        const rrule = getRecurrenceString(task);
-
-        const payload = {
-            id: 0,
-            title: task.title,
-            category_id: categoryId,
-            estimated_pomodoros: task.cycles,
-            start_datetime: toLocalISOString(task.startTime),
-            recurrence_rule: rrule,
-            is_completed: false,
-            parent_task_id: null,
-            created_at: null
-        };
-
-        await invoke("tasks_add_task", { task: payload });
-        await fetchTasks();
     }
 
     async function updateTask(task: Task, recurrenceChanged: boolean) {
-        // Resolve category if changed (naive implementation for now)
-        const categoryId = task.category_id;
-        // Logic to create category if needed ... (reused from addTask or extracted)
+        try {
+            const categoryId = task.category_id;
+            let rrule = task.recurrence_rule;
+            if (recurrenceChanged) {
+                const rule = getRecurrenceString(task);
+                rrule = rule !== undefined ? rule : undefined;
+            }
 
-        let rrule = task.recurrence_rule;
-        if (recurrenceChanged) {
-            const rule = getRecurrenceString(task);
-            rrule = rule !== undefined ? rule : undefined;
-        }
-
-        const payload = {
-            id: task.id,
-            title: task.title,
-            category_id: categoryId,
-            estimated_pomodoros: task.cycles,
-            start_datetime: toLocalISOString(task.startTime),
-            recurrence_rule: rrule,
-            is_completed: task.completed,
-            parent_task_id: task.parent_task_id
-        };
-
-        await invoke("tasks_update_task", { task: payload });
-        await fetchTasks();
-    }
-
-    async function completeTaskInstance(task: Task) {
-        if (task.recurrence_rule && !task.parent_task_id) {
-            await invoke("tasks_complete_task_instance", {
-                parentTaskId: task.id,
-                date: toLocalISOString(task.startTime)
-            });
-        } else {
             const payload = {
                 id: task.id,
                 title: task.title,
-                category_id: task.category_id,
+                category_id: categoryId,
                 estimated_pomodoros: task.cycles,
-                start_datetime: toLocalISOString(task.startTime),
-                recurrence_rule: task.recurrence_rule,
-                is_completed: true,
-                parent_task_id: task.parent_task_id
+                start_datetime: toUTCISOString(task.startTime),
+                recurrence_rule: rrule ?? null,
+                is_completed: task.completed,
+                parent_task_id: task.parent_task_id ?? null,
+                created_at: null // or preserve somehow if needed
             };
-            await invoke("tasks_update_task", { task: payload });
+
+            await db.updateTask(payload);
+            await fetchTasks();
+        } catch (e: any) {
+            console.error("Error updating task", e);
+            ui.setError(e.message || "Failed to update task");
         }
-        await fetchTasks();
+    }
+
+    async function completeTaskInstance(task: Task) {
+        try {
+            if (task.recurrence_rule && !task.parent_task_id) {
+                await db.completeTaskInstance(task.id, task.startTime);
+            } else {
+                const payload = {
+                    id: task.id,
+                    title: task.title,
+                    category_id: task.category_id,
+                    estimated_pomodoros: task.cycles,
+                    start_datetime: toUTCISOString(task.startTime),
+                    recurrence_rule: task.recurrence_rule ?? null,
+                    is_completed: true,
+                    parent_task_id: task.parent_task_id ?? null,
+                    created_at: null
+                };
+                await db.updateTask(payload);
+            }
+            await fetchTasks();
+        } catch (e: any) {
+            console.error("Error completing task instance", e);
+            ui.setError(e.message || "Failed to complete task");
+        }
     }
 
     function expandTasksForRange(start: Date, end: Date) {
@@ -196,10 +197,11 @@ export const useTasks = defineStore("tasks", () => {
 
     async function deleteTask(id: number) {
         try {
-            await invoke("tasks_delete_task", { id });
+            await db.deleteTask(id);
             await fetchTasks();
-        } catch (e) {
+        } catch (e: any) {
             console.error("Failed to delete task", e);
+            ui.setError(e.message || "Failed to delete task");
         }
     }
 

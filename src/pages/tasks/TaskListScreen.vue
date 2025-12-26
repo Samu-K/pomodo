@@ -85,6 +85,7 @@ const handleTaskComplete = async (task: Task) => {
             <p class="text-text-muted text-sm mt-1">Manage your focus goals</p>
         </div>
         <button 
+            data-testid="add-task-fab"
             @click="showCreateModal = true"
             class="w-12 h-12 rounded-full bg-gradient-to-r from-pomodo-orange to-pomodo-red text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all"
         >

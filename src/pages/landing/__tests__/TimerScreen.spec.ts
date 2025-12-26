@@ -20,24 +20,26 @@ vi.mock("lucide-vue-next", () => ({
 	Play: { template: '<svg class="lucide-play"></svg>' },
 	RotateCcw: { template: '<svg class="lucide-rotate-ccw"></svg>' },
 	SkipForward: { template: '<svg class="lucide-skip-forward"></svg>' },
-	MinusCircle: { template: '<svg class="lucide-minus-circle"></svg>' }
+	MinusCircle: { template: '<svg class="lucide-minus-circle"></svg>' },
+	Minimize2: { template: '<svg class="lucide-minimize-2"></svg>' },
+	Maximize2: { template: '<svg class="lucide-maximize-2"></svg>' }
 }));
 
 // Mock ResizeObserver & others
 vi.stubGlobal(
 	"ResizeObserver",
 	class ResizeObserver {
-		observe() {}
-		unobserve() {}
-		disconnect() {}
+		observe() { }
+		unobserve() { }
+		disconnect() { }
 	}
 );
 vi.stubGlobal(
 	"IntersectionObserver",
 	class IntersectionObserver {
-		observe() {}
-		unobserve() {}
-		disconnect() {}
+		observe() { }
+		unobserve() { }
+		disconnect() { }
 	}
 );
 vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>
@@ -206,31 +208,23 @@ describe("TimerScreen.vue", () => {
 	});
 
 	it("disables play button if no category selected in FOCUS mode", async () => {
-		// Find buttons in the control section (reset, play, skip)
-		const buttons = wrapper.findAll("button");
-		// The play button is the 2nd native button (after the VBtn for task selection which is index 0)
-		// Control buttons: reset=[1], play=[2], skip=[3]
-		const playBtn = buttons[2];
-		expect(playBtn.element.disabled).toBe(true);
+		const playBtn = wrapper.find('[data-testid="toggle-timer"]');
+		expect((playBtn.element as HTMLButtonElement).disabled).toBe(true);
 	});
 
 	it("enables play button when category is selected", async () => {
 		timerStore.categoryId = 1;
 		await wrapper.vm.$nextTick();
 
-		const buttons = wrapper.findAll("button");
-		// Control buttons: reset=[1], play=[2], skip=[3]
-		const playBtn = buttons[2];
-		expect(playBtn.element.disabled).toBe(false);
+		const playBtn = wrapper.find('[data-testid="toggle-timer"]');
+		expect((playBtn.element as HTMLButtonElement).disabled).toBe(false);
 	});
 
 	it("toggles timer when play button is clicked", async () => {
 		timerStore.categoryId = 1;
 		await wrapper.vm.$nextTick();
 
-		const buttons = wrapper.findAll("button");
-		// Control buttons: reset=[1], play=[2], skip=[3]
-		const playBtn = buttons[2];
+		const playBtn = wrapper.find('[data-testid="toggle-timer"]');
 		await playBtn.trigger("click");
 
 		expect(timerStore.toggleTimer).toHaveBeenCalled();
@@ -246,10 +240,8 @@ describe("TimerScreen.vue", () => {
 		expect(wrapper.text()).toContain("05:00");
 
 		// Play button should be enabled in REST mode even without category
-		const buttons = wrapper.findAll("button");
-		// In REST mode, there's no VBtn for task selection, so: reset=[0], play=[1], skip=[2]
-		const playBtn = buttons[1];
-		expect(playBtn.element.disabled).toBe(false);
+		const playBtn = wrapper.find('[data-testid="toggle-timer"]');
+		expect((playBtn.element as HTMLButtonElement).disabled).toBe(false);
 	});
 
 	describe("Skip Button Logic", () => {
@@ -260,11 +252,9 @@ describe("TimerScreen.vue", () => {
 			timerStore.remainingTime = 750;
 			await wrapper.vm.$nextTick();
 
-			const buttons = wrapper.findAll("button");
-			// Control buttons in FOCUS mode: VBtn=[0], reset=[1], play=[2], skip=[3]
-			const skipBtn = buttons[3];
+			const skipBtn = wrapper.find('[data-testid="skip-timer"]');
 			expect(skipBtn.exists()).toBe(true);
-			expect(skipBtn.element.disabled).toBe(false);
+			expect((skipBtn.element as HTMLButtonElement).disabled).toBe(false);
 		});
 
 		it("is hidden in Focus mode if running", async () => {
@@ -283,9 +273,9 @@ describe("TimerScreen.vue", () => {
 			timerStore.isRunning = true; // Even if running
 			await wrapper.vm.$nextTick();
 
-			const skipBtn = wrapper.findAll("button")[2];
+			const skipBtn = wrapper.find('[data-testid="skip-timer"]');
 			expect(skipBtn.exists()).toBe(true);
-			expect(skipBtn.element.disabled).toBe(false);
+			expect((skipBtn.element as HTMLButtonElement).disabled).toBe(false);
 		});
 	});
 
@@ -296,9 +286,9 @@ describe("TimerScreen.vue", () => {
 			timerStore.remainingTime = 750;
 			await wrapper.vm.$nextTick();
 
-			const resetBtn = wrapper.findAll("button")[0];
+			const resetBtn = wrapper.find('[data-testid="reset-timer"]');
 			expect(resetBtn.exists()).toBe(true);
-			expect(resetBtn.element.disabled).toBe(false);
+			expect((resetBtn.element as HTMLButtonElement).disabled).toBe(false);
 		});
 
 		it("is hidden in Focus mode if running", async () => {
@@ -317,8 +307,8 @@ describe("TimerScreen.vue", () => {
 			timerStore.remainingTime = 150;
 			await wrapper.vm.$nextTick();
 
-			const resetBtn = wrapper.findAll("button")[0];
-			expect(resetBtn.element.disabled).toBe(true);
+			const resetBtn = wrapper.find('[data-testid="reset-timer"]');
+			expect((resetBtn.element as HTMLButtonElement).disabled).toBe(true);
 		});
 	});
 

@@ -2,6 +2,17 @@
 	"$schema": "../gen/schemas/desktop-schema.json",
 	"identifier": "default",
 	"description": "Capability for the main window",
-	"windows": ["main"],
-	"permissions": ["core:default", "opener:default", "notification:default", "haptics:default"]
+	"windows": [
+		"main"
+	],
+	"permissions": [
+		"core:default",
+		"opener:default",
+		"notification:default",
+		"haptics:default",
+		"core:window:allow-set-size",
+		"core:window:allow-set-always-on-top",
+		"core:window:allow-set-resizable",
+		"core:window:allow-center"
+	]
 }

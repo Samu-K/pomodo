@@ -56,12 +56,15 @@ const saveTask = async () => {
       <!-- Actions -->
       <div class="flex gap-3 mt-4">
         <button 
+          data-testid="cancel-task"
           @click="emit('close')"
           class="flex-1 py-3 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg text-lightText-secondary dark:text-text-secondary font-semibold hover:bg-light-border dark:hover:bg-dark-border transition-colors"
         >
           Cancel
         </button>
-        <button class="flex-1 py-3 bg-gradient-to-r from-pomodo-orange to-pomodo-red rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
+        <button 
+          data-testid="confirm-create-task"
+          class="flex-1 py-3 bg-gradient-to-r from-pomodo-orange to-pomodo-red rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
           @click="saveTask"
         >
           Create Task

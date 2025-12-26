@@ -12,7 +12,9 @@ import {
 	delete_session,
 	set_newest_session_complete
 } from "../funcs/db/session";
+import { toUTCISOString } from "../funcs/stats/date_handling";
 import { useSettingsStore } from "./settings";
+import { useUIStore } from "./ui";
 
 export enum TimerMode {
 	FOCUS = 0,
@@ -21,6 +23,7 @@ export enum TimerMode {
 
 export const useTimerStore = defineStore("timer", () => {
 	const settingsStore = useSettingsStore();
+	const ui = useUIStore();
 
 	// --- Settings & Computed Durations ---
 	// Ensure settings are loaded
@@ -203,8 +206,9 @@ export const useTimerStore = defineStore("timer", () => {
 		if (mode.value === TimerMode.FOCUS) {
 			try {
 				await set_newest_session_complete(); // Mark DB entry as finished
-			} catch (e) {
+			} catch (e: any) {
 				console.error("Error marking session complete:", e);
+				ui.setError(e.message || "Failed to complete session");
 			}
 			currentSessionId.value = null; // Session is complete, don't delete on reset
 			sessionStreak.value = sessionStreak.value + 1;
@@ -240,7 +244,7 @@ export const useTimerStore = defineStore("timer", () => {
 			if (categoryId.value !== null && categoryId.value !== undefined) {
 				const new_session: Session = {
 					id: null,
-					start_time: new Date().toISOString().slice(0, 19),
+					start_time: toUTCISOString(new Date()),
 					duration: focusDuration.value,
 					finished: false,
 					category_id: categoryId.value,
@@ -249,8 +253,13 @@ export const useTimerStore = defineStore("timer", () => {
 					created_at: null,
 					last_modified: null
 				};
-				const newId = await add_session(new_session);
-				currentSessionId.value = newId;
+				try {
+					const newId = await add_session(new_session);
+					currentSessionId.value = newId;
+				} catch (e: any) {
+					console.error("Error creating session:", e);
+					ui.setError(e.message || "Failed to create focus session");
+				}
 			}
 		}
 
@@ -284,12 +293,12 @@ export const useTimerStore = defineStore("timer", () => {
 					console.log(
 						`Successfully deleted session ID: ${currentSessionId.value}`
 					);
-				} catch (error) {
+				} catch (e: any) {
 					console.error(
 						`Failed to delete session ${currentSessionId.value}:`,
-						error
+						e
 					);
-					console.error("Error details:", JSON.stringify(error, null, 2));
+					ui.setError(e.message || "Failed to delete session");
 					// Continue with reset even if deletion fails
 				} finally {
 					currentSessionId.value = null;

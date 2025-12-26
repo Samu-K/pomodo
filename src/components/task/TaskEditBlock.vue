@@ -236,6 +236,7 @@ const onMinuteSelected = () => {
             Task Name *
           </label>
           <v-text-field
+            data-testid="task-name-input"
             label="Task name"
             placeholder="Enter task name"
             v-model="props.selTask.title"
@@ -248,6 +249,7 @@ const onMinuteSelected = () => {
             Category
           </label>
           <v-select 
+            data-testid="task-category-select"
             label="Category"
             v-model="props.selTask.category_id"
             :items="categoryStore.categories"
@@ -313,6 +315,7 @@ const onMinuteSelected = () => {
             Repeat 
           </label>
           <v-select 
+            data-testid="task-recurrence-select"
             v-model="props.selTask.recurrence.type"
             :items="Object.values(RecurrenceType)"
           >

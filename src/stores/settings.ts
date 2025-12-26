@@ -6,10 +6,12 @@ import {
 	get_settings_categories,
 	set_setting_value
 } from "../funcs/db/settings";
+import { useUIStore } from "./ui";
 
 const THEME_STORAGE_KEY = "pomodo-theme";
 
 export const useSettingsStore = defineStore("settings", () => {
+	const ui = useUIStore();
 	const settings = ref<Setting[]>([]);
 	const categories = ref<SettingCategory[]>([]);
 
@@ -24,6 +26,9 @@ export const useSettingsStore = defineStore("settings", () => {
 			]);
 			settings.value = fetchedSettings;
 			categories.value = fetchedCategories;
+		} catch (e: any) {
+			console.error("Failed to fetch settings", e);
+			ui.setError(e.message || "Failed to fetch settings");
 		} finally {
 			isLoading.value = false;
 		}
@@ -46,7 +51,13 @@ export const useSettingsStore = defineStore("settings", () => {
 			settings.value[settingIndex].value = stringValue;
 		}
 
-		await set_setting_value(id, stringValue);
+		try {
+			await set_setting_value(id, stringValue);
+		} catch (e: any) {
+			console.error("Failed to update setting", e);
+			ui.setError(e.message || "Failed to update setting");
+			// Rollback or ignore? For now, just show error.
+		}
 	};
 
 	// Theme-specific computed properties

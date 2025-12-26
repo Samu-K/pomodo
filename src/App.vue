@@ -7,6 +7,8 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useTheme } from "vuetify";
+import { LogicalSize } from "@tauri-apps/api/dpi";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import AppLayout from "./components/AppLayout.vue";
 import SplashScreen from "./components/SplashScreen.vue";
 import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
@@ -16,10 +18,12 @@ import { RecurrenceType } from "./defines/recur.ts";
 import { Task } from "./defines/task.ts";
 import { useSettingsStore } from "./stores/settings";
 import { TimerMode, useTimerStore } from "./stores/timer";
+import { useUIStore } from "./stores/ui";
 
 const route = useRoute();
 const router = useRouter();
 const settingsStore = useSettingsStore();
+const uiStore = useUIStore();
 const vuetifyTheme = useTheme();
 const isLoading = ref(true);
 
@@ -61,6 +65,7 @@ const selectedTask = ref<Task>({
 	id: 0,
 	title: "",
 	category: "",
+	category_id: null,
 	cycles: 0,
 	startTime: new Date(),
 	gradient: "",
@@ -82,6 +87,23 @@ watch(
 		}
 	},
 	{ immediate: true }
+);
+
+watch(
+	() => uiStore.isMiniMode,
+	async (isMini) => {
+		const appWindow = getCurrentWindow();
+		if (isMini) {
+			await appWindow.setSize(new LogicalSize(320, 150));
+			await appWindow.setAlwaysOnTop(true);
+			await appWindow.setResizable(false);
+		} else {
+			await appWindow.setSize(new LogicalSize(400, 900));
+			await appWindow.setAlwaysOnTop(false);
+			await appWindow.setResizable(true);
+			await appWindow.center();
+		}
+	}
 );
 
 const hideBottomNav = computed(() => {
@@ -115,6 +137,7 @@ const openTaskDetails = (task: Task) => {
     :show-back-button="showBackButton"
     :show-settings-button="false"
     :hide-bottom-nav="hideBottomNav"
+    :is-mini-mode="uiStore.isMiniMode"
     @back-click="handleBackClick"
     @add-task="handleAddTask"
     @task-details="openTaskDetails"
@@ -135,4 +158,23 @@ const openTaskDetails = (task: Task) => {
     :selTask="selectedTask"
     @close="showTaskDetails = false"
   />
+
+  <!-- Global Error Notification -->
+  <v-snackbar
+    :model-value="!!uiStore.errorMessage"
+    color="error"
+    location="top"
+    :timeout="5000"
+    @update:model-value="(val) => !val && uiStore.clearError()"
+  >
+    {{ uiStore.errorMessage }}
+    <template #actions>
+      <v-btn
+        variant="text"
+        @click="uiStore.clearError()"
+      >
+        Close
+      </v-btn>
+    </template>
+  </v-snackbar>
 </template>

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RecurrenceType } from "../../defines/recur";
 import type { Task } from "../../defines/task";
 import { useTasks } from "../task";
+import { useUIStore } from "../ui";
 
 // Mock Tauri invoke
 vi.mock("@tauri-apps/api/core", () => ({
@@ -16,11 +17,13 @@ vi.mock("../../funcs/task", () => ({
 
 describe("Tasks Store", () => {
 	let tasksStore: ReturnType<typeof useTasks>;
+	let uiStore: ReturnType<typeof useUIStore>;
 
 	beforeEach(() => {
 		setActivePinia(createPinia());
 		vi.clearAllMocks();
 		tasksStore = useTasks();
+		uiStore = useUIStore();
 	});
 
 	afterEach(() => {
@@ -324,21 +327,14 @@ describe("Tasks Store", () => {
 			expect(tasksStore.tasks[0].category).toBe("");
 		});
 
-		it("handles fetch error gracefully", async () => {
+		it("handles fetch error gracefully and sets ui store error", async () => {
 			const { invoke } = await import("@tauri-apps/api/core");
-			const consoleSpy = vi
-				.spyOn(console, "error")
-				.mockImplementation(() => { });
 
 			vi.mocked(invoke).mockRejectedValue(new Error("DB Error"));
 
 			await tasksStore.fetchTasks();
 
-			expect(consoleSpy).toHaveBeenCalledWith(
-				"Failed to fetch tasks",
-				expect.any(Error)
-			);
-			consoleSpy.mockRestore();
+			expect(uiStore.errorMessage).toBe("DB Error");
 		});
 	});
 
@@ -379,7 +375,7 @@ describe("Tasks Store", () => {
 		it("creates new category if not found", async () => {
 			const { invoke } = await import("@tauri-apps/api/core");
 
-			vi.mocked(invoke).mockImplementation(async (cmd: string, args?: any) => {
+			vi.mocked(invoke).mockImplementation(async (cmd: string, _args?: any) => {
 				if (cmd === "tasks_get_tasks") return [];
 				if (cmd === "categories_get_categories") return [];
 				if (cmd === "categories_add_category") return 42;
@@ -401,7 +397,7 @@ describe("Tasks Store", () => {
 			await tasksStore.addTask(newTask);
 
 			expect(invoke).toHaveBeenCalledWith("categories_add_category", {
-				cat: { id: 0, name: "New Category" }
+				cat: { id: 0, name: "New Category", color: "pomodo-orange" }
 			});
 		});
 
@@ -527,21 +523,14 @@ describe("Tasks Store", () => {
 			expect(invoke).toHaveBeenCalledWith("tasks_get_tasks");
 		});
 
-		it("handles delete error gracefully", async () => {
+		it("handles delete error gracefully and sets ui store error", async () => {
 			const { invoke } = await import("@tauri-apps/api/core");
-			const consoleSpy = vi
-				.spyOn(console, "error")
-				.mockImplementation(() => { });
 
 			vi.mocked(invoke).mockRejectedValue(new Error("Delete failed"));
 
 			await tasksStore.deleteTask(5);
 
-			expect(consoleSpy).toHaveBeenCalledWith(
-				"Failed to delete task",
-				expect.any(Error)
-			);
-			consoleSpy.mockRestore();
+			expect(uiStore.errorMessage).toBe("Delete failed");
 		});
 	});
 

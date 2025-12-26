@@ -249,12 +249,14 @@ const handleCalendarCreateTask = (date: Date) => {
     <div class="px-6 py-4 border-b border-light-border dark:border-dark-border mb-2 ">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <button class="w-8 h-8 rounded-full border border-pomodo-orange text-pomodo-orange hover:bg-pomodo-orange hover:text-white transition-colors flex items-center justify-center"
+          <button 
+            data-testid="prev-date"
+            class="w-8 h-8 rounded-full border border-pomodo-orange text-pomodo-orange hover:bg-pomodo-orange hover:text-white transition-colors flex items-center justify-center"
             @click="goToPrevDate"
           >
             <ChevronLeft :size="16" />
           </button>
-          <span class="mt-3 text-lg font-semibold text-pomodo-orange">
+          <span data-testid="selected-date-display" class="mt-3 text-lg font-semibold text-pomodo-orange">
             <div class="flex">
               <p v-if="viewMode === 'timeline'">
                 <span v-if="isDateToday()">Today</span>
@@ -265,7 +267,9 @@ const handleCalendarCreateTask = (date: Date) => {
               </p>
             </div>
           </span>
-          <button class="w-8 h-8 rounded-full border border-pomodo-orange text-pomodo-orange hover:bg-pomodo-orange hover:text-white transition-colors flex items-center justify-center"
+          <button 
+            data-testid="next-date"
+            class="w-8 h-8 rounded-full border border-pomodo-orange text-pomodo-orange hover:bg-pomodo-orange hover:text-white transition-colors flex items-center justify-center"
             @click="goToNextDate"
           >
             <ChevronRight :size="16" />
@@ -323,6 +327,7 @@ const handleCalendarCreateTask = (date: Date) => {
 
           <!-- Task Blocks -->
           <button
+            data-testid="timeline-task-block"
             @click="openTaskDetails(task)"
             :disabled="task.completed"
             v-for="task in tasksForSelectedDate"
@@ -381,7 +386,7 @@ const handleCalendarCreateTask = (date: Date) => {
       <div class="flex justify-around text-xs">
         <div class="text-center">
           <span class="text-lightText-muted dark:text-text-muted block">Scheduled</span>
-          <span class="text-pomodo-orange font-semibold">{{tasksForSelectedDate.length}}</span>
+          <span data-testid="stats-scheduled-count" class="text-pomodo-orange font-semibold">{{tasksForSelectedDate.length}}</span>
         </div>
         <div class="text-center">
           <span class="text-lightText-muted dark:text-text-muted block">Total Time</span>

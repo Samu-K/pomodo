@@ -143,6 +143,7 @@ onBeforeRouteLeave((to, _from, next) => {
     <div class="flex items-center justify-between px-6 py-4 border-b border-light-border dark:border-dark-border">
       <div class="flex items-center gap-2">
         <button 
+          data-testid="settings-back"
           @click="router.back()"
           class="w-8 h-8 flex items-center justify-center text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors"
         >
@@ -184,6 +185,7 @@ onBeforeRouteLeave((to, _from, next) => {
             <p class="text-xs text-lightText-muted dark:text-text-muted mt-1">Choose your preferred theme</p>
           </div>
           <v-select
+            data-testid="theme-selector"
             :model-value="settingsStore.theme"
             :items="themeOptions"
             item-title="label"

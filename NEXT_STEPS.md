@@ -75,7 +75,7 @@
 
 ## 3. User Experience (UX) Enhancements
 
-### 3.1 "Focus Mode" / Mini Window
+### 3.1 "Focus Mode" / Mini Window - DONE
 **Objective:** Reduce visual clutter during focus sessions.
 **Instructions:**
 - Add a toggle to switch the window to a "Mini" compact state.

@@ -69,6 +69,7 @@ const clearTask = () => {
             @click="selectTask(task)"
             variant="tonal"
             class="mt-3 task-btn"
+            data-testid="task-item"
             :color="selectedTaskId === task.id ? 'orange' : undefined"
           >
             <div class="flex flex-col items-center w-full py-2">
