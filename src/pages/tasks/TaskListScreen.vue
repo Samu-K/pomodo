@@ -54,9 +54,15 @@ const groupedTasks = computed(() => {
 		});
 	}
 
-	// 3. Completed (Optional, maybe collapsible)
-	// For now, let's keep it simple and maybe add a toggle later.
-	// The user asked for "Management", so maybe showing completed is good, but let's hide them for cleaner view first.
+	// 3. Completed
+	const completed = tasksStore.tasks.filter((t) => t.completed);
+	if (completed.length > 0) {
+		groups.push({
+			categoryId: -1, // Special ID for completed
+			name: "Completed",
+			tasks: completed
+		});
+	}
 
 	return groups;
 });
@@ -67,9 +73,7 @@ const openDetails = (task: Task) => {
 };
 
 const handleTaskComplete = async (task: Task) => {
-	// Toggle completion
-	const updated = { ...task, completed: !task.completed };
-	await tasksStore.updateTask(updated, false);
+	await tasksStore.toggleTaskCompletion(task);
 };
 </script>
 
@@ -129,8 +133,8 @@ const handleTaskComplete = async (task: Task) => {
                                 {{ task.title }}
                             </h3>
                             <div class="flex items-center gap-2 text-xs text-text-muted mt-0.5">
-                                <span v-if="task.cycles > 1">{{ task.cycles }} cycles</span>
-                                <span v-if="task.recurrence_rule" class="flex items-center gap-1 text-pomodo-orange">
+                                <span>{{ task.completedCycles }} / {{ task.cycles }} cycles</span>
+                                <span v-if="task.recurrence_rule" class="flex items-center gap-1 text-pomodo-orange ml-2">
                                     <Calendar :size="12" /> Recurring
                                 </span>
                             </div>

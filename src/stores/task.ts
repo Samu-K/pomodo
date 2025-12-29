@@ -7,6 +7,7 @@ import { getRecurrenceString } from "../funcs/task";
 import { fromUTCString, toUTCISOString } from "../funcs/stats/date_handling";
 import { useUIStore } from "./ui";
 import * as db from "../funcs/db/tasks";
+import { get_sessions } from "../funcs/db/session";
 import { commands } from "../funcs/commands";
 
 
@@ -28,12 +29,21 @@ export const useTasks = defineStore("tasks", () => {
             const categories = catRes.data;
             const catMap = new Map(categories.map((c) => [c.id, c.name]));
 
+            const sessions = await get_sessions();
+            const sessionTaskMap = new Map<number, number>();
+            sessions.forEach(s => {
+                if (s.task_id && s.finished) {
+                    sessionTaskMap.set(s.task_id, (sessionTaskMap.get(s.task_id) || 0) + 1);
+                }
+            });
+
             tasks.value = fetched.map((t) => ({
                 id: t.id,
                 title: t.title,
                 category: t.category_id ? catMap.get(t.category_id) || "" : "",
                 category_id: t.category_id,
                 cycles: t.estimated_pomodoros || 1,
+                completedCycles: sessionTaskMap.get(t.id) || 0,
                 startTime: fromUTCString(t.start_datetime),
                 completed: t.is_completed,
                 recurrence_rule: t.recurrence_rule ?? undefined,
@@ -205,6 +215,27 @@ export const useTasks = defineStore("tasks", () => {
         }
     }
 
+    async function toggleTaskCompletion(task: Task) {
+        try {
+            const payload = {
+                id: task.id,
+                title: task.title,
+                category_id: task.category_id,
+                estimated_pomodoros: task.cycles,
+                start_datetime: toUTCISOString(task.startTime),
+                recurrence_rule: task.recurrence_rule ?? null,
+                is_completed: !task.completed,
+                parent_task_id: task.parent_task_id ?? null,
+                created_at: null
+            };
+            await db.updateTask(payload);
+            await fetchTasks();
+        } catch (e: any) {
+            console.error("Error toggling task completion", e);
+            ui.setError(e.message || "Failed to update task");
+        }
+    }
+
     return {
         tasks,
         expandedTasks,
@@ -213,6 +244,7 @@ export const useTasks = defineStore("tasks", () => {
         updateTask,
         deleteTask,
         completeTaskInstance,
+        toggleTaskCompletion,
         expandTasksForRange
     };
 });

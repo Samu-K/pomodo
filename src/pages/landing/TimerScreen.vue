@@ -8,16 +8,15 @@ import type { Task } from "../../defines/task";
 import { useCategoryStore } from "../../stores/categories";
 import { useSettingsStore } from "../../stores/settings";
 import { useTasks } from "../../stores/task";
-import { useThemeStore } from "../../stores/theme";
 import { TimerMode, useTimerStore } from "../../stores/timer";
 import { useUIStore } from "../../stores/ui";
+import { watch } from "vue";
 
 const router = useRouter();
 
 const uiStore = useUIStore();
 const timer = useTimerStore();
 const categoryStore = useCategoryStore();
-const themeStore = useThemeStore();
 const settingsStore = useSettingsStore();
 const tasksStore = useTasks();
 
@@ -95,30 +94,6 @@ const allowReset = computed(() => {
 	return !timer.isRunning && timer.percent < 100;
 });
 
-const categoryStyle = computed(() => {
-	const color = selectedCategory.value?.color;
-	const pomodoOrange = themeStore.getColor("pomodo.orange") || "#FF6B35";
-
-	if (!color) {
-		// No category color - use pomodo orange as default
-		return {
-			backgroundColor: themeStore.hexToRgba(pomodoOrange, 0.15),
-			color: pomodoOrange,
-			borderColor: themeStore.hexToRgba(pomodoOrange, 0.3)
-		};
-	}
-
-	// Resolve color using theme store (handles both hex and legacy names)
-	const hexColor = themeStore.resolveColor(color);
-
-	// Convert to rgba for backgrounds
-	return {
-		backgroundColor: themeStore.hexToRgba(hexColor, 0.15),
-		color: hexColor,
-		borderColor: themeStore.hexToRgba(hexColor, 0.3)
-	};
-});
-
 // Hold to pause logic
 const holdProgress = ref(0);
 let holdInterval: number | undefined;
@@ -153,6 +128,46 @@ const endHold = () => {
 const completeHold = () => {
 	endHold();
 	timer.pauseTimer();
+};
+
+const showCompletionDialog = ref(false);
+const showOvertimeDialog = ref(false);
+const overtimeAmount = ref(1);
+
+watch(() => timer.mode, async (newMode, oldMode) => {
+    if (oldMode === TimerMode.FOCUS && newMode === TimerMode.REST) {
+        // Just finished a focus session
+        await tasksStore.fetchTasks();
+        
+        if (selectedTask.value) {
+            // Check if we reached the goal
+            // Note: fetchTasks already calculates completedCycles which includes the one we just finished in DB
+            if (selectedTask.value.completedCycles >= selectedTask.value.cycles) {
+                 showCompletionDialog.value = true;
+            }
+        }
+    }
+});
+
+const handleCompleteTask = async () => {
+    if (selectedTask.value) {
+        await tasksStore.completeTaskInstance(selectedTask.value);
+        showCompletionDialog.value = false;
+        timer.setTaskId(null); // Clear task after completion
+    }
+};
+
+const handleNotComplete = () => {
+    showCompletionDialog.value = false;
+    showOvertimeDialog.value = true;
+};
+
+const handleAddOvertime = async () => {
+    if (selectedTask.value) {
+        const updated = { ...selectedTask.value, cycles: selectedTask.value.cycles + overtimeAmount.value };
+        await tasksStore.updateTask(updated, false);
+        showOvertimeDialog.value = false;
+    }
 };
 
 defineExpose({
@@ -350,6 +365,47 @@ defineExpose({
                     <SkipForward :size="20" />
                 </button>
             </div>
+
+            <!-- Task Completion Dialog -->
+            <v-dialog v-model="showCompletionDialog" max-width="400" persistent>
+                <v-card class="rounded-xl p-4 bg-light-surface dark:bg-dark-surface">
+                    <v-card-title class="text-2xl font-bold bg-gradient-to-r from-pomodo-orange to-pomodo-red bg-clip-text text-transparent">
+                        Task Finished?
+                    </v-card-title>
+                    <v-card-text class="text-text-muted">
+                        You've focused the estimated {{ selectedTask?.cycles }} cycles on <b>{{ selectedTask?.title }}</b>. Is it completed?
+                    </v-card-text>
+                    <v-card-actions class="justify-end gap-2">
+                        <v-btn variant="text" color="grey" @click="handleNotComplete">Not Yet</v-btn>
+                        <v-btn color="pomodo-orange" class="text-white" @click="handleCompleteTask">Yes, Mark Complete</v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+
+            <!-- Overtime Dialog -->
+            <v-dialog v-model="showOvertimeDialog" max-width="400">
+                <v-card class="rounded-xl p-4 bg-light-surface dark:bg-dark-surface">
+                    <v-card-title class="text-xl font-bold">Add Overtime</v-card-title>
+                    <v-card-text>
+                        <p class="text-text-muted mb-4">How many more cycles do you need for this task?</p>
+                        <v-slider
+                            v-model="overtimeAmount"
+                            :min="1"
+                            :max="10"
+                            :step="1"
+                            thumb-label
+                            color="pomodo-orange"
+                        ></v-slider>
+                        <div class="text-center font-bold text-pomodo-orange">
+                            +{{ overtimeAmount }} {{ overtimeAmount === 1 ? 'cycle' : 'cycles' }}
+                        </div>
+                    </v-card-text>
+                    <v-card-actions class="justify-end gap-2">
+                        <v-btn variant="text" color="grey" @click="showOvertimeDialog = false">Cancel</v-btn>
+                        <v-btn color="pomodo-orange" class="text-white" @click="handleAddOvertime">Add & Continue</v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
         </template>
     </div>
 </template>

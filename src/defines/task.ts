@@ -9,6 +9,7 @@ export interface Task {
 	cycles: number; // estimated_pomodoros
 	startTime: Date; // start_datetime
 	completed: boolean; // is_completed
+	completedCycles: number;
 	recurrence_rule?: string;
 	recurrence?: Recurrence; // Optional, for UI state before saving
 	gradient: string;
