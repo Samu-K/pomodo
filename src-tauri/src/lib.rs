@@ -110,6 +110,18 @@ tauri_commands! {
     tasks::complete_task_instance(parent_task_id: i64, date: NaiveDateTime) -> IdReturn
 }
 
+#[tauri::command]
+#[specta::specta]
+async fn close_splashscreen(app: tauri::AppHandle) {
+    if let Some(splashscreen) = app.get_webview_window("splashscreen") {
+        splashscreen.close().unwrap();
+    }
+    if let Some(main_window) = app.get_webview_window("main") {
+        main_window.show().unwrap();
+        main_window.set_focus().unwrap();
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder =

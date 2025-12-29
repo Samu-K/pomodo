@@ -71,6 +71,32 @@ onMounted(async () => {
 	}
 });
 
+// Keep Screen On Logic
+watch(
+	() => [timer.isRunning, timer.mode],
+	async ([isRunning, mode]) => {
+		try {
+			if (isRunning && mode === TimerMode.FOCUS) {
+				await invoke("plugin:keep-screen-on|enable");
+			} else {
+				await invoke("plugin:keep-screen-on|disable");
+			}
+		} catch (e) {
+			console.error("KeepScreenOn error:", e);
+		}
+	},
+	{ immediate: true }
+);
+
+// Haptics Helper
+const haptic = async (style: "light" | "medium" | "heavy" = "medium") => {
+	try {
+		await invoke("plugin:haptics|impact", { style });
+	} catch (e) {
+		// Ignore errors (e.g. on desktop)
+	}
+};
+
 const selectedCategory = computed(() => {
 	if (!timer.categoryId) return null;
 	return (
@@ -132,6 +158,7 @@ const endHold = () => {
 
 const completeHold = () => {
 	endHold();
+	haptic("heavy");
 	timer.pauseTimer();
 };
 

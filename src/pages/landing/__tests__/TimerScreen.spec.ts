@@ -9,6 +9,17 @@ import { useSettingsStore } from "../../../stores/settings";
 import { TimerMode, useTimerStore } from "../../../stores/timer";
 import TimerScreen from "../TimerScreen.vue";
 
+type WritableTimerStore = ReturnType<typeof useTimerStore> & {
+	isReady: boolean;
+	mode: TimerMode;
+	sessionStreak: number;
+	long_break_interval: number;
+	percent: number;
+	formattedTime: string;
+	isRunning: boolean;
+	categoryId: number | null;
+};
+
 // Mock Tauri API
 vi.mock("@tauri-apps/api/core", () => ({
 	invoke: vi.fn()
@@ -269,8 +280,8 @@ describe("TimerScreen.vue", () => {
 		});
 
 		it("is always enabled in Rest mode", async () => {
-			timerStore.mode = TimerMode.REST;
-			timerStore.isRunning = true; // Even if running
+			(timerStore as WritableTimerStore).mode = TimerMode.REST;
+			(timerStore as WritableTimerStore).isRunning = true; // Even if running
 			await wrapper.vm.$nextTick();
 
 			const skipBtn = wrapper.find('[data-testid="skip-timer"]');

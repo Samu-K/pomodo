@@ -228,6 +228,9 @@ async updateTray(title: string, toggleText: string | null) : Promise<Result<null
     if(e instanceof Error) throw e;
     else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
 }
+},
+async closeSplashscreen() : Promise<void> {
+    await TAURI_INVOKE("close_splashscreen");
 }
 }
 

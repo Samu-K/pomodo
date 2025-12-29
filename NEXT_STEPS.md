@@ -1,79 +1,28 @@
-# Pomodo Project Improvement Roadmap
+# Pomodo Project Roadmap
 
-**Version:** 1.0
-**Status:** Planned
-**Context:** This document outlines the architectural refactoring, feature additions, and technical debt cleanup required to mature the Pomodo project from a template to a production-ready application.
-
----
-
-## 1. Architectural Refactoring
-
-### 1.1 Adopt Vue Router - DONE
-**Current State:** `App.vue` uses manual state (`activeTab`) and conditional rendering (`v-if`) for navigation.
-**Objective:** Replace manual routing with `vue-router` to improve navigation handling, enable lazy loading, and clean up the root component.
-**Instructions:**
-- Install `vue-router`.
-- Create `src/router/index.ts` defining routes for:
-  - `/` (Timer)
-  - `/timeline`
-  - `/tasks`
-  - `/stats`
-  - `/settings`
-- Refactor `AppLayout.vue` to use `<router-view>` instead of slots for content.
-- Update bottom navigation to use `router-link` or programmatic navigation.
-
-### 1.2 Extract Logic to Composables
-**Current State:** Complex logic (e.g., "Hold to pause") resides directly inside UI components like `TimerScreen.vue`.
-**Objective:** Decouple logic from UI to enhance reusability and testability.
-**Instructions:**
-- Create `src/composables/useHoldAction.ts` to encapsulate the hold-to-trigger logic.
-- Refactor `TimerScreen.vue` to import and use this composable.
-- Ensure the composable accepts callbacks for `onStart`, `onComplete`, and `onCancel`.
-
-### 1.3 Web Worker for Timer - DONE
-**Current State:** The timer relies on `setInterval` running on the main thread in `stores/timer.ts`.
-**Objective:** Prevent timer drift and throttling when the application is in the background.
-**Instructions:**
-- Create a dedicated Web Worker (`src/workers/timer.worker.ts`).
-- Move the `tick` logic and interval management into the worker.
-- Refactor `stores/timer.ts` to communicate with the worker via messages (`postMessage`).
+**Version:** 6.0 (Tasks & Recurrence)
+**Context:** This document outlines the path to maturing Pomodo from a template into a production-ready, cross-platform (Desktop, iOS, Android) application.
 
 ---
 
-## 2. Feature Completeness
-
-### 2.1 System Notifications & Audio
-**Current State:** Sessions finish silently with only a state change.
-**Objective:** Alert the user when a focus or break session ends, even if the window is not focused.
-**Instructions:**
-- Integrate `@tauri-apps/plugin-notification`.
-- Trigger a system notification in `timer.ts` inside `handleComplete()`.
-- Implement an audio feedback mechanism (e.g., a "ding" sound) using HTML5 Audio or a lightweight library.
-
-### 2.2 Task Management (CRUD)
-**Current State:** The "Tasks" tab is a placeholder.
-**Objective:** Fully implement the Task interface.
-**Instructions:**
-- Create `src/pages/tasks/TaskListScreen.vue`.
-- Connect UI to the existing Rust backend commands for tasks (ensure commands exist in `src-tauri` or implement them).
-- Utilize existing modals:
-  - `CreateTaskModal.vue`
-  - `TaskDetailsModal.vue`
-- Implement grouping by category and "Completed" vs. "Pending" views.
-
-### 2.3 System Tray Integration
-**Current State:** No system tray presence.
-**Objective:** Allow the app to run in the background and provide quick status updates.
-**Instructions:**
-- Configure the System Tray in `src-tauri/tauri.conf.json` and Rust backend.
-- Features to implement:
-  - Show remaining time in the tray tooltip or menu title.
-  - "Show/Hide" toggle.
-  - "Quit" option.
+## ✅ Completed / In-Progress
+- **Routing:** Migrated to `vue-router`.
+- **Timer Logic:** Moved to Web Workers for background stability.
+- **Type Safety:** Implemented `tauri-specta` for typesafe commands.
+- **Design System:** Centralized theme colors.
 
 ---
 
-## 3. User Experience (UX) Enhancements
+## 🏗 Phase 1: Core Architecture & Refactoring
+
+### 1.2 Platform Detection
+- **Goal:** Runtime logic for UI differences.
+- **Implementation:** `src/composables/usePlatform.ts` (flags for mobile/desktop).
+
+---
+
+## 📝 Phase 2: Task Management (The "Meat")
+*Adding structure to the workflow.*
 
 ### 3.1 "Focus Mode" / Mini Window - DONE
 **Objective:** Reduce visual clutter during focus sessions.
@@ -84,55 +33,84 @@
   - Show only the timer and current task.
   - Resize the window using Tauri's window API.
 
-### 3.2 Keyboard Shortcuts
-**Objective:** Power-user efficiency.
-**Instructions:**
-- Implement a global key listener (or Tauri global shortcuts) for:
-  - `Space`: Toggle Timer.
-  - `Esc`: Cancel/Skip.
-  - `Ctrl/Cmd+N`: New Task.
+### 2.2 Recurrence Logic (Frontend)
+- **Goal:** Flexible scheduling (e.g., "Every Mon/Wed").
+- **Tech:** Use `rrule` (npm package) for parsing and generating rule strings.
+- **Flow:**
+  - **Creation:** Convert UI form state -> RRULE string.
+  - **Display:** Use `rrule.between()` to calculate visible tasks for the Timeline view.
 
-### 3.3 Empty States
-**Objective:** Improve UX when data is missing.
-**Instructions:**
-- Create a reusable `<EmptyState />` component.
-- Implement in `StatsScreen` (when no history exists) and `TimelineScreen` (when no tasks are scheduled).
-
----
-
-## 4. Code Quality & Maintenance
-
-### 4.1 Type-Safe Tauri Commands (Specta)
-**Current State:** Commands are invoked using raw strings.
-**Objective:** Ensure full type safety between Rust and TypeScript.
-**Instructions:**
-- Fully implement `tauri-specta` (already present in `Cargo.toml`).
-- Generate TypeScript bindings for all Rust commands.
-- Replace manual `invoke("command_string")` calls with the generated typed functions.
-
-### 4.2 Centralized Design System
-**Current State:** Colors are hardcoded in components like `TimerScreen.vue`.
-**Objective:** Single source of truth for styling.
-**Instructions:**
-- Extract all color codes (hex values) into `src/utils/theme.ts` or a Pinia theme store.
-- Update `tailwind.config.js` to reference these variables if dynamic updates are needed.
-- Refactor components to use these centralized values instead of hardcoded strings.
-
-### 4.3 Testing Strategy
-**Current State:** Basic Vitest setup exists.
-**Objective:** Ensure reliability of core logic.
-**Instructions:**
-- **Unit Tests:** Add comprehensive tests for `stores/timer.ts` covering:
-  - Auto-start logic.
-  - State persistence.
-  - Long break calculations.
-- **Component Tests:** Test `TimerScreen.vue` interaction logic using Vue Test Utils.
+### 2.3 Task Selection Flow (Timer Screen)
+- **Goal:** Context-aware focus.
+- **New UX:**
+  1. User clicks "Select Task".
+  2. **Step 1:** Pick Category (e.g., "Work").
+  3. **Step 2:** Pick specific Task (sorted by date) OR "Just Focus" (category only).
+  4. **Result:** Timer session is linked to both Category ID and Task ID.
 
 ---
 
-## Technical Constraints & Guidelines
-* **Package Manager:** Strictly use **pnpm**.
-* **Linter:** Follow **Biome** rules (`biome.json`).
-* **UI Framework:** Prioritize **Vuetify** components; use **Tailwind** for layout.
-* **Icons:** Use `lucide-vue-next`.
-* **Backend:** Do not modify `src-tauri` unless implementing specific required commands for the features above.
+## 📱 Phase 3: Mobile Core & "Feel"
+
+### 3.1 Startup Experience
+- **Implementation:** `splashscreen.html` configured in Tauri to hide initialization.
+
+### 3.2 "Always On" Focus
+- **Implementation:** `tauri-plugin-keep-screen-on` enabled during Focus Mode.
+
+### 3.3 Tactile Feedback
+- **Implementation:** `tauri-plugin-haptic-feedback` for interactions.
+
+### 3.4 Navigation Gestures
+- **Implementation:** Swipe Left/Right navigation using `@vueuse/core`.
+
+---
+
+## 🎨 Phase 4: UI/UX Refinements
+
+### 4.1 Unified Interaction
+- **Action:** Remove `:hover` states; rely on `:active` for cross-platform consistency.
+
+### 4.2 Visual Polish
+- **Timer Screen:** Clearer Enabled/Disabled button states.
+- **Empty States:** Friendly placeholders for empty lists/charts.
+- **OLED Theme:** True Black mode for mobile battery savings.
+
+---
+
+## 🚀 Phase 5: Background & Notifications
+
+### 5.1 iOS: Live Activities
+- **Implementation:** Custom Swift Plugin + Widget Extension for Lock Screen timer.
+
+### 5.2 Android: Foreground Service
+- **Implementation:** Custom Kotlin Plugin starting a Foreground Service with `.setUsesChronometer(true)`.
+
+### 5.3 Interactive Notifications
+- **Implementation:** "Start Break" / "Pause" buttons directly in system notifications.
+
+---
+
+## 🖥️ Phase 6: Desktop Quality of Life
+
+### 6.1 Window Management
+- **Persistence:** Save/Restore window size/position.
+- **Mini-Mode:** Toggle small, always-on-top window.
+- **Minimize to Tray:** Keep running in background on close.
+
+### 6.2 Context Menus
+- **Implementation:** Right-click menus for Task editing and Timer control.
+
+### 6.3 Global Hotkeys
+- **Implementation:** `Ctrl+Shift+P` to toggle timer globally.
+
+---
+
+## ✨ Phase 7: Gamification & Data
+
+### 7.1 Stats Screen
+- **Metrics:** Track "Daily Streak" and "Total Focus Hours".
+- **Implementation:** Aggregations in `src/stores/stats.ts`.
+
+### 7.2 Data Backup
+- **Implementation:** JSON Export/Import of SQLite DB.

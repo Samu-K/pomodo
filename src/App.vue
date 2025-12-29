@@ -26,7 +26,7 @@ const uiStore = useUIStore();
 const vuetifyTheme = useTheme();
 const isLoading = ref(true);
 
-// Initialize theme on app mount
+// Initialize theme and splashscreen on app mount
 onMounted(async () => {
 	// Ensure settings are loaded first
 	if (settingsStore.settings.length === 0) {
@@ -127,6 +127,37 @@ const openTaskDetails = (task: Task) => {
 	showTaskDetails.value = true;
 	selectedTask.value = task;
 };
+
+// Swipe Navigation
+const tabs = ["/", "/timeline", "/tasks", "/stats"];
+useSwipe(document.body, {
+	onSwipeEnd(_e, direction) {
+		if (direction === "left") {
+			// Swipe Left -> Go Right (Next Tab)
+			if (!showBackButton.value) {
+				navigateTabs(1);
+			}
+		} else if (direction === "right") {
+			// Swipe Right -> Go Left (Prev Tab) or Back
+			if (showBackButton.value) {
+				router.back();
+			} else {
+				navigateTabs(-1);
+			}
+		}
+	}
+});
+
+function navigateTabs(offset: number) {
+	const current = route.path;
+	const idx = tabs.indexOf(current);
+	if (idx === -1) return;
+
+	const newIdx = idx + offset;
+	if (newIdx >= 0 && newIdx < tabs.length) {
+		router.push(tabs[newIdx]);
+	}
+}
 </script>
 
 <template>

@@ -29,6 +29,9 @@ importers:
       '@tauri-apps/plugin-opener':
         specifier: ^2
         version: 2.5.2
+      '@vueuse/core':
+        specifier: ^14.1.0
+        version: 14.1.0(vue@3.5.25(typescript@5.6.3))
       apexcharts:
         specifier: ^5.3.6
         version: 5.3.6
@@ -916,6 +919,19 @@ packages:
       vue: ^3.0.0
       vuetify: ^3.0.0
 
+  '@vueuse/core@14.1.0':
+    resolution: {integrity: sha512-rgBinKs07hAYyPF834mDTigH7BtPqvZ3Pryuzt1SD/lg5wEcWqvwzXXYGEDb2/cP0Sj5zSvHl3WkmMELr5kfWw==}
+    peerDependencies:
+      vue: ^3.5.0
+
+  '@vueuse/metadata@14.1.0':
+    resolution: {integrity: sha512-7hK4g015rWn2PhKcZ99NyT+ZD9sbwm7SGvp7k+k+rKGWnLjS/oQozoIZzWfCewSUeBmnJkIb+CNr7Zc/EyRnnA==}
+
+  '@vueuse/shared@14.1.0':
+    resolution: {integrity: sha512-EcKxtYvn6gx1F8z9J5/rsg3+lTQnvOruQd8fUecW99DCK04BkWD7z5KQ/wTAx+DazyoEE9dJt/zV8OIEQbM6kw==}
+    peerDependencies:
+      vue: ^3.5.0
+
   '@yr/monotone-cubic-spline@1.0.3':
     resolution: {integrity: sha512-FQXkOta0XBSUPHndIKON2Y9JeQz5ZeMqLYZVVK93FliNBFm7LNMIZmY6FrMEB9XPcDbE2bekMbZD6kzDkxwYjA==}
 
@@ -1588,6 +1604,9 @@ packages:
     resolution: {integrity: sha512-6A2rnmW5xZMdw11LYjhcI5846rt9pbLSabY5XPxo+XWdxwZaFEn47Go4NzFiHu9sNNmr/kXivP1vStfvMaK1GQ==}
     engines: {node: '>=14.0.0'}
     hasBin: true
+
+  tauri-plugin-keep-screen-on-api@0.1.4:
+    resolution: {integrity: sha512-uFY2EKWiKQ3xmwpMYfjaXgYr5USSNS0/Nz8h75lnG0bgttsEcUs4soP0fHPpE7tL3BKbzJdyTycusirkS9aKkA==}
 
   thenify-all@1.6.0:
     resolution: {integrity: sha512-RNxQH/qI8/t3thXJDwcstUO4zeqo64+Uy/+sNVRBx4Xn2OX+OZ9oP+iJnNFqplFra2ZUVeKCSa2oVWi3T4uVmA==}
@@ -2559,6 +2578,19 @@ snapshots:
       vue: 3.5.25(typescript@5.6.3)
       vuetify: 3.11.0(typescript@5.6.3)(vite-plugin-vuetify@2.1.2)(vue@3.5.25(typescript@5.6.3))
 
+  '@vueuse/core@14.1.0(vue@3.5.25(typescript@5.6.3))':
+    dependencies:
+      '@types/web-bluetooth': 0.0.21
+      '@vueuse/metadata': 14.1.0
+      '@vueuse/shared': 14.1.0(vue@3.5.25(typescript@5.6.3))
+      vue: 3.5.25(typescript@5.6.3)
+
+  '@vueuse/metadata@14.1.0': {}
+
+  '@vueuse/shared@14.1.0(vue@3.5.25(typescript@5.6.3))':
+    dependencies:
+      vue: 3.5.25(typescript@5.6.3)
+
   '@yr/monotone-cubic-spline@1.0.3': {}
 
   abbrev@2.0.0: {}
@@ -3202,6 +3234,10 @@ snapshots:
     transitivePeerDependencies:
       - tsx
       - yaml
+
+  tauri-plugin-keep-screen-on-api@0.1.4:
+    dependencies:
+      '@tauri-apps/api': 2.9.0
 
   thenify-all@1.6.0:
     dependencies:

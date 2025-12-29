@@ -10,6 +10,10 @@ import { useThemeStore } from "../../../stores/theme";
 import { useTimerStore } from "../../../stores/timer";
 import CategoryManager from "../CategoryManager.vue";
 
+type WritableThemeStore = ReturnType<typeof useThemeStore> & {
+	categoryColors: string[];
+};
+
 // Mock Tauri API
 vi.mock("@tauri-apps/api/core", () => ({
 	invoke: vi.fn()
