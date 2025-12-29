@@ -206,9 +206,11 @@ export const useTimerStore = defineStore("timer", () => {
 		if (mode.value === TimerMode.FOCUS) {
 			try {
 				await set_newest_session_complete(); // Mark DB entry as finished
-			} catch (e: any) {
+			} catch (e) {
 				console.error("Error marking session complete:", e);
-				ui.setError(e.message || "Failed to complete session");
+				let msg = "Failed to complete session";
+				if (e instanceof Error) msg = e.message;
+				ui.setError(msg);
 			}
 			currentSessionId.value = null; // Session is complete, don't delete on reset
 			sessionStreak.value = sessionStreak.value + 1;
@@ -256,9 +258,11 @@ export const useTimerStore = defineStore("timer", () => {
 				try {
 					const newId = await add_session(new_session);
 					currentSessionId.value = newId;
-				} catch (e: any) {
+				} catch (e) {
 					console.error("Error creating session:", e);
-					ui.setError(e.message || "Failed to create focus session");
+					let msg = "Failed to create focus session";
+					if (e instanceof Error) msg = e.message;
+					ui.setError(msg);
 				}
 			}
 		}
@@ -293,12 +297,14 @@ export const useTimerStore = defineStore("timer", () => {
 					console.log(
 						`Successfully deleted session ID: ${currentSessionId.value}`
 					);
-				} catch (e: any) {
+				} catch (e) {
 					console.error(
 						`Failed to delete session ${currentSessionId.value}:`,
 						e
 					);
-					ui.setError(e.message || "Failed to delete session");
+					let msg = "Failed to delete session";
+					if (e instanceof Error) msg = e.message;
+					ui.setError(msg);
 					// Continue with reset even if deletion fails
 				} finally {
 					currentSessionId.value = null;

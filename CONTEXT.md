@@ -36,6 +36,8 @@ The project uses a specific color palette defined in `tailwind.config.js`.
 
 ## 📏 Development Rules & Constraints
 
+0.  **Type Safety**:
+    - ALWAYS use **TypeScript**. Never use `any` or `unknown`.
 1.  **Package Manager**:
     - ALWAYS use **pnpm**. Never use `npm` or `yarn`.
 

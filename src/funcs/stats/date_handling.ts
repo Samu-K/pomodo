@@ -1,7 +1,7 @@
 // Helper to check if a date string is "Today"
-const isToday = (dateString: string | null) => {
-	if (!dateString) return false; // Null check
-	const d = new Date(dateString);
+const isToday = (date: Date | string | null) => {
+	if (!date) return false; // Null check
+	const d = date instanceof Date ? date : new Date(date);
 	const today = new Date();
 	return (
 		d.getDate() === today.getDate() &&
@@ -11,9 +11,9 @@ const isToday = (dateString: string | null) => {
 };
 
 // Helper to check if a date is in the "Current Week"
-const isSameWeek = (dateString: string | null) => {
-	if (!dateString) return false; // Null check
-	const d = new Date(dateString);
+const isSameWeek = (date: Date | string | null) => {
+	if (!date) return false; // Null check
+	const d = date instanceof Date ? date : new Date(date);
 	const today = new Date();
 
 	// Adjust to make Monday index 0, Sunday index 6

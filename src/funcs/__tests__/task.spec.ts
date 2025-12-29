@@ -250,6 +250,7 @@ describe("Task Functions", () => {
 			cycles: 1,
 			startTime: new Date("2024-03-15T10:00:00Z"),
 			completed: false,
+			completedCycles: 0,
 			gradient: "from-pomodo-orange to-pomodo-red"
 		};
 

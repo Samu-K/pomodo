@@ -1,14 +1,13 @@
 <script setup lang="ts">
+import { LogicalSize } from "@tauri-apps/api/dpi";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
 	isPermissionGranted,
 	requestPermission
 } from "@tauri-apps/plugin-notification";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-
 import { useTheme } from "vuetify";
-import { LogicalSize } from "@tauri-apps/api/dpi";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import AppLayout from "./components/AppLayout.vue";
 import SplashScreen from "./components/SplashScreen.vue";
 import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
@@ -70,6 +69,7 @@ const selectedTask = ref<Task>({
 	startTime: new Date(),
 	gradient: "",
 	completed: false,
+	completedCycles: 0,
 	recurrence: {
 		type: RecurrenceType.NONE
 	}

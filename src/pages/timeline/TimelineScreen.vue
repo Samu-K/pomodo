@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, Plus, Calendar } from "lucide-vue-next";
-import { startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns";
+import { endOfMonth, endOfWeek, startOfMonth, startOfWeek } from "date-fns";
+import { Calendar, ChevronLeft, ChevronRight, Plus } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 import CreateTaskModal from "../../components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
+import CalendarView from "../../components/timeline/CalendarView.vue";
 import type { Task } from "../../defines/task.ts";
 import { useSettingsStore } from "../../stores/settings.ts";
 import { useTasks } from "../../stores/task.ts";
-import CalendarView from "../../components/timeline/CalendarView.vue";
 
 const tasksStore = useTasks();
 const settingsStore = useSettingsStore();
@@ -15,7 +15,7 @@ const settingsStore = useSettingsStore();
 const showCreateModal = ref(false);
 const showDetailsModal = ref(false);
 const selectedTask = ref<Task | null>(null);
-const viewMode = ref<'timeline' | 'calendar'>('timeline');
+const viewMode = ref<"timeline" | "calendar">("timeline");
 const createTaskDate = ref<Date | undefined>(undefined);
 
 // Constants
@@ -89,7 +89,7 @@ onMounted(async () => {
 
 // Re-expand tasks when selected date changes OR when tasks are updated OR view mode changes
 const updateExpandedTasks = () => {
-	if (viewMode.value === 'timeline') {
+	if (viewMode.value === "timeline") {
 		const start = new Date(selectedDate.value);
 		start.setDate(start.getDate() - 3);
 		const end = new Date(selectedDate.value);
@@ -101,11 +101,11 @@ const updateExpandedTasks = () => {
 		const monthEnd = endOfMonth(monthStart);
 		const start = startOfWeek(monthStart, { weekStartsOn: 1 });
 		const end = endOfWeek(monthEnd, { weekStartsOn: 1 });
-		
+
 		// Add buffer
 		start.setDate(start.getDate() - 1);
 		end.setDate(end.getDate() + 1);
-		
+
 		tasksStore.expandTasksForRange(start, end);
 	}
 };
@@ -195,7 +195,7 @@ function calculateTaskPos(time: Date): number {
 
 const goToPrevDate = () => {
 	const newDate = new Date(selectedDate.value);
-	if (viewMode.value === 'timeline') {
+	if (viewMode.value === "timeline") {
 		newDate.setDate(newDate.getDate() - 1);
 	} else {
 		newDate.setMonth(newDate.getMonth() - 1);
@@ -205,7 +205,7 @@ const goToPrevDate = () => {
 
 const goToNextDate = () => {
 	const newDate = new Date(selectedDate.value);
-	if (viewMode.value === 'timeline') {
+	if (viewMode.value === "timeline") {
 		newDate.setDate(newDate.getDate() + 1);
 	} else {
 		newDate.setMonth(newDate.getMonth() + 1);
@@ -234,7 +234,7 @@ const handleDetailsModalClose = () => {
 
 const handleCalendarDateSelect = (date: Date) => {
 	selectedDate.value = date;
-	viewMode.value = 'timeline';
+	viewMode.value = "timeline";
 };
 
 const handleCalendarCreateTask = (date: Date) => {

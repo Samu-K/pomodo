@@ -29,17 +29,17 @@ vi.mock("lucide-vue-next", () => ({
 vi.stubGlobal(
 	"ResizeObserver",
 	class ResizeObserver {
-		observe() { }
-		unobserve() { }
-		disconnect() { }
+		observe() {}
+		unobserve() {}
+		disconnect() {}
 	}
 );
 vi.stubGlobal(
 	"IntersectionObserver",
 	class IntersectionObserver {
-		observe() { }
-		unobserve() { }
-		disconnect() { }
+		observe() {}
+		unobserve() {}
+		disconnect() {}
 	}
 );
 vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>

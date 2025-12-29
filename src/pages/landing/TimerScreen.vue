@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { Maximize2, Minimize2, Pause, Play, RotateCcw, Settings, SkipForward } from "lucide-vue-next";
-import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import {
+	Maximize2,
+	Minimize2,
+	Pause,
+	Play,
+	RotateCcw,
+	SkipForward
+} from "lucide-vue-next";
+import { computed, onMounted, ref, watch } from "vue";
 import CategoryManager from "../../components/timer/CategoryManager.vue";
+import OvertimeDialog from "../../components/timer/OvertimeDialog.vue";
+import TaskCompletionDialog from "../../components/timer/TaskCompletionDialog.vue";
 import TaskManager from "../../components/timer/TaskManager.vue";
 import type { Task } from "../../defines/task";
 import { useCategoryStore } from "../../stores/categories";
@@ -10,9 +18,6 @@ import { useSettingsStore } from "../../stores/settings";
 import { useTasks } from "../../stores/task";
 import { TimerMode, useTimerStore } from "../../stores/timer";
 import { useUIStore } from "../../stores/ui";
-import { watch } from "vue";
-
-const router = useRouter();
 
 const uiStore = useUIStore();
 const timer = useTimerStore();
@@ -132,42 +137,47 @@ const completeHold = () => {
 
 const showCompletionDialog = ref(false);
 const showOvertimeDialog = ref(false);
-const overtimeAmount = ref(1);
 
-watch(() => timer.mode, async (newMode, oldMode) => {
-    if (oldMode === TimerMode.FOCUS && newMode === TimerMode.REST) {
-        // Just finished a focus session
-        await tasksStore.fetchTasks();
-        
-        if (selectedTask.value) {
-            // Check if we reached the goal
-            // Note: fetchTasks already calculates completedCycles which includes the one we just finished in DB
-            if (selectedTask.value.completedCycles >= selectedTask.value.cycles) {
-                 showCompletionDialog.value = true;
-            }
-        }
-    }
-});
+watch(
+	() => timer.mode,
+	async (newMode, oldMode) => {
+		if (oldMode === TimerMode.FOCUS && newMode === TimerMode.REST) {
+			// Just finished a focus session
+			await tasksStore.fetchTasks();
+
+			if (selectedTask.value) {
+				// Check if we reached the goal
+				// Note: fetchTasks already calculates completedCycles which includes the one we just finished in DB
+				if (selectedTask.value.completedCycles >= selectedTask.value.cycles) {
+					showCompletionDialog.value = true;
+				}
+			}
+		}
+	}
+);
 
 const handleCompleteTask = async () => {
-    if (selectedTask.value) {
-        await tasksStore.completeTaskInstance(selectedTask.value);
-        showCompletionDialog.value = false;
-        timer.setTaskId(null); // Clear task after completion
-    }
+	if (selectedTask.value) {
+		await tasksStore.completeTaskInstance(selectedTask.value);
+		showCompletionDialog.value = false;
+		timer.setTaskId(null); // Clear task after completion
+	}
 };
 
 const handleNotComplete = () => {
-    showCompletionDialog.value = false;
-    showOvertimeDialog.value = true;
+	showCompletionDialog.value = false;
+	showOvertimeDialog.value = true;
 };
 
-const handleAddOvertime = async () => {
-    if (selectedTask.value) {
-        const updated = { ...selectedTask.value, cycles: selectedTask.value.cycles + overtimeAmount.value };
-        await tasksStore.updateTask(updated, false);
-        showOvertimeDialog.value = false;
-    }
+const handleAddOvertime = async (amount: number) => {
+	if (selectedTask.value) {
+		const updated = {
+			...selectedTask.value,
+			cycles: selectedTask.value.cycles + amount
+		};
+		await tasksStore.updateTask(updated, false);
+		showOvertimeDialog.value = false;
+	}
 };
 
 defineExpose({
@@ -190,9 +200,6 @@ defineExpose({
     >
         <!-- Settings and Mini View Toggle -->
         <div v-if="!uiStore.isMiniMode && timer.isReady" class="absolute top-8 right-6 z-20 flex gap-2">
-            <button data-testid="nav-settings" @click="router.push('/settings')" class="p-2 text-text-muted hover:text-pomodo-orange transition-colors">
-                <Settings :size="24"/>
-            </button>
             <button data-testid="toggle-mini-mode" @click="uiStore.toggleMiniMode" class="p-2 text-text-muted hover:text-pomodo-orange transition-colors">
                 <Minimize2 :size="24"/>
             </button>
@@ -367,45 +374,18 @@ defineExpose({
             </div>
 
             <!-- Task Completion Dialog -->
-            <v-dialog v-model="showCompletionDialog" max-width="400" persistent>
-                <v-card class="rounded-xl p-4 bg-light-surface dark:bg-dark-surface">
-                    <v-card-title class="text-2xl font-bold bg-gradient-to-r from-pomodo-orange to-pomodo-red bg-clip-text text-transparent">
-                        Task Finished?
-                    </v-card-title>
-                    <v-card-text class="text-text-muted">
-                        You've focused the estimated {{ selectedTask?.cycles }} cycles on <b>{{ selectedTask?.title }}</b>. Is it completed?
-                    </v-card-text>
-                    <v-card-actions class="justify-end gap-2">
-                        <v-btn variant="text" color="grey" @click="handleNotComplete">Not Yet</v-btn>
-                        <v-btn color="pomodo-orange" class="text-white" @click="handleCompleteTask">Yes, Mark Complete</v-btn>
-                    </v-card-actions>
-                </v-card>
-            </v-dialog>
+            <TaskCompletionDialog
+                v-model="showCompletionDialog"
+                :task="selectedTask"
+                @confirm="handleCompleteTask"
+                @cancel="handleNotComplete"
+            />
 
             <!-- Overtime Dialog -->
-            <v-dialog v-model="showOvertimeDialog" max-width="400">
-                <v-card class="rounded-xl p-4 bg-light-surface dark:bg-dark-surface">
-                    <v-card-title class="text-xl font-bold">Add Overtime</v-card-title>
-                    <v-card-text>
-                        <p class="text-text-muted mb-4">How many more cycles do you need for this task?</p>
-                        <v-slider
-                            v-model="overtimeAmount"
-                            :min="1"
-                            :max="10"
-                            :step="1"
-                            thumb-label
-                            color="pomodo-orange"
-                        ></v-slider>
-                        <div class="text-center font-bold text-pomodo-orange">
-                            +{{ overtimeAmount }} {{ overtimeAmount === 1 ? 'cycle' : 'cycles' }}
-                        </div>
-                    </v-card-text>
-                    <v-card-actions class="justify-end gap-2">
-                        <v-btn variant="text" color="grey" @click="showOvertimeDialog = false">Cancel</v-btn>
-                        <v-btn color="pomodo-orange" class="text-white" @click="handleAddOvertime">Add & Continue</v-btn>
-                    </v-card-actions>
-                </v-card>
-            </v-dialog>
+            <OvertimeDialog
+                v-model="showOvertimeDialog"
+                @confirm="handleAddOvertime"
+            />
         </template>
     </div>
 </template>

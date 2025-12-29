@@ -26,9 +26,11 @@ export const useSettingsStore = defineStore("settings", () => {
 			]);
 			settings.value = fetchedSettings;
 			categories.value = fetchedCategories;
-		} catch (e: any) {
+		} catch (e) {
 			console.error("Failed to fetch settings", e);
-			ui.setError(e.message || "Failed to fetch settings");
+			let msg = "Failed to fetch settings";
+			if (e instanceof Error) msg = e.message;
+			ui.setError(msg);
 		} finally {
 			isLoading.value = false;
 		}
@@ -53,9 +55,11 @@ export const useSettingsStore = defineStore("settings", () => {
 
 		try {
 			await set_setting_value(id, stringValue);
-		} catch (e: any) {
+		} catch (e) {
 			console.error("Failed to update setting", e);
-			ui.setError(e.message || "Failed to update setting");
+			let msg = "Failed to update setting";
+			if (e instanceof Error) msg = e.message;
+			ui.setError(msg);
 			// Rollback or ignore? For now, just show error.
 		}
 	};

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
-import { Settings } from "lucide-vue-next";
+import { CheckCircle, ListTodo, Settings, TrendingUp } from "lucide-vue-next";
 import { computed, onMounted, type Ref, ref } from "vue";
 import { useRouter } from "vue-router";
 import WeeklyFocusChart from "../../components/stats/WeeklyFocusChart.vue";
@@ -13,15 +13,35 @@ import {
 	isToday
 } from "../../funcs/stats/date_handling";
 import { useTasks } from "../../stores/task";
-import { CheckCircle, ListTodo, TrendingUp } from "lucide-vue-next";
 
 const router = useRouter();
 const tasksStore = useTasks();
 
 // Task Stats Logic
-const taskStats = computed(() => {
-	const total = tasksStore.expandedTasks.length;
-	const completed = tasksStore.expandedTasks.filter(t => t.completed).length;
+// Task Stats Logic
+const todayTaskStats = computed(() => {
+	const todaysTasks = tasksStore.expandedTasks.filter((t) =>
+		isToday(t.startTime)
+	);
+	const total = todaysTasks.length;
+	const completed = todaysTasks.filter((t) => t.completed).length;
+	const pending = total - completed;
+	const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+	return {
+		total,
+		completed,
+		pending,
+		rate
+	};
+});
+
+const weeklyTaskStats = computed(() => {
+	const weeklyTasks = tasksStore.expandedTasks.filter((t) =>
+		isSameWeek(t.startTime)
+	);
+	const total = weeklyTasks.length;
+	const completed = weeklyTasks.filter((t) => t.completed).length;
 	const pending = total - completed;
 	const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -35,11 +55,17 @@ const taskStats = computed(() => {
 
 onMounted(() => {
 	const now = new Date();
-	const startOfDay = new Date(now.setHours(0, 0, 0, 0));
-	const endOfDay = new Date(now.setHours(23, 59, 59, 999));
-	
+	const dayOfWeek = (now.getDay() + 6) % 7; // Monday = 0
+	const startOfWeek = new Date(now);
+	startOfWeek.setDate(now.getDate() - dayOfWeek);
+	startOfWeek.setHours(0, 0, 0, 0);
+
+	const endOfWeek = new Date(startOfWeek);
+	endOfWeek.setDate(startOfWeek.getDate() + 6);
+	endOfWeek.setHours(23, 59, 59, 999);
+
 	tasksStore.fetchTasks().then(() => {
-		tasksStore.expandTasksForRange(startOfDay, endOfDay);
+		tasksStore.expandTasksForRange(startOfWeek, endOfWeek);
 	});
 });
 
@@ -118,7 +144,7 @@ const weeklySessionsRaw = computed(() => {
       <!-- Focus Time Section -->
       <section class="mb-10">
         <h2 class="text-lg font-semibold text-lightText-primary dark:text-white mb-1">Focus Time  -  Total {{formatDuration(total_seconds_today)}}</h2>
-        <h2 class="text-base font-medium text-lightText-primary dark:text-white mb-5">Tasks Done - Total {{taskStats.completed}}</h2>
+        <h2 class="text-base font-medium text-lightText-primary dark:text-white mb-5">Tasks Done - Total {{todayTaskStats.completed}}</h2>
         
         <div v-for="item in todaysFocusData" :key="item.category" class="flex items-center mb-5">
           <div class="flex items-center gap-3 w-24">
@@ -160,7 +186,7 @@ const weeklySessionsRaw = computed(() => {
               <CheckCircle :size="20" class="text-green-500" />
             </div>
             <div class="text-2xl font-bold text-green-500 mb-1">
-              {{ taskStats.completed }}
+              {{ weeklyTaskStats.completed }}
             </div>
             <div class="text-xs text-lightText-muted dark:text-text-muted">Done</div>
           </div>
@@ -171,7 +197,7 @@ const weeklySessionsRaw = computed(() => {
               <ListTodo :size="20" class="text-pomodo-orange" />
             </div>
             <div class="text-2xl font-bold text-pomodo-orange mb-1">
-              {{ taskStats.pending }}
+              {{ weeklyTaskStats.pending }}
             </div>
             <div class="text-xs text-lightText-muted dark:text-text-muted">To Do</div>
           </div>
@@ -182,7 +208,7 @@ const weeklySessionsRaw = computed(() => {
               <TrendingUp :size="20" class="text-blue-500" />
             </div>
             <div class="text-2xl font-bold text-blue-500 mb-1">
-              {{ taskStats.rate }}%
+              {{ weeklyTaskStats.rate }}%
             </div>
             <div class="text-xs text-lightText-muted dark:text-text-muted">Completion</div>
           </div>

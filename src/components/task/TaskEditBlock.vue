@@ -79,21 +79,21 @@ const calculateTaskDuration = (cycles: number): number => {
 };
 
 const formatDuration = (minutes: number): string => {
-  const h = Math.floor(minutes / 60);
-  const m = Math.round(minutes % 60);
-  if (h === 0) return `${m} minutes`;
-  if (m === 0) return `${h} hours`;
-  return `${h}h ${m}m`;
+	const h = Math.floor(minutes / 60);
+	const m = Math.round(minutes % 60);
+	if (h === 0) return `${m} minutes`;
+	if (m === 0) return `${h} hours`;
+	return `${h}h ${m}m`;
 };
 
 const estimatedDurationString = computed(() => {
-  const cycles = props.selTask.cycles || 1;
-  const totalMinutes = calculateTaskDuration(cycles);
-  return formatDuration(totalMinutes);
+	const cycles = props.selTask.cycles || 1;
+	const totalMinutes = calculateTaskDuration(cycles);
+	return formatDuration(totalMinutes);
 });
 
 watch(
-	() => props.selTask.recurrence.type,
+	() => props.selTask.recurrence?.type,
 	async (newType) => {
 		if (newType !== RecurrenceType.NONE) {
 			props.selTask.recurrence = {
@@ -316,14 +316,14 @@ const onMinuteSelected = () => {
           </label>
           <v-select 
             data-testid="task-recurrence-select"
-            v-model="props.selTask.recurrence.type"
+            v-model="props.selTask.recurrence!.type"
             :items="Object.values(RecurrenceType)"
           >
           </v-select>
         </div>
 
         <div
-          v-if="selTask.recurrence.type === RecurrenceType.CUSTOM"
+          v-if="selTask.recurrence?.type === RecurrenceType.CUSTOM"
         >
             <div class="flex gap-1 items-center justify-start">
               <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
@@ -383,7 +383,7 @@ const onMinuteSelected = () => {
             </div>
 
         </div>
-        <div v-if="selTask.recurrence.type !== RecurrenceType.NONE">
+        <div v-if="selTask.recurrence?.type !== RecurrenceType.NONE">
           <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2 pt-8">
             Repeat until 
           </label>
@@ -394,7 +394,7 @@ const onMinuteSelected = () => {
               <v-date-input
                 v-model="(props.selTask.recurrence as CustomRecurrence).repeatUntilDate" 
                 :disabled="(props.selTask.recurrence as CustomRecurrence).repeatUntilType!== 'two'"
-              </v-date-input>
+              ></v-date-input>
             </div>
             <div class="flex items-center justify-center gap-1">
               <v-radio label="Once repeated" value="three"></v-radio>

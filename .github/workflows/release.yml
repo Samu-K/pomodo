@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release-desktop:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: install frontend dependencies
+        run: pnpm install
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "App ${{ github.ref_name }}"
+          releaseBody: "See the assets to download this version and install."
+          releaseDraft: true
+          prerelease: false
+
+  release-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Android APK
+        run: pnpm tauri android build
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apks
+          path: src-tauri/gen/android/app/build/outputs/apk/universal/release/*.apk
+# NOTE: To attach this to the GitHub release, we would need to add a step to upload it to the release created by the desktop job, or waiting for it.
+# For now, artifacts are sufficient for manual access.

@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import type { Task } from "../../defines/task";
 import { useTasks } from "../../stores/task";
 
-const props = defineProps<{
+defineProps<{
 	selectedTaskId: number | null;
 	modelValue?: boolean;
 }>();
@@ -34,7 +34,7 @@ const filteredTasks = computed(() => {
 	tomorrow.setDate(tomorrow.getDate() + 1);
 
 	return tasksStore.expandedTasks.filter((t) => {
-		return t.startTime >= today && t.startTime < tomorrow;
+		return !t.completed && t.startTime >= today && t.startTime < tomorrow;
 	});
 });
 

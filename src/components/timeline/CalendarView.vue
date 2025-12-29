@@ -1,55 +1,57 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
-  endOfWeek, 
-  eachDayOfInterval, 
-  isSameMonth, 
-  isToday,
-  format
+import {
+	eachDayOfInterval,
+	endOfMonth,
+	endOfWeek,
+	format,
+	isSameMonth,
+	isToday,
+	startOfMonth,
+	startOfWeek
 } from "date-fns";
-import { useTasks } from "../../stores/task";
+import { computed, ref } from "vue";
 import type { Task } from "../../defines/task";
+import { useTasks } from "../../stores/task";
 
 const props = defineProps<{
-  currentDate: Date;
+	currentDate: Date;
 }>();
 
 const emit = defineEmits<{
-  (e: 'selectDate', date: Date): void;
-  (e: 'createTask', date: Date): void;
+	(e: "selectDate", date: Date): void;
+	(e: "createTask", date: Date): void;
 }>();
 
 const tasksStore = useTasks();
 
 // Generate calendar grid days
 const calendarDays = computed(() => {
-  const monthStart = startOfMonth(props.currentDate);
-  const monthEnd = endOfMonth(monthStart);
-  const startDate = startOfWeek(monthStart, { weekStartsOn: 1 }); // Monday start
-  const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+	const monthStart = startOfMonth(props.currentDate);
+	const monthEnd = endOfMonth(monthStart);
+	const startDate = startOfWeek(monthStart, { weekStartsOn: 1 }); // Monday start
+	const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
-  return eachDayOfInterval({ start: startDate, end: endDate });
+	return eachDayOfInterval({ start: startDate, end: endDate });
 });
 
 // Filter tasks for a specific day
 const getTasksForDay = (date: Date) => {
-  const dayStart = new Date(date);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(date);
-  dayEnd.setHours(23, 59, 59, 999);
+	const dayStart = new Date(date);
+	dayStart.setHours(0, 0, 0, 0);
+	const dayEnd = new Date(date);
+	dayEnd.setHours(23, 59, 59, 999);
 
-  return tasksStore.expandedTasks.filter(
-    (task: Task) => task.startTime >= dayStart && task.startTime <= dayEnd
-  ).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+	return tasksStore.expandedTasks
+		.filter(
+			(task: Task) => task.startTime >= dayStart && task.startTime <= dayEnd
+		)
+		.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 };
 
 const handleDayClick = (date: Date) => {
-  if (!isLongPress.value) {
-    emit('selectDate', date);
-  }
+	if (!isLongPress.value) {
+		emit("selectDate", date);
+	}
 };
 
 // Long Press Logic
@@ -57,22 +59,21 @@ const longPressTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const isLongPress = ref(false);
 
 const startLongPress = (date: Date) => {
-  isLongPress.value = false;
-  longPressTimer.value = setTimeout(() => {
-    isLongPress.value = true;
-    emit('createTask', date);
-  }, 500); // 500ms hold time
+	isLongPress.value = false;
+	longPressTimer.value = setTimeout(() => {
+		isLongPress.value = true;
+		emit("createTask", date);
+	}, 500); // 500ms hold time
 };
 
 const clearLongPress = () => {
-  if (longPressTimer.value) {
-    clearTimeout(longPressTimer.value);
-    longPressTimer.value = null;
-  }
+	if (longPressTimer.value) {
+		clearTimeout(longPressTimer.value);
+		longPressTimer.value = null;
+	}
 };
 
-const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
+const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 </script>
 
 <template>

@@ -1,6 +1,10 @@
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RecurrenceType } from "../../defines/recur";
+import {
+	type Recurrence,
+	RecurrenceType,
+	RepeatUntilType
+} from "../../defines/recur";
 import type { Task } from "../../defines/task";
 import { useTasks } from "../task";
 import { useUIStore } from "../ui";
@@ -63,7 +67,8 @@ describe("Tasks Store", () => {
 				startTime: today,
 				completed: false,
 				gradient: "from-pomodo-orange to-pomodo-red",
-				recurrence: { type: RecurrenceType.NONE }
+				recurrence: { type: RecurrenceType.NONE },
+				completedCycles: 0
 			};
 
 			tasksStore.tasks = [task];
@@ -83,7 +88,8 @@ describe("Tasks Store", () => {
 				startTime: new Date("2020-01-01"),
 				completed: false,
 				gradient: "from-pomodo-orange to-pomodo-red",
-				recurrence: { type: RecurrenceType.NONE }
+				recurrence: { type: RecurrenceType.NONE },
+				completedCycles: 0
 			};
 
 			tasksStore.tasks = [task];
@@ -105,7 +111,8 @@ describe("Tasks Store", () => {
 				startTime: startDate,
 				completed: false,
 				gradient: "from-pomodo-orange to-pomodo-red",
-				recurrence_rule: "FREQ=DAILY"
+				recurrence_rule: "FREQ=DAILY",
+				completedCycles: 0
 			};
 
 			tasksStore.tasks = [task];
@@ -132,7 +139,8 @@ describe("Tasks Store", () => {
 				startTime: startDate,
 				completed: false,
 				gradient: "from-pomodo-orange to-pomodo-red",
-				recurrence_rule: "FREQ=WEEKLY"
+				recurrence_rule: "FREQ=WEEKLY",
+				completedCycles: 0
 			};
 
 			const endDate = new Date(today);
@@ -154,7 +162,8 @@ describe("Tasks Store", () => {
 				cycles: 1,
 				startTime: tomorrow,
 				completed: false,
-				gradient: "from-pomodo-orange to-pomodo-red"
+				gradient: "from-pomodo-orange to-pomodo-red",
+				completedCycles: 0
 			};
 
 			const earlierTask: Task = {
@@ -165,7 +174,8 @@ describe("Tasks Store", () => {
 				cycles: 1,
 				startTime: today,
 				completed: false,
-				gradient: "from-pomodo-orange to-pomodo-red"
+				gradient: "from-pomodo-orange to-pomodo-red",
+				completedCycles: 0
 			};
 
 			tasksStore.tasks = [laterTask, earlierTask];
@@ -185,7 +195,8 @@ describe("Tasks Store", () => {
 				startTime: yesterday,
 				completed: false,
 				gradient: "from-pomodo-orange to-pomodo-red",
-				recurrence_rule: "FREQ=DAILY"
+				recurrence_rule: "FREQ=DAILY",
+				completedCycles: 0
 			};
 
 			// Exception for today's instance
@@ -198,7 +209,8 @@ describe("Tasks Store", () => {
 				startTime: today,
 				completed: true,
 				gradient: "from-pomodo-orange to-pomodo-red",
-				parent_task_id: 1
+				parent_task_id: 1,
+				completedCycles: 0
 			};
 
 			tasksStore.tasks = [parentTask, exceptionTask];
@@ -223,7 +235,8 @@ describe("Tasks Store", () => {
 				startTime: today,
 				completed: false,
 				gradient: "from-pomodo-orange to-pomodo-red",
-				recurrence_rule: "INVALID_RULE"
+				recurrence_rule: "INVALID_RULE",
+				completedCycles: 0
 			};
 
 			tasksStore.tasks = [task];
@@ -237,7 +250,7 @@ describe("Tasks Store", () => {
 			expect(tasksStore.expandedTasks).toHaveLength(1);
 		});
 
-		it("excludes completed non-recurring tasks", () => {
+		it("includes completed non-recurring tasks", () => {
 			const task: Task = {
 				id: 1,
 				title: "Completed Task",
@@ -247,13 +260,15 @@ describe("Tasks Store", () => {
 				startTime: today,
 				completed: true,
 
-				gradient: "from-pomodo-orange to-pomodo-red"
+				gradient: "from-pomodo-orange to-pomodo-red",
+				completedCycles: 0
 			};
 
 			tasksStore.tasks = [task];
 			tasksStore.expandTasksForRange(yesterday, tomorrow);
 
-			expect(tasksStore.expandedTasks).toHaveLength(0);
+			expect(tasksStore.expandedTasks).toHaveLength(1);
+			expect(tasksStore.expandedTasks[0].id).toBe(1);
 		});
 	});
 
@@ -358,7 +373,8 @@ describe("Tasks Store", () => {
 				startTime: new Date("2024-03-15T10:00:00Z"),
 				completed: false,
 				gradient: "from-pomodo-orange to-pomodo-red",
-				recurrence: { type: RecurrenceType.NONE }
+				recurrence: { type: RecurrenceType.NONE },
+				completedCycles: 0
 			};
 
 			await tasksStore.addTask(newTask);
@@ -375,13 +391,15 @@ describe("Tasks Store", () => {
 		it("creates new category if not found", async () => {
 			const { invoke } = await import("@tauri-apps/api/core");
 
-			vi.mocked(invoke).mockImplementation(async (cmd: string, _args?: any) => {
-				if (cmd === "tasks_get_tasks") return [];
-				if (cmd === "categories_get_categories") return [];
-				if (cmd === "categories_add_category") return 42;
-				if (cmd === "tasks_add_task") return 1;
-				return [];
-			});
+			vi.mocked(invoke).mockImplementation(
+				async (cmd: string, _args?: unknown) => {
+					if (cmd === "tasks_get_tasks") return [];
+					if (cmd === "categories_get_categories") return [];
+					if (cmd === "categories_add_category") return 42;
+					if (cmd === "tasks_add_task") return 1;
+					return [];
+				}
+			);
 
 			const newTask: Task = {
 				id: 0,
@@ -391,7 +409,8 @@ describe("Tasks Store", () => {
 				cycles: 1,
 				startTime: new Date("2024-03-15T10:00:00Z"),
 				completed: false,
-				gradient: "from-pomodo-orange to-pomodo-red"
+				gradient: "from-pomodo-orange to-pomodo-red",
+				completedCycles: 0
 			};
 
 			await tasksStore.addTask(newTask);
@@ -421,7 +440,8 @@ describe("Tasks Store", () => {
 				cycles: 1,
 				startTime: new Date("2024-03-15T10:00:00Z"),
 				completed: false,
-				gradient: "from-pomodo-orange to-pomodo-red"
+				gradient: "from-pomodo-orange to-pomodo-red",
+				completedCycles: 0
 			};
 
 			await tasksStore.addTask(newTask);
@@ -454,7 +474,8 @@ describe("Tasks Store", () => {
 				startTime: new Date("2024-03-15T10:00:00Z"),
 				completed: false,
 				gradient: "from-pomodo-orange to-pomodo-red",
-				recurrence_rule: "FREQ=DAILY"
+				recurrence_rule: "FREQ=DAILY",
+				completedCycles: 0
 			};
 
 			await tasksStore.updateTask(task, false);
@@ -493,10 +514,9 @@ describe("Tasks Store", () => {
 				gradient: "from-pomodo-orange to-pomodo-red",
 				recurrence: {
 					type: RecurrenceType.WEEKLY,
-					repeatUntilType: import("../../defines/recur").then(
-						(m) => m.RepeatUntilType.REPEAT_FOREVER
-					)
-				} as any
+					repeatUntilType: RepeatUntilType.REPEAT_FOREVER
+				} as Recurrence,
+				completedCycles: 0
 			};
 
 			await tasksStore.updateTask(task, true);
@@ -556,8 +576,9 @@ describe("Tasks Store", () => {
 				startTime: new Date("2024-03-15T10:00:00Z"),
 				completed: false,
 				gradient: "from-pomodo-orange to-pomodo-red",
-				recurrence_rule: "FREQ=DAILY"
+				recurrence_rule: "FREQ=DAILY",
 				// No parent_task_id - this is the parent
+				completedCycles: 0
 			};
 
 			await tasksStore.completeTaskInstance(task);
@@ -579,8 +600,9 @@ describe("Tasks Store", () => {
 				cycles: 1,
 				startTime: new Date("2024-03-15T10:00:00Z"),
 				completed: false,
-				gradient: "from-pomodo-orange to-pomodo-red"
+				gradient: "from-pomodo-orange to-pomodo-red",
 				// No recurrence_rule
+				completedCycles: 0
 			};
 
 			await tasksStore.completeTaskInstance(task);
@@ -606,7 +628,8 @@ describe("Tasks Store", () => {
 				completed: false,
 				gradient: "from-pomodo-orange to-pomodo-red",
 				recurrence_rule: "FREQ=DAILY",
-				parent_task_id: 1 // This is a child/exception
+				parent_task_id: 1, // This is a child/exception
+				completedCycles: 0
 			};
 
 			await tasksStore.completeTaskInstance(task);

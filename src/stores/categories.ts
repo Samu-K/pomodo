@@ -19,9 +19,11 @@ export const useCategoryStore = defineStore("categories", () => {
 		try {
 			const fetched = await get_categories();
 			categories.value = fetched;
-		} catch (e: any) {
+		} catch (e) {
 			console.error("Failed to fetch categories", e);
-			ui.setError(e.message || "Failed to fetch categories");
+			let msg = "Failed to fetch categories";
+			if (e instanceof Error) msg = e.message;
+			ui.setError(msg);
 		} finally {
 			isLoading.value = false;
 		}
@@ -31,9 +33,11 @@ export const useCategoryStore = defineStore("categories", () => {
 		try {
 			await add_category(cat);
 			await fetchCategories();
-		} catch (e: any) {
+		} catch (e) {
 			console.error("Failed to create category", e);
-			ui.setError(e.message || "Failed to create category");
+			let msg = "Failed to create category";
+			if (e instanceof Error) msg = e.message;
+			ui.setError(msg);
 		}
 	};
 
@@ -41,9 +45,11 @@ export const useCategoryStore = defineStore("categories", () => {
 		try {
 			await change_category_name_array(cats);
 			await fetchCategories();
-		} catch (e: any) {
+		} catch (e) {
 			console.error("Failed to update categories", e);
-			ui.setError(e.message || "Failed to update categories");
+			let msg = "Failed to update categories";
+			if (e instanceof Error) msg = e.message;
+			ui.setError(msg);
 		}
 	};
 
@@ -51,9 +57,11 @@ export const useCategoryStore = defineStore("categories", () => {
 		try {
 			await delete_category_array(cats);
 			await fetchCategories();
-		} catch (e: any) {
+		} catch (e) {
 			console.error("Failed to remove categories", e);
-			ui.setError(e.message || "Failed to remove categories");
+			let msg = "Failed to remove categories";
+			if (e instanceof Error) msg = e.message;
+			ui.setError(msg);
 		}
 	};
 

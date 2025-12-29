@@ -9,8 +9,6 @@ import {
 } from "../defines/recur.ts";
 import type { Task } from "../defines/task.ts";
 
-const _cycleLen = 25;
-
 export interface DatabaseCategory {
 	id: number;
 	name: string;

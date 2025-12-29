@@ -14,20 +14,30 @@ const props = defineProps<{
 
 const taskStore = useTasks();
 
+const isOpen = ref(true);
+
+const close = () => {
+	isOpen.value = false;
+};
+
 const saveAndExit = async () => {
 	await taskStore.updateTask(props.selTask, recurrenceChanged.value);
-	emit("close");
+	close();
 };
 
 const exitWithoutSave = () => {
-	emit("close");
+	close();
 };
 
 const deleteTask = async () => {
 	if (confirm("Are you sure you want to delete this task?")) {
 		await taskStore.deleteTask(props.selTask.id);
-		emit("close");
+		close();
 	}
+};
+
+const onAfterLeave = () => {
+	emit("close");
 };
 
 const recurrenceChanged = ref(false);
@@ -40,12 +50,13 @@ watch(
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/80 flex items-center justify-center  animate-fade-in overflow-auto"
-    @click="emit('close')" 
+  <v-dialog 
+    v-model="isOpen" 
+    max-width="450" 
+    @after-leave="onAfterLeave"
+    class="backdrop-blur-sm"
   >
-    <div class="bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full max-w-md mx-4 animate-scale-in max-h-[85%] border border-light-border dark:border-dark-border overflow-scroll"
-      @click.stop
-    >
+    <div class="bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full border border-light-border dark:border-dark-border overflow-scroll shadow-xl">
     
       <TaskEditBlock :selTask="props.selTask" />
 
@@ -70,5 +81,5 @@ watch(
         </button>
       </div>
     </div>
-  </div> 
+  </v-dialog> 
 </template>

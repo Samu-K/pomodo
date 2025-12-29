@@ -7,7 +7,7 @@ import { useTasks } from "../../stores/task";
 import TaskEditBlock from "./TaskEditBlock.vue";
 
 const props = defineProps<{
-  initialDate?: Date;
+	initialDate?: Date;
 }>();
 
 const emit = defineEmits<{
@@ -16,6 +16,8 @@ const emit = defineEmits<{
 
 const curDate = ref<Date>(props.initialDate || new Date());
 const tasksStore = useTasks();
+
+const isOpen = ref(true);
 
 const newTask = ref<Task>({
 	id: 0,
@@ -28,23 +30,37 @@ const newTask = ref<Task>({
 		type: RecurrenceType.NONE
 	},
 	gradient: "",
-	completed: false
+	completed: false,
+	completedCycles: 0
 });
+
+const close = () => {
+	isOpen.value = false;
+};
 
 const saveTask = async () => {
 	await tasksStore.addTask(newTask.value);
+	close();
+};
+
+const onAfterLeave = () => {
 	emit("close");
 };
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/80 flex items-center justify-center  animate-fade-in overflow-auto">
-    <div class="bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full max-w-md mx-4 animate-scale-in max-h-[85%] border border-light-border dark:border-dark-border overflow-scroll">
+  <v-dialog 
+    v-model="isOpen" 
+    max-width="450" 
+    @after-leave="onAfterLeave"
+    class="backdrop-blur-sm"
+  >
+    <div class="bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full border border-light-border dark:border-dark-border overflow-scroll shadow-xl">
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-semibold text-pomodo-orange">Create New Task</h2>
         <button 
-          @click="emit('close')"
+          @click="close"
           class="w-8 h-8 flex items-center justify-center text-lightText-muted dark:text-text-muted hover:text-lightText-primary dark:hover:text-white transition-colors"
         >
           <X :size="20" />
@@ -57,7 +73,7 @@ const saveTask = async () => {
       <div class="flex gap-3 mt-4">
         <button 
           data-testid="cancel-task"
-          @click="emit('close')"
+          @click="close"
           class="flex-1 py-3 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg text-lightText-secondary dark:text-text-secondary font-semibold hover:bg-light-border dark:hover:bg-dark-border transition-colors"
         >
           Cancel
@@ -71,31 +87,11 @@ const saveTask = async () => {
         </button>
       </div>
     </div>
-  </div>
+  </v-dialog>
 </template>
 
 <style scoped>
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes scale-in {
-  from { 
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to { 
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.2s ease-out;
-}
-
-.animate-scale-in {
-  animation: scale-in 0.2s ease-out;
-}
+/* Scoped styles can be removed if handled by Vuetify transitions, 
+   but keeping specific ones if needed. 
+   Vuetify handles entry/exit fade/scale for dialog. */
 </style>
