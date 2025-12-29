@@ -7,8 +7,8 @@ on:
   pull_request:
 
 jobs:
-  quality-check:
-    name: Quality Check
+  lint:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,11 +32,9 @@ jobs:
       - name: Type Check
         run: pnpm run build
 
-      - name: Unit Tests
-        run: pnpm run test
-
-  e2e-tests:
-    name: E2E Tests
+  unit-tests:
+    name: Unit Tests
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,16 +45,30 @@ jobs:
         with:
           node-version: 20
           cache: "pnpm"
-
       - name: Install dependencies
         run: pnpm install
+      - name: Run Unit Tests
+        run: pnpm run test
 
+  e2e-tests:
+    name: E2E Tests
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
-
       - name: Run Playwright tests
         run: pnpm run test:e2e
-
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -64,8 +76,9 @@ jobs:
           path: playwright-report/
           retention-days: 30
 
-  build-check-desktop:
+  build-desktop:
     name: Build Check (Desktop)
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -78,7 +91,6 @@ jobs:
           cache: "pnpm"
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
-      # Install Tauri system dependencies for Linux
       - name: Install dependencies (Ubuntu)
         run: |
           sudo apt-get update
@@ -88,8 +100,9 @@ jobs:
       - name: Build Desktop
         run: pnpm tauri build
 
-  build-check-android:
+  build-android:
     name: Build Check (Android)
+    needs: build-desktop
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -116,8 +129,9 @@ jobs:
       - name: Build Android (Debug)
         run: pnpm tauri android build --debug
 
-  build-check-ios-rust:
+  build-ios-rust:
     name: Build Check (iOS Rust)
+    needs: build-desktop
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4

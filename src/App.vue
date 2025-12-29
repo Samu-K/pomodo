@@ -5,6 +5,7 @@ import {
 	isPermissionGranted,
 	requestPermission
 } from "@tauri-apps/plugin-notification";
+import { useSwipe } from "@vueuse/core";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useTheme } from "vuetify";
@@ -131,7 +132,7 @@ const openTaskDetails = (task: Task) => {
 // Swipe Navigation
 const tabs = ["/", "/timeline", "/tasks", "/stats"];
 useSwipe(document.body, {
-	onSwipeEnd(_e, direction) {
+	onSwipeEnd(_e: Event, direction: string) {
 		if (direction === "left") {
 			// Swipe Left -> Go Right (Next Tab)
 			if (!showBackButton.value) {
