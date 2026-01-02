@@ -2,33 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom scrollbar styles for dark theme */
-@layer utilities {
-	/* Webkit browsers (Chrome, Safari, Edge) */
-	.scrollbar-thin::-webkit-scrollbar {
-		width: 6px;
-		height: 6px;
-	}
+/* Global scrollbar hiding */
+* {
+	-ms-overflow-style: none; /* IE and Edge */
+	scrollbar-width: none; /* Firefox */
+}
 
-	.scrollbar-thin::-webkit-scrollbar-track {
-		background: theme('colors.dark.surface');
-		border-radius: 3px;
-	}
-
-	.scrollbar-thin::-webkit-scrollbar-thumb {
-		background: theme('colors.pomodo.orange');
-		border-radius: 3px;
-	}
-
-	.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-		background: #a06340;
-	}
-
-	/* Firefox */
-	.scrollbar-thin {
-		scrollbar-width: thin;
-		scrollbar-color: theme('colors.pomodo.orange') theme('colors.dark.surface');
-	}
+*::-webkit-scrollbar {
+	display: none; /* Chrome, Safari and Opera */
 }
 
 /* Global styles */

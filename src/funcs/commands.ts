@@ -10,7 +10,7 @@ async categoriesAddCategory(cat: Category) : Promise<Result<number, AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("categories_add_category", { cat }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async categoriesGetCategories() : Promise<Result<Category[], AppError>> {
@@ -18,7 +18,7 @@ async categoriesGetCategories() : Promise<Result<Category[], AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("categories_get_categories") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async categoriesGetCategoryByName(catName: string) : Promise<Result<Category, AppError>> {
@@ -26,7 +26,7 @@ async categoriesGetCategoryByName(catName: string) : Promise<Result<Category, Ap
     return { status: "ok", data: await TAURI_INVOKE("categories_get_category_by_name", { catName }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async categoriesGetCategory(catId: number) : Promise<Result<Category, AppError>> {
@@ -34,7 +34,7 @@ async categoriesGetCategory(catId: number) : Promise<Result<Category, AppError>>
     return { status: "ok", data: await TAURI_INVOKE("categories_get_category", { catId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async categoriesSetCategoryName(name: string, catId: number) : Promise<Result<null, AppError>> {
@@ -42,7 +42,7 @@ async categoriesSetCategoryName(name: string, catId: number) : Promise<Result<nu
     return { status: "ok", data: await TAURI_INVOKE("categories_set_category_name", { name, catId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async categoriesSetCategoryColor(color: string, catId: number) : Promise<Result<null, AppError>> {
@@ -50,7 +50,7 @@ async categoriesSetCategoryColor(color: string, catId: number) : Promise<Result<
     return { status: "ok", data: await TAURI_INVOKE("categories_set_category_color", { color, catId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async categoriesDeleteCategory(catId: number) : Promise<Result<null, AppError>> {
@@ -58,7 +58,7 @@ async categoriesDeleteCategory(catId: number) : Promise<Result<null, AppError>> 
     return { status: "ok", data: await TAURI_INVOKE("categories_delete_category", { catId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async sessionAddSession(session: Session) : Promise<Result<number, AppError>> {
@@ -66,7 +66,7 @@ async sessionAddSession(session: Session) : Promise<Result<number, AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("session_add_session", { session }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async sessionGetSessions() : Promise<Result<Session[], AppError>> {
@@ -74,7 +74,7 @@ async sessionGetSessions() : Promise<Result<Session[], AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("session_get_sessions") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async sessionGetIncompleteSessions() : Promise<Result<Session[], AppError>> {
@@ -82,7 +82,7 @@ async sessionGetIncompleteSessions() : Promise<Result<Session[], AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("session_get_incomplete_sessions") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async sessionGetCategorySessions(catId: number) : Promise<Result<Session[], AppError>> {
@@ -90,7 +90,7 @@ async sessionGetCategorySessions(catId: number) : Promise<Result<Session[], AppE
     return { status: "ok", data: await TAURI_INVOKE("session_get_category_sessions", { catId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async sessionGetDateSessions(date: string) : Promise<Result<Session[], AppError>> {
@@ -98,7 +98,7 @@ async sessionGetDateSessions(date: string) : Promise<Result<Session[], AppError>
     return { status: "ok", data: await TAURI_INVOKE("session_get_date_sessions", { date }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async sessionSetSessionIncomplete(id: number) : Promise<Result<null, AppError>> {
@@ -106,7 +106,7 @@ async sessionSetSessionIncomplete(id: number) : Promise<Result<null, AppError>> 
     return { status: "ok", data: await TAURI_INVOKE("session_set_session_incomplete", { id }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async sessionSetSessionComplete(id: number) : Promise<Result<null, AppError>> {
@@ -114,7 +114,7 @@ async sessionSetSessionComplete(id: number) : Promise<Result<null, AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("session_set_session_complete", { id }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async sessionSetSessionCategory(sessionId: number, catId: number) : Promise<Result<null, AppError>> {
@@ -122,7 +122,7 @@ async sessionSetSessionCategory(sessionId: number, catId: number) : Promise<Resu
     return { status: "ok", data: await TAURI_INVOKE("session_set_session_category", { sessionId, catId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async sessionSetSessionLength(sessionId: number, len: number) : Promise<Result<null, AppError>> {
@@ -130,7 +130,7 @@ async sessionSetSessionLength(sessionId: number, len: number) : Promise<Result<n
     return { status: "ok", data: await TAURI_INVOKE("session_set_session_length", { sessionId, len }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async sessionDeleteSession(sessionId: number) : Promise<Result<null, AppError>> {
@@ -138,7 +138,7 @@ async sessionDeleteSession(sessionId: number) : Promise<Result<null, AppError>> 
     return { status: "ok", data: await TAURI_INVOKE("session_delete_session", { sessionId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async settingsGetSettingValue(key: string) : Promise<Result<string, AppError>> {
@@ -146,7 +146,7 @@ async settingsGetSettingValue(key: string) : Promise<Result<string, AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("settings_get_setting_value", { key }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async settingsGetAllSettings() : Promise<Result<Setting[], AppError>> {
@@ -154,7 +154,7 @@ async settingsGetAllSettings() : Promise<Result<Setting[], AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("settings_get_all_settings") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async settingsSetSettingValue(value: string, id: number) : Promise<Result<null, AppError>> {
@@ -162,7 +162,7 @@ async settingsSetSettingValue(value: string, id: number) : Promise<Result<null, 
     return { status: "ok", data: await TAURI_INVOKE("settings_set_setting_value", { value, id }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async settingsGetSettingCategories() : Promise<Result<SettingCategory[], AppError>> {
@@ -170,7 +170,7 @@ async settingsGetSettingCategories() : Promise<Result<SettingCategory[], AppErro
     return { status: "ok", data: await TAURI_INVOKE("settings_get_setting_categories") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async settingsGetSettingsForCategory(catId: number) : Promise<Result<Setting[], AppError>> {
@@ -178,7 +178,7 @@ async settingsGetSettingsForCategory(catId: number) : Promise<Result<Setting[], 
     return { status: "ok", data: await TAURI_INVOKE("settings_get_settings_for_category", { catId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async tasksAddTask(task: Task) : Promise<Result<number, AppError>> {
@@ -186,7 +186,7 @@ async tasksAddTask(task: Task) : Promise<Result<number, AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("tasks_add_task", { task }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async tasksGetTasks() : Promise<Result<Task[], AppError>> {
@@ -194,7 +194,7 @@ async tasksGetTasks() : Promise<Result<Task[], AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("tasks_get_tasks") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async tasksUpdateTask(task: Task) : Promise<Result<null, AppError>> {
@@ -202,7 +202,7 @@ async tasksUpdateTask(task: Task) : Promise<Result<null, AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("tasks_update_task", { task }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async tasksDeleteTask(id: number) : Promise<Result<null, AppError>> {
@@ -210,7 +210,7 @@ async tasksDeleteTask(id: number) : Promise<Result<null, AppError>> {
     return { status: "ok", data: await TAURI_INVOKE("tasks_delete_task", { id }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async tasksCompleteTaskInstance(parentTaskId: number, date: string) : Promise<Result<number, AppError>> {
@@ -218,7 +218,7 @@ async tasksCompleteTaskInstance(parentTaskId: number, date: string) : Promise<Re
     return { status: "ok", data: await TAURI_INVOKE("tasks_complete_task_instance", { parentTaskId, date }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
 },
 async updateTray(title: string, toggleText: string | null) : Promise<Result<null, string>> {
@@ -226,11 +226,8 @@ async updateTray(title: string, toggleText: string | null) : Promise<Result<null
     return { status: "ok", data: await TAURI_INVOKE("update_tray", { title, toggleText }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else { const err = e instanceof Error ? e : { message: String(e) }; return { status: "error", error: err }; }
+    else return { status: "error", error: e  as any };
 }
-},
-async closeSplashscreen() : Promise<void> {
-    await TAURI_INVOKE("close_splashscreen");
 }
 }
 
