@@ -1,30 +1,25 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import {
-	Maximize2,
-	Minimize2,
-	Pause,
-	Play,
-	RotateCcw,
-	SkipForward
-} from "lucide-vue-next";
+import { Maximize2, Minimize2, Pause, Play } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 import CategoryManager from "../../components/timer/CategoryManager.vue";
 import OvertimeDialog from "../../components/timer/OvertimeDialog.vue";
 import TaskCompletionDialog from "../../components/timer/TaskCompletionDialog.vue";
 import TaskManager from "../../components/timer/TaskManager.vue";
+import TimerControls from "../../components/timer/TimerControls.vue";
+import TimerDisplay from "../../components/timer/TimerDisplay.vue";
+import { useHoldToPause } from "../../composables/useHoldToPause";
 import type { Task } from "../../defines/task";
 import { useCategoryStore } from "../../stores/categories";
-import { useSettingsStore } from "../../stores/settings";
-import { useTasks } from "../../stores/task";
 import { useProjectStore } from "../../stores/project";
+import { useTasks } from "../../stores/task";
 import { TimerMode, useTimerStore } from "../../stores/timer";
 import { useUIStore } from "../../stores/ui";
 
 const uiStore = useUIStore();
 const timer = useTimerStore();
 const categoryStore = useCategoryStore();
-const settingsStore = useSettingsStore();
+
 const tasksStore = useTasks();
 const projectStore = useProjectStore();
 
@@ -80,8 +75,6 @@ const handleTaskClear = () => {
 	showTaskManager.value = false;
 };
 
-const isDark = computed(() => settingsStore.resolvedTheme === "dark");
-
 onMounted(async () => {
 	if (categoryStore.categories.length === 0) {
 		await categoryStore.fetchCategories();
@@ -99,10 +92,12 @@ watch(
 	() => [timer.isRunning, timer.mode],
 	async ([isRunning, mode]) => {
 		try {
-			if (isRunning && mode === TimerMode.FOCUS) {
-				await invoke("plugin:keep-screen-on|enable");
-			} else {
-				await invoke("plugin:keep-screen-on|disable");
+			if (uiStore.isMobile) {
+				if (isRunning && mode === TimerMode.FOCUS) {
+					await invoke("plugin:keep-screen-on|enable");
+				} else {
+					await invoke("plugin:keep-screen-on|disable");
+				}
 			}
 		} catch (e) {
 			console.error("KeepScreenOn error:", e);
@@ -136,53 +131,20 @@ const showCategorySelector = computed(() => {
 	return !timer.isRunning && timer.percent >= 100;
 });
 
-const allowSkip = computed(() => {
-	if (timer.mode === TimerMode.REST) return true;
-	// Focus mode: only if paused
-	return !timer.isRunning;
-});
-
-const allowReset = computed(() => {
-	if (timer.mode === TimerMode.REST) return false;
-	// Focus mode: only if paused
-	return !timer.isRunning && timer.percent < 100;
-});
-
-// Hold to pause logic
-const holdProgress = ref(0);
-let holdInterval: number | undefined;
-const HOLD_DURATION = 3000; // 3 seconds
-const UPDATE_INTERVAL = 50; // Update every 50ms
-
 const isFocusRunning = computed(
 	() => timer.isRunning && timer.mode === TimerMode.FOCUS
 );
 
-const startHold = () => {
-	if (!isFocusRunning.value) return;
-
-	holdProgress.value = 0;
-	holdInterval = window.setInterval(() => {
-		holdProgress.value += (UPDATE_INTERVAL / HOLD_DURATION) * 100;
-
-		if (holdProgress.value >= 100) {
-			completeHold();
-		}
-	}, UPDATE_INTERVAL);
-};
-
-const endHold = () => {
-	if (holdInterval) {
-		clearInterval(holdInterval);
-		holdInterval = undefined;
-	}
-	holdProgress.value = 0;
-};
-
-const completeHold = () => {
-	endHold();
+// Hold to pause logic
+const { holdProgress, startHold, endHold } = useHoldToPause(() => {
 	haptic("heavy");
 	timer.pauseTimer();
+});
+
+const handleStartHold = () => {
+	if (isFocusRunning.value) {
+		startHold();
+	}
 };
 
 const showCompletionDialog = ref(false);
@@ -242,8 +204,8 @@ defineExpose({
             isFocusRunning || uiStore.isMiniMode ? 'bg-black' : 'bg-light-bg dark:bg-dark-bg',
             uiStore.isMiniMode ? '' : '-mt-4'
         ]"
-        @mousedown="startHold"
-        @touchstart="startHold"
+        @mousedown="handleStartHold"
+        @touchstart="handleStartHold"
         @mouseup="endHold"
         @touchend="endHold"
         @mouseleave="endHold"
@@ -295,7 +257,7 @@ defineExpose({
         <!-- Normal view content -->
          <template v-else>
             <!-- Hold Progress Overlay, Circle that starts from middle of screen-->
-            <div class="absolute bottom-0 right-0 top-0 left-0 items-center justify-center flex flex-col" >
+            <div class="absolute bottom-0 right-0 top-0 left-0 items-center justify-center flex flex-col pointer-events-none" >
                 <div 
                     v-if="isFocusRunning"
                     class="bg-dark-bg pointer-events-none z-0 transition-all duration-75 rounded-full"
@@ -308,32 +270,7 @@ defineExpose({
             </div>
 
             <div v-else class="flex-1 flex flex-col items-center justify-center px-6 gap-10 z-10">
-        <div v-if="!isFocusRunning" class="flex gap-3 mb-2">
-            <div 
-                v-for="i in timer.long_break_interval" 
-                :key="i"
-                class="w-3 h-3 rounded-full border border-pomodo-orange transition-all duration-300"
-                :class="{
-                    'bg-pomodo-orange': i <= timer.sessionStreak,
-                    'bg-transparent': i > timer.sessionStreak
-                }"
-            ></div>
-        </div>
-                <v-progress-circular 
-                    :model-value="timer.percent" 
-                    :color="themeColor" 
-                    :size="170" 
-                    width="10" 
-                    z-index='2'
-                ></v-progress-circular>
-
-                <div :class="(`-mb-12 text-2xl text-${themeColor}`)">
-                    {{ timer.mode === TimerMode.FOCUS ? 'FOCUS' : 'REST' }}
-                </div>
-
-                <div :class="(`text-timer text-${themeColor} mt-12`)">
-                    {{ timer.formattedTime }}
-                </div>
+                <TimerDisplay />
 
                 <div class="w-72 h-22 mb-8 flex justify-center" v-if="timer.mode === TimerMode.FOCUS">
                     <!-- Show task/category info if selected, otherwise show "Select Focus" button -->
@@ -382,52 +319,11 @@ defineExpose({
                 </div>
             </div>
 
-            <div v-if="!isFocusRunning" class="flex items-center justify-center gap-8 w-full pb-8 z-10">
-                <button 
-                    data-testid="reset-timer"
-                    @click="timer.resetTimer"
-                    class="w-12 h-12 rounded-full flex items-center justify-center transition-colors"
-                    :class="[
-                        isDark 
-                            ? 'bg-dark-surface border border-dark-border text-text-secondary' 
-                            : 'bg-transparent border-[3px] border-black text-black'
-                    ]"
-                    :disabled="!allowReset"
-                >
-                    <RotateCcw :size="20" :class="{'opacity-50': !allowReset}"/>
-                </button>
-                
-                <button 
-                    data-testid="toggle-timer"
-                    @click="timer.toggleTimer"
-                    :disabled="timer.mode === TimerMode.FOCUS && !selectedCategory"
-                    class="w-20 h-20 rounded-full text-white flex items-center justify-center transition-transform"
-                    :class="[
-                        {'bg-gradient-to-br from-pomodo-orange to-pomodo-red': !timer.isRunning && timer.mode === TimerMode.FOCUS && selectedCategory},
-                        {'bg-gradient-to-br from-green-400 to-green-700': !timer.isRunning && timer.mode === TimerMode.REST},
-                        {'bg-gradient-to-br from-gray-600 to-black': timer.isRunning},
-                        {'bg-gradient-to-br from-gray-900 to-black opacity-70': timer.mode === TimerMode.FOCUS && !selectedCategory},
-                        {'hover:scale-105 shadow-fab hover:shadow-fab-hover': !timer.isRunning && (timer.mode === TimerMode.REST || selectedCategory)}
-                    ]"
-                >
-                    <Pause :size="32" v-if="timer.isRunning"/>
-                    <Play :size="32" v-else/>
-                </button>
-                
-                <button 
-                    data-testid="skip-timer"
-                    class="w-12 h-12 rounded-full flex items-center justify-center transition-colors"
-                    :class="[
-                        {'opacity-50': !allowSkip},
-                        isDark 
-                            ? 'bg-dark-surface border border-dark-border text-text-secondary' 
-                            : 'bg-transparent border-[3px] border-black text-black'
-                    ]"
-                    :disabled="!allowSkip"
-                    @click="timer.skip"
-                >
-                    <SkipForward :size="20" />
-                </button>
+            <div v-if="!isFocusRunning">
+                <TimerControls 
+                    :selectedCategory="selectedCategory" 
+                    :canStart="timer.mode === TimerMode.REST || !!(timer.taskId || timer.projectId || selectedCategory)"
+                />
             </div>
 
             <!-- Task Completion Dialog -->

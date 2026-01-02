@@ -1,11 +1,6 @@
-import { vibrate } from "@tauri-apps/plugin-haptics";
-import {
-	isPermissionGranted,
-	requestPermission,
-	sendNotification
-} from "@tauri-apps/plugin-notification";
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
+import { useTimerFeedback } from "../composables/useTimerFeedback";
 import type { Session } from "../funcs/commands";
 import {
 	add_session,
@@ -142,67 +137,8 @@ export const useTimerStore = defineStore("timer", () => {
 		pauseTimer();
 
 		// Check for notifications
-		const notificationsEnabled = settingsStore.settings.find(
-			(s) => s.key === "Push notifications"
-		)?.value;
-
-		const soundsEnabled = settingsStore.settings.find(
-			(s) => s.key === "Sound Alerts"
-		)?.value;
-
-		if (soundsEnabled === "true") {
-			const audio = new Audio(
-				mode.value === TimerMode.FOCUS ? "/ding.wav" : "/gong.wav"
-			);
-			audio.play().catch((e) => console.error("Error playing sound:", e));
-		}
-
-		const vibrationEnabled = settingsStore.settings.find(
-			(s) => s.key === "Vibration"
-		)?.value;
-
-		if (vibrationEnabled === "true") {
-			try {
-				if (mode.value === TimerMode.FOCUS) {
-					// Long vibration for focus end
-					await vibrate(500);
-				} else {
-					// Double short vibration for rest end
-					await vibrate(200);
-					setTimeout(async () => {
-						await vibrate(200);
-					}, 300);
-				}
-			} catch (e) {
-				console.error("Error vibrating:", e);
-			}
-		}
-
-		if (notificationsEnabled === "true") {
-			try {
-				let permissionGranted = await isPermissionGranted();
-				if (!permissionGranted) {
-					const permission = await requestPermission();
-					permissionGranted = permission === "granted";
-				}
-
-				if (permissionGranted) {
-					if (mode.value === TimerMode.FOCUS) {
-						sendNotification({
-							title: "Focus Session Complete",
-							body: "Great job! Time for a break."
-						});
-					} else {
-						sendNotification({
-							title: "Break Finished",
-							body: "Time to get back to work!"
-						});
-					}
-				}
-			} catch (error) {
-				console.error("Error in notification logic:", error);
-			}
-		}
+		const { triggerAllFeedback } = useTimerFeedback();
+		await triggerAllFeedback(mode.value === TimerMode.FOCUS);
 
 		if (mode.value === TimerMode.FOCUS) {
 			try {

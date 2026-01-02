@@ -2,6 +2,7 @@
 import { ref, watch } from "vue";
 import { Task } from "../../defines/task.ts";
 import { useTasks } from "../../stores/task";
+import ConfirmationModal from "../ui/ConfirmationModal.vue";
 import TaskEditBlock from "./TaskEditBlock.vue";
 
 const emit = defineEmits<{
@@ -29,11 +30,16 @@ const exitWithoutSave = () => {
 	close();
 };
 
-const deleteTask = async () => {
-	if (confirm("Are you sure you want to delete this task?")) {
-		await taskStore.deleteTask(props.selTask.id);
-		close();
-	}
+const showDeleteConfirmation = ref(false);
+
+const deleteTask = () => {
+	showDeleteConfirmation.value = true;
+};
+
+const confirmDelete = async () => {
+	await taskStore.deleteTask(props.selTask.id);
+	showDeleteConfirmation.value = false;
+	close();
 };
 
 const onAfterLeave = () => {
@@ -81,5 +87,17 @@ watch(
         </button>
       </div>
     </div>
+
+    <ConfirmationModal 
+      v-if="showDeleteConfirmation"
+      title="Delete Task"
+      message="Are you sure you want to delete this task? This action cannot be undone."
+      primaryBtnText="Delete"
+      secondaryBtnText="Cancel"
+      :isDanger="true"
+      @primary="confirmDelete"
+      @secondary="showDeleteConfirmation = false"
+      @close="showDeleteConfirmation = false"
+    />
   </v-dialog> 
 </template>

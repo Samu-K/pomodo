@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 
 export const useUIStore = defineStore("ui", () => {
 	const errorMessage = ref<string | null>(null);
@@ -32,11 +32,14 @@ export const useUIStore = defineStore("ui", () => {
 		isMiniMode.value = value;
 	}
 
-	const isMobile = computed(() => {
-		if (typeof window === "undefined") return false;
+	const isMobile = ref(false);
 
+	// Initialize and set up reactivity for mobile detection
+	if (typeof window !== "undefined") {
 		const userAgent =
-			navigator.userAgent || navigator.vendor || (window as any).opera;
+			navigator.userAgent ||
+			navigator.vendor ||
+			("opera" in window ? (window as Window & { opera: string }).opera : "");
 
 		// Check for common mobile devices
 		const isNativeMobile =
@@ -44,11 +47,19 @@ export const useUIStore = defineStore("ui", () => {
 				userAgent.toLowerCase()
 			);
 
-		// Also check for touch-only devices which usually indicates mobile/tablet
-		const isTouchOnly = window.matchMedia("(pointer: coarse)").matches;
+		const updateMobileStatus = () => {
+			// Also check for touch-only devices which usually indicates mobile/tablet
+			const isTouchOnly = window.matchMedia("(pointer: coarse)").matches;
+			isMobile.value = isNativeMobile || isTouchOnly;
+		};
 
-		return isNativeMobile || isTouchOnly;
-	});
+		// Set initial value
+		updateMobileStatus();
+
+		// Listen for changes to the media query
+		const mediaQuery = window.matchMedia("(pointer: coarse)");
+		mediaQuery.addEventListener("change", updateMobileStatus);
+	}
 
 	return {
 		errorMessage,

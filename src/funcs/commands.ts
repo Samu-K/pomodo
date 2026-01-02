@@ -219,6 +219,7 @@ async tasksCompleteTaskInstance(parentTaskId: number, date: string) : Promise<Re
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
+}
 },
 async projectsAddProject(project: Project) : Promise<Result<number, AppError>> {
     try {

@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { Briefcase, Check, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-vue-next";
+import {
+	Briefcase,
+	Check,
+	ChevronDown,
+	ChevronRight,
+	Plus,
+	Trash2
+} from "lucide-vue-next";
 import { onMounted, ref } from "vue";
 import CreateTaskModal from "../../components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
+import type { Task } from "../../defines/task";
+import type { Project } from "../../funcs/commands";
 import { useCategoryStore } from "../../stores/categories";
 import { useProjectStore } from "../../stores/project";
 import { useTasks } from "../../stores/task";
-import type { Project } from "../../funcs/commands";
-import type { Task } from "../../defines/task";
 
 const projectStore = useProjectStore();
 const tasksStore = useTasks();
@@ -41,7 +48,7 @@ const toggleExpand = (id: number) => {
 };
 
 const getProjectTasks = (projectId: number) => {
-	return tasksStore.tasks.filter(t => t.project_id === projectId);
+	return tasksStore.tasks.filter((t) => t.project_id === projectId);
 };
 
 const openCreate = () => {
@@ -88,7 +95,11 @@ const saveProject = async () => {
 };
 
 const deleteProject = async (id: number) => {
-	if (confirm("Are you sure you want to delete this project? Tasks linked to this project will remain but will no longer be linked.")) {
+	if (
+		confirm(
+			"Are you sure you want to delete this project? Tasks linked to this project will remain but will no longer be linked."
+		)
+	) {
 		await projectStore.deleteProject(id);
 	}
 };

@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { AlertCircle, CheckCircle, X } from "lucide-vue-next";
 import { useUIStore } from "../../stores/ui";
-import { CheckCircle, AlertCircle, X } from "lucide-vue-next";
 
 const ui = useUIStore();
 </script>

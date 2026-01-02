@@ -4,11 +4,11 @@ import {
 	type RouteRecordRaw
 } from "vue-router";
 import TimerScreen from "../pages/landing/TimerScreen.vue";
+import ProjectListScreen from "../pages/projects/ProjectListScreen.vue";
 import SettingsScreen from "../pages/settings/SettingsScreen.vue";
 import SessionLog from "../pages/stats/SessionLog.vue";
 import StatsScreen from "../pages/stats/StatsScreen.vue";
 import TaskListScreen from "../pages/tasks/TaskListScreen.vue";
-import ProjectListScreen from "../pages/projects/ProjectListScreen.vue";
 import TimelineScreen from "../pages/timeline/TimelineScreen.vue";
 
 const routes: Array<RouteRecordRaw> = [

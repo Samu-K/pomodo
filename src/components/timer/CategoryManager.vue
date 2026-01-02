@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { MinusCircle, PlusCircle } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
-import EmptyState from "../ui/EmptyState.vue";
 import type { Category } from "../../funcs/commands";
 import { useCategoryStore } from "../../stores/categories";
+import EmptyState from "../ui/EmptyState.vue";
 
 defineProps<{
 	selectedCategory: Category | null | undefined;

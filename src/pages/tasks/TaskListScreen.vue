@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { ChevronDown, ChevronRight, Eye, EyeOff, Plus } from "lucide-vue-next";
 import { computed, onMounted, ref } from "vue";
-import { Eye, EyeOff, ChevronDown, ChevronRight } from "lucide-vue-next";
-import EmptyState from "../../components/ui/EmptyState.vue";
 import CreateTaskModal from "../../components/task/CreateTaskModal.vue";
-import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
 import QuickAddTask from "../../components/task/QuickAddTask.vue";
+import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
 import TaskListItem from "../../components/task/TaskListItem.vue";
+import EmptyState from "../../components/ui/EmptyState.vue";
 import Toast from "../../components/ui/Toast.vue";
 import type { Task } from "../../defines/task";
 import { useCategoryStore } from "../../stores/categories";
@@ -129,7 +129,7 @@ const openDetails = (task: Task) => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col pt-12 px-6 bg-light-bg dark:bg-dark-bg text-lightText-primary dark:text-text-primary overflow-hidden">
+  <div class="h-full flex flex-col pt-12 px-6 bg-light-bg dark:bg-dark-bg text-lightText-primary dark:text-text-primary overflow-hidden relative">
     
     <!-- Header -->
     <div class="flex items-end justify-between mb-8 px-2">
@@ -218,6 +218,15 @@ const openDetails = (task: Task) => {
         </div>
 
     </div>
+
+    <!-- Floating Action Button -->
+    <button 
+      data-testid="add-task-fab"
+      @click="showCreateModal = true"
+      class="absolute bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-pomodo-orange to-pomodo-red rounded-full text-white shadow-fab hover:shadow-fab-hover hover:scale-110 transition-all flex items-center justify-center z-20"
+    >
+      <Plus :size="24" />
+    </button>
 
     <!-- Modals -->
     <CreateTaskModal 

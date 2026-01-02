@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, Calendar, MoreVertical } from "lucide-vue-next";
+import { Calendar, Check, MoreVertical } from "lucide-vue-next";
 import type { Task } from "../../defines/task";
 import { useTasks } from "../../stores/task";
 

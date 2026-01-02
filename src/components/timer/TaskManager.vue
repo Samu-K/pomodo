@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import type { Task } from "../../defines/task";
-import { useTasks } from "../../stores/task";
 import { useProjectStore } from "../../stores/project";
+import { useTasks } from "../../stores/task";
 
 defineProps<{
 	selectedTaskId: number | null;
@@ -66,6 +66,7 @@ const selectProject = (id: number) => {
 <template>
   <v-dialog v-model="dialogOpen" max-width="400" class="mx-4">
     <v-card class="rounded-2xl">
+      <v-card-title class="text-center pt-4 pb-2">Select Task</v-card-title>
       <v-tabs v-model="activeTab" grow color="orange">
         <v-tab :value="0">Tasks</v-tab>
         <v-tab :value="1">Projects</v-tab>

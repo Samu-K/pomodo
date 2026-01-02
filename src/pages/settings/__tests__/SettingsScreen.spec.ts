@@ -12,7 +12,8 @@ vi.mock("@tauri-apps/api/core", () => ({
 // Mock Lucide Icons
 vi.mock("lucide-vue-next", () => ({
 	ChevronLeft: { template: '<svg class="lucide-chevron-left"></svg>' },
-	X: { template: '<svg class="lucide-x"></svg>' }
+	X: { template: '<svg class="lucide-x"></svg>' },
+	Cloud: { template: '<svg class="lucide-cloud"></svg>' }
 }));
 
 // Mock Vue Router
@@ -51,10 +52,10 @@ const globalStubs = {
 		props: ["settings", "sectionTitle"],
 		emits: ["change"]
 	},
-	UnsavedChangesModal: {
-		name: "UnsavedChangesModal",
-		template: '<div class="unsaved-changes-modal"></div>',
-		emits: ["save", "discard", "cancel"]
+	ConfirmationModal: {
+		name: "ConfirmationModal",
+		template: '<div class="confirmation-modal"></div>',
+		emits: ["primary", "secondary", "close"]
 	},
 	"v-select": {
 		template: '<div class="v-select"></div>',
@@ -177,11 +178,11 @@ describe("SettingsScreen.vue", () => {
 
 		await wrapper.vm.$nextTick();
 
-		const modal = wrapper.findComponent({ name: "UnsavedChangesModal" });
+		const modal = wrapper.findComponent({ name: "ConfirmationModal" });
 		expect(modal.exists()).toBe(true);
 
-		// Emit save
-		modal.vm.$emit("save");
+		// Emit save (primary)
+		modal.vm.$emit("primary");
 		await wrapper.vm.$nextTick();
 
 		// Verify save logic ran
@@ -201,10 +202,10 @@ describe("SettingsScreen.vue", () => {
 
 		await wrapper.vm.$nextTick();
 
-		const modal = wrapper.findComponent({ name: "UnsavedChangesModal" });
+		const modal = wrapper.findComponent({ name: "ConfirmationModal" });
 
-		// Emit discard
-		modal.vm.$emit("discard");
+		// Emit discard (secondary)
+		modal.vm.$emit("secondary");
 		await wrapper.vm.$nextTick();
 
 		// Verify updateSetting NOT called
@@ -223,10 +224,10 @@ describe("SettingsScreen.vue", () => {
 
 		await wrapper.vm.$nextTick();
 
-		const modal = wrapper.findComponent({ name: "UnsavedChangesModal" });
+		const modal = wrapper.findComponent({ name: "ConfirmationModal" });
 
-		// Emit cancel
-		modal.vm.$emit("cancel");
+		// Emit cancel (close)
+		modal.vm.$emit("close");
 		await wrapper.vm.$nextTick();
 
 		expect(

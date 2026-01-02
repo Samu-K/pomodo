@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
 import { CheckCircle, ListTodo, Settings, TrendingUp } from "lucide-vue-next";
-import { computed, onMounted, type Ref, ref } from "vue";
+import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import EmptyState from "../../components/ui/EmptyState.vue";
 import WeeklyFocusChart from "../../components/stats/WeeklyFocusChart.vue";
 import WeeklyOverview from "../../components/stats/WeeklyOverview.vue";
+import EmptyState from "../../components/ui/EmptyState.vue";
 import { get_categories } from "../../funcs/db/categories";
 import { get_sessions } from "../../funcs/db/session";
 import {
@@ -79,8 +79,19 @@ const sessionsState = useQuery({
 	queryFn: get_sessions
 });
 
-const today_session_count: Ref<number> = ref(0);
-const total_seconds_today: Ref<number> = ref(0);
+const today_session_count = computed(() => {
+	if (!sessionsState.data.value) return 0;
+	return sessionsState.data.value.filter(
+		(s) => s.finished && s.start_time && isToday(s.start_time)
+	).length;
+});
+
+const total_seconds_today = computed(() => {
+	if (!sessionsState.data.value) return 0;
+	return sessionsState.data.value
+		.filter((s) => s.finished && s.start_time && isToday(s.start_time))
+		.reduce((sum, s) => sum + (s.duration || 0), 0);
+});
 
 const todaysFocusData = computed(() => {
 	if (!sessionsState.data.value || !categoriesState.data.value) return [];
@@ -88,14 +99,11 @@ const todaysFocusData = computed(() => {
 	const todaySessions = sessionsState.data.value.filter(
 		(s) => s.finished && s.start_time && isToday(s.start_time)
 	);
-	console.log(todaySessions);
-	today_session_count.value = todaySessions.length;
 
 	const totalSeconds = todaySessions.reduce(
 		(sum, s) => sum + (s.duration || 0),
 		0
 	);
-	total_seconds_today.value = totalSeconds;
 
 	if (totalSeconds === 0) return [];
 
@@ -150,8 +158,10 @@ const weeklySessionsRaw = computed(() => {
         
         <EmptyState 
           v-if="today_session_count === 0"
-          title="No focus sessions today"
-          description="Ready to get some work done? Start your first focus session to see stats here."
+          :title="todayTaskStats.completed > 0 ? 'No focus time recorded' : 'No focus sessions today'"
+          :description="todayTaskStats.completed > 0 
+            ? `You've completed ${todayTaskStats.completed} tasks, but haven't tracked any focus time.`
+            : 'Ready to get some work done? Start your first focus session to see stats here.'"
         />
 
         <template v-else>

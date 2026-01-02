@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { Plus, Tag, ChevronDown } from "lucide-vue-next";
-import { useTasks } from "../../stores/task";
-import { useCategoryStore } from "../../stores/categories";
-import { useUIStore } from "../../stores/ui";
+import { ChevronDown, Plus, Tag } from "lucide-vue-next";
+import { computed, ref } from "vue";
 import type { Task } from "../../defines/task";
+import { useCategoryStore } from "../../stores/categories";
+import { useTasks } from "../../stores/task";
+import { useUIStore } from "../../stores/ui";
 
 const tasksStore = useTasks();
 const categoryStore = useCategoryStore();
@@ -34,7 +34,8 @@ const handleAdd = async () => {
 			startTime: new Date(),
 			completed: false,
 			completedCycles: 0,
-			gradient: "from-pomodo-orange to-pomodo-red"
+			gradient: "from-pomodo-orange to-pomodo-red",
+			project_id: null
 		};
 
 		await tasksStore.addTask(newTask);
@@ -62,9 +63,11 @@ const getCategoryColor = (colorName: string | null | undefined) => {
     <div class="flex-1 flex items-center gap-2 pl-2">
         <button 
             @click="handleAdd"
-            class="w-10 h-10 rounded-full bg-light-bg dark:bg-dark-bg flex items-center justify-center text-text-muted hover:text-pomodo-orange hover:bg-pomodo-orange/10 transition-all shadow-sm cursor-pointer"
+            :disabled="!taskTitle.trim()"
+            class="w-8 h-8 flex-shrink-0 rounded-full bg-text-muted dark:bg-text-muted flex items-center justify-center text-light-surface dark:text-dark-surface transition-all shadow-sm"
+            :class="taskTitle.trim() ? 'hover:bg-pomodo-orange cursor-pointer' : 'opacity-50 cursor-not-allowed'"
         >
-            <Plus :size="20" stroke-width="3" />
+            <Plus :size="18" stroke-width="3" />
         </button>
         <input 
             v-model="taskTitle"

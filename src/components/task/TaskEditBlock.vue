@@ -2,6 +2,7 @@
 import { mdiClockOutline } from "@mdi/js";
 import { computed, onMounted, ref, watch } from "vue";
 import { VDateInput } from "vuetify/labs/VDateInput";
+import { useTaskCalculations } from "../../composables/useTaskCalculations";
 import {
 	CustomRecurrence,
 	CustomRecurrenceType,
@@ -13,8 +14,8 @@ import {
 } from "../../defines/recur.ts";
 import { Task } from "../../defines/task.ts";
 import { useCategoryStore } from "../../stores/categories.ts";
-import { useSettingsStore } from "../../stores/settings.ts";
 import { useProjectStore } from "../../stores/project.ts";
+import { useSettingsStore } from "../../stores/settings.ts";
 
 const projectStore = useProjectStore();
 onMounted(() => {
@@ -27,70 +28,7 @@ const props = defineProps<{
 
 const settingsStore = useSettingsStore();
 
-// Get timer settings from settings store
-const focusDuration = computed(() => {
-	const val = settingsStore.settings.find(
-		(s) => s.key === "Focus Duration"
-	)?.value;
-	return val ? Number(val) : 25; // Default to 25 minutes
-});
-
-const shortBreakTime = computed(() => {
-	const val = settingsStore.settings.find(
-		(s) => s.key === "Short Break Time"
-	)?.value;
-	return val ? Number(val) : 5; // Default to 5 minutes
-});
-
-const longBreakTime = computed(() => {
-	const val = settingsStore.settings.find(
-		(s) => s.key === "Long Break Time"
-	)?.value;
-	return val ? Number(val) : 15; // Default to 15 minutes
-});
-
-const longBreakInterval = computed(() => {
-	const val = settingsStore.settings.find(
-		(s) => s.key === "Long Break Interval"
-	)?.value;
-	return val ? Number(val) : 4; // Default to every 4 pomodoros
-});
-
-/**
- * Calculate total task duration in minutes, including rest breaks.
- * @param cycles - Number of pomodoro cycles
- * @returns Total duration in minutes (focus time + break time)
- */
-const calculateTaskDuration = (cycles: number): number => {
-	if (cycles <= 0) return 0;
-	if (cycles === 1) return focusDuration.value; // Single cycle, no breaks
-
-	// Focus time
-	const totalFocusTime = cycles * focusDuration.value;
-
-	// Calculate number of breaks (between each focus session)
-	const totalBreaks = cycles - 1;
-
-	// How many long breaks occur?
-	// Long break happens after every longBreakInterval cycles
-	const longBreaksCount = Math.floor(cycles / longBreakInterval.value);
-	const shortBreaksCount = totalBreaks - longBreaksCount;
-
-	// Total break time
-	const totalBreakTime =
-		shortBreaksCount * shortBreakTime.value +
-		longBreaksCount * longBreakTime.value;
-
-	return totalFocusTime + totalBreakTime;
-};
-
-const formatDuration = (minutes: number): string => {
-	const h = Math.floor(minutes / 60);
-	const m = Math.round(minutes % 60);
-	if (h === 0) return `${m} minutes`;
-	if (m === 0) return `${h} hours`;
-	return `${h}h ${m}m`;
-};
+const { calculateTaskDuration, formatDuration } = useTaskCalculations();
 
 const estimatedDurationString = computed(() => {
 	const cycles = props.selTask.cycles || 1;
@@ -249,6 +187,19 @@ const onMinuteSelected = () => {
 		showTimeMenu.value = false;
 	}, 100);
 };
+
+// Check if project is pre-selected to determine initial mode
+const isProjectSelection = ref(!!props.selTask.project_id);
+
+const toggleSelectionMode = () => {
+	isProjectSelection.value = !isProjectSelection.value;
+	// Clear the other value when switching modes to ensure mutual exclusivity
+	if (isProjectSelection.value) {
+		props.selTask.category_id = null;
+	} else {
+		props.selTask.project_id = null;
+	}
+};
 </script>
 
 <template>
@@ -275,32 +226,48 @@ const onMinuteSelected = () => {
             auto-grow
           ></v-textarea>
         </div>
+        <!-- Project/Category Toggle -->
         <div>
-          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
-            Project
-          </label>
-          <v-select
-            data-testid="task-project-select"
-            v-model="props.selTask.project_id"
-            :items="projectStore.projects"
-            item-title="name"
-            item-value="id"
-            clearable
-          ></v-select>
-        </div> <!-- Category -->
-        <div>
-          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
-            Category
-          </label>
-          <v-select 
-            data-testid="task-category-select"
-            v-model="props.selTask.category_id"
-            :items="categoryStore.categories"
-            item-title="name"
-            item-value="id"
-            clearable
-          >
-          </v-select>
+          <div v-if="isProjectSelection">
+            <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
+              Project
+            </label>
+            <v-select
+              data-testid="task-project-select"
+              v-model="props.selTask.project_id"
+              :items="projectStore.projects"
+              item-title="name"
+              item-value="id"
+              clearable
+            ></v-select>
+            <p 
+              @click="toggleSelectionMode"
+              class="text-xs text-pomodo-orange cursor-pointer hover:underline"
+            >
+              add to category
+            </p>
+          </div>
+
+          <div v-else>
+            <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
+              Category
+            </label>
+            <v-select 
+              data-testid="task-category-select"
+              v-model="props.selTask.category_id"
+              :items="categoryStore.categories"
+              item-title="name"
+              item-value="id"
+              clearable
+            >
+            </v-select>
+            <p 
+              @click="toggleSelectionMode"
+              class="text-xs text-pomodo-orange cursor-pointer hover:underline"
+            >
+              add to project
+            </p>
+          </div>
         </div>
 
         <div>

@@ -7,7 +7,6 @@ import * as directives from "vuetify/directives";
 import { useCategoryStore } from "../../../stores/categories";
 import { useSettingsStore } from "../../../stores/settings";
 import { TimerMode, useTimerStore } from "../../../stores/timer";
-import { useUIStore } from "../../../stores/ui";
 import TimerScreen from "../TimerScreen.vue";
 
 type WritableTimerStore = ReturnType<typeof useTimerStore> & {
@@ -41,17 +40,17 @@ vi.mock("lucide-vue-next", () => ({
 vi.stubGlobal(
 	"ResizeObserver",
 	class ResizeObserver {
-		observe() { }
-		unobserve() { }
-		disconnect() { }
+		observe() {}
+		unobserve() {}
+		disconnect() {}
 	}
 );
 vi.stubGlobal(
 	"IntersectionObserver",
 	class IntersectionObserver {
-		observe() { }
-		unobserve() { }
-		disconnect() { }
+		observe() {}
+		unobserve() {}
+		disconnect() {}
 	}
 );
 vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>
@@ -388,8 +387,20 @@ describe("TimerScreen.vue", () => {
 		});
 		describe("Mini Mode Toggle Visibility", () => {
 			it("is visible when not on mobile", async () => {
-				const uiStore = useUIStore();
-				(uiStore as any).isMobile = false;
+				// Mock matchMedia to return non-mobile (fine pointer)
+				Object.defineProperty(window, "matchMedia", {
+					writable: true,
+					value: vi.fn().mockImplementation((query) => ({
+						matches: !(query === "(pointer: coarse)"),
+						media: query,
+						onchange: null,
+						addListener: vi.fn(),
+						removeListener: vi.fn(),
+						addEventListener: vi.fn(),
+						removeEventListener: vi.fn(),
+						dispatchEvent: vi.fn()
+					}))
+				});
 				settingsStore.isLoading = false;
 				await wrapper.vm.$nextTick();
 
@@ -398,9 +409,58 @@ describe("TimerScreen.vue", () => {
 			});
 
 			it("is hidden when on mobile", async () => {
-				const uiStore = useUIStore();
-				(uiStore as any).isMobile = true;
+				// Mock matchMedia to return mobile (coarse pointer)
+				Object.defineProperty(window, "matchMedia", {
+					writable: true,
+					value: vi.fn().mockImplementation((query) => ({
+						matches: query === "(pointer: coarse)",
+						media: query,
+						onchange: null,
+						addListener: vi.fn(),
+						removeListener: vi.fn(),
+						addEventListener: vi.fn(),
+						removeEventListener: vi.fn(),
+						dispatchEvent: vi.fn()
+					}))
+				});
+
+				// Remount the component to pick up the new matchMedia mock
+				wrapper.unmount();
+				wrapper = mount(TimerScreen, {
+					global: {
+						plugins: [
+							createTestingPinia({
+								createSpy: vi.fn,
+								stubActions: true
+							}),
+							vuetify
+						],
+						stubs: globalStubs
+					}
+				});
+
+				// Re-initialize store references
+				timerStore = useTimerStore();
+				categoryStore = useCategoryStore();
+				settingsStore = useSettingsStore();
+
+				// Set up the same initial state as beforeEach
 				settingsStore.isLoading = false;
+				settingsStore.settings.push({
+					id: 99,
+					key: "Long Break Interval",
+					value: "4",
+					category_id: 1,
+					description: null,
+					data_type: "number"
+				});
+				timerStore.mode = TimerMode.FOCUS;
+				timerStore.sessionStreak = 0;
+				timerStore.remainingTime = 1500;
+				timerStore.isRunning = false;
+				timerStore.categoryId = null;
+				categoryStore.categories = [{ id: 1, name: "Work", color: "red" }];
+
 				await wrapper.vm.$nextTick();
 
 				const toggleBtn = wrapper.find('[data-testid="toggle-mini-mode"]');
