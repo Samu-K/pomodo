@@ -8,6 +8,7 @@ import SettingsScreen from "../pages/settings/SettingsScreen.vue";
 import SessionLog from "../pages/stats/SessionLog.vue";
 import StatsScreen from "../pages/stats/StatsScreen.vue";
 import TaskListScreen from "../pages/tasks/TaskListScreen.vue";
+import ProjectListScreen from "../pages/projects/ProjectListScreen.vue";
 import TimelineScreen from "../pages/timeline/TimelineScreen.vue";
 
 const routes: Array<RouteRecordRaw> = [
@@ -25,6 +26,11 @@ const routes: Array<RouteRecordRaw> = [
 		path: "/tasks",
 		name: "Tasks",
 		component: TaskListScreen
+	},
+	{
+		path: "/projects",
+		name: "Projects",
+		component: ProjectListScreen
 	},
 	{
 		path: "/stats",

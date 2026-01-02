@@ -7,6 +7,7 @@ import * as directives from "vuetify/directives";
 import { useCategoryStore } from "../../../stores/categories";
 import { useSettingsStore } from "../../../stores/settings";
 import { TimerMode, useTimerStore } from "../../../stores/timer";
+import { useUIStore } from "../../../stores/ui";
 import TimerScreen from "../TimerScreen.vue";
 
 type WritableTimerStore = ReturnType<typeof useTimerStore> & {
@@ -40,17 +41,17 @@ vi.mock("lucide-vue-next", () => ({
 vi.stubGlobal(
 	"ResizeObserver",
 	class ResizeObserver {
-		observe() {}
-		unobserve() {}
-		disconnect() {}
+		observe() { }
+		unobserve() { }
+		disconnect() { }
 	}
 );
 vi.stubGlobal(
 	"IntersectionObserver",
 	class IntersectionObserver {
-		observe() {}
-		unobserve() {}
-		disconnect() {}
+		observe() { }
+		unobserve() { }
+		disconnect() { }
 	}
 );
 vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>
@@ -384,6 +385,27 @@ describe("TimerScreen.vue", () => {
 			vi.advanceTimersByTime(3100);
 
 			expect(timerStore.pauseTimer).toHaveBeenCalled();
+		});
+		describe("Mini Mode Toggle Visibility", () => {
+			it("is visible when not on mobile", async () => {
+				const uiStore = useUIStore();
+				(uiStore as any).isMobile = false;
+				settingsStore.isLoading = false;
+				await wrapper.vm.$nextTick();
+
+				const toggleBtn = wrapper.find('[data-testid="toggle-mini-mode"]');
+				expect(toggleBtn.exists()).toBe(true);
+			});
+
+			it("is hidden when on mobile", async () => {
+				const uiStore = useUIStore();
+				(uiStore as any).isMobile = true;
+				settingsStore.isLoading = false;
+				await wrapper.vm.$nextTick();
+
+				const toggleBtn = wrapper.find('[data-testid="toggle-mini-mode"]');
+				expect(toggleBtn.exists()).toBe(false);
+			});
 		});
 	});
 });

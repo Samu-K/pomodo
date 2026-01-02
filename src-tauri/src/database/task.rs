@@ -16,10 +16,12 @@ impl TaskActions {
     pub async fn add_task(&self, task: Task) -> IdReturn {
         let mut tx = self.db.begin().await?;
         let id = query(
-            "INSERT INTO tasks (title, category_id, estimated_pomodoros, start_datetime, recurrence_rule, is_completed, parent_task_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO tasks (title, description, category_id, project_id, estimated_pomodoros, start_datetime, recurrence_rule, is_completed, parent_task_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(task.title)
+        .bind(task.description)
         .bind(task.category_id)
+        .bind(task.project_id)
         .bind(task.estimated_pomodoros)
         .bind(task.start_datetime)
         .bind(task.recurrence_rule)
@@ -42,10 +44,12 @@ impl TaskActions {
 
     pub async fn update_task(&self, task: Task) -> NoReturn {
         query(
-            "UPDATE tasks SET title = ?, category_id = ?, estimated_pomodoros = ?, start_datetime = ?, recurrence_rule = ?, is_completed = ? WHERE id = ?",
+            "UPDATE tasks SET title = ?, description = ?, category_id = ?, project_id = ?, estimated_pomodoros = ?, start_datetime = ?, recurrence_rule = ?, is_completed = ? WHERE id = ?",
         )
         .bind(task.title)
+        .bind(task.description)
         .bind(task.category_id)
+        .bind(task.project_id)
         .bind(task.estimated_pomodoros)
         .bind(task.start_datetime)
         .bind(task.recurrence_rule)
@@ -67,10 +71,12 @@ impl TaskActions {
             .await?;
 
         let id = query(
-             "INSERT INTO tasks (title, category_id, estimated_pomodoros, start_datetime, recurrence_rule, is_completed, parent_task_id) VALUES (?, ?, ?, ?, NULL, 1, ?)",
+             "INSERT INTO tasks (title, description, category_id, project_id, estimated_pomodoros, start_datetime, recurrence_rule, is_completed, parent_task_id) VALUES (?, ?, ?, ?, ?, ?, NULL, 1, ?)",
         )
         .bind(parent_task.title)
+        .bind(parent_task.description)
         .bind(parent_task.category_id)
+        .bind(parent_task.project_id)
         .bind(parent_task.estimated_pomodoros)
         .bind(date) // The specific instance date
         .bind(parent_task_id)

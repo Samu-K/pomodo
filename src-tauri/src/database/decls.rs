@@ -63,6 +63,7 @@ pub struct Session {
     pub finished: bool,
     pub category_id: Option<i64>,
     pub task_id: Option<i64>,
+    pub project_id: Option<i64>,
     pub notes: Option<String>,
     pub created_at: Option<NaiveDateTime>,
     pub last_modified: Option<NaiveDateTime>,
@@ -98,6 +99,22 @@ pub type SessionGetVec = Result<Vec<Session>, AppError>;
 pub type SettingGetVec = Result<Vec<Setting>, AppError>;
 pub type SettingCatGetVec = Result<Vec<SettingCategory>, AppError>;
 
+#[derive(serde::Deserialize, serde::Serialize, FromRow, Debug, Default, Type)]
+#[serde(default)]
+pub struct Project {
+    pub id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    pub color: Option<String>,
+    pub estimated_pomodoros: Option<i64>,
+    pub category_id: Option<i64>,
+    pub is_completed: bool,
+    pub created_at: Option<NaiveDateTime>,
+}
+
+pub type ProjectGet = Result<Project, AppError>;
+pub type ProjectGetVec = Result<Vec<Project>, AppError>;
+
 pub type StringReturn = Result<String, AppError>;
 
 #[derive(serde::Deserialize, serde::Serialize, FromRow, Debug, Default, Type)]
@@ -105,7 +122,9 @@ pub type StringReturn = Result<String, AppError>;
 pub struct Task {
     pub id: i64,
     pub title: String,
+    pub description: Option<String>,
     pub category_id: Option<i64>,
+    pub project_id: Option<i64>,
     pub estimated_pomodoros: Option<i64>,
     pub start_datetime: Option<NaiveDateTime>,
     pub recurrence_rule: Option<String>,

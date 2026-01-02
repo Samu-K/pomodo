@@ -54,7 +54,7 @@ watch(
     v-model="isOpen" 
     max-width="450" 
     @after-leave="onAfterLeave"
-    class="backdrop-blur-sm"
+    class="backdrop-blur-sm pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
   >
     <div class="bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full border border-light-border dark:border-dark-border overflow-scroll shadow-xl">
     

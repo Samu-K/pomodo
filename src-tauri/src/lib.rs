@@ -17,9 +17,10 @@ use tauri::{
 use crate::database::{
     category::CategoryActions,
     decls::{
-        Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, Session, SessionGetVec,
-        SettingCatGetVec, SettingGetVec, StringReturn, Task, TaskGetVec,
+        Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, Project, ProjectGetVec, Session,
+        SessionGetVec, SettingCatGetVec, SettingGetVec, StringReturn, Task, TaskGetVec,
     },
+    project::ProjectActions,
     session::SessionActions,
     settings::SettingActions,
     task::TaskActions,
@@ -30,6 +31,7 @@ pub struct AppState {
     pub session: SessionActions,
     pub settings: SettingActions,
     pub tasks: TaskActions,
+    pub projects: ProjectActions,
 }
 
 pub struct TrayState {
@@ -107,7 +109,11 @@ tauri_commands! {
     tasks::get_tasks() -> TaskGetVec,
     tasks::update_task(task: Task) -> NoReturn,
     tasks::delete_task(id: i64) -> NoReturn,
-    tasks::complete_task_instance(parent_task_id: i64, date: NaiveDateTime) -> IdReturn
+    tasks::complete_task_instance(parent_task_id: i64, date: NaiveDateTime) -> IdReturn,
+    projects::add_project(project: Project) -> IdReturn,
+    projects::get_projects() -> ProjectGetVec,
+    projects::update_project(project: Project) -> NoReturn,
+    projects::delete_project(id: i64) -> NoReturn
 }
 
 #[tauri::command]
@@ -156,6 +162,10 @@ pub fn run() {
             tasks_update_task,
             tasks_delete_task,
             tasks_complete_task_instance,
+            projects_add_project,
+            projects_get_projects,
+            projects_update_project,
+            projects_delete_project,
             update_tray
         ]);
 
@@ -186,11 +196,13 @@ pub fn run() {
                         let sta = SettingActions::new(db.clone());
                         let ca = CategoryActions::new(db.clone());
                         let ta = TaskActions::new(db.clone());
+                        let pa = ProjectActions::new(db.clone());
                         app.manage(AppState {
                             categories: ca,
                             session: sa,
                             settings: sta,
                             tasks: ta,
+                            projects: pa,
                         });
                         println!("Setup: state managed");
                     }

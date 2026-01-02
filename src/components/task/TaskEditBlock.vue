@@ -14,6 +14,12 @@ import {
 import { Task } from "../../defines/task.ts";
 import { useCategoryStore } from "../../stores/categories.ts";
 import { useSettingsStore } from "../../stores/settings.ts";
+import { useProjectStore } from "../../stores/project.ts";
+
+const projectStore = useProjectStore();
+onMounted(() => {
+	projectStore.fetchProjects();
+});
 
 const props = defineProps<{
 	selTask: Task;
@@ -123,6 +129,24 @@ watch(
 		if (newType === CustomRecurrenceType.MONTHLY) {
 			(props.selTask.recurrence as CustomRecurrence).monthlyType =
 				MonthlyRepeatType.ON_TASK_DATE;
+		}
+	}
+);
+
+watch(
+	() => props.selTask.project_id,
+	(newVal) => {
+		if (newVal) {
+			props.selTask.category_id = null;
+		}
+	}
+);
+
+watch(
+	() => props.selTask.category_id,
+	(newVal) => {
+		if (newVal) {
+			props.selTask.project_id = null;
 		}
 	}
 );
@@ -237,20 +261,39 @@ const onMinuteSelected = () => {
           </label>
           <v-text-field
             data-testid="task-name-input"
-            label="Task name"
-            placeholder="Enter task name"
-            v-model="props.selTask.title"
-          ></v-text-field>
+            placeholder="Enter task name" v-model="props.selTask.title" ></v-text-field> 
+        </div> <!-- Description -->
+        <div>
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
+            Description
+          </label>
+          <v-textarea
+            data-testid="task-description-input"
+            placeholder="Add some notes about this task..."
+            v-model="props.selTask.description"
+            rows="3"
+            auto-grow
+          ></v-textarea>
         </div>
-
-        <!-- Category -->
+        <div>
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
+            Project
+          </label>
+          <v-select
+            data-testid="task-project-select"
+            v-model="props.selTask.project_id"
+            :items="projectStore.projects"
+            item-title="name"
+            item-value="id"
+            clearable
+          ></v-select>
+        </div> <!-- Category -->
         <div>
           <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
             Category
           </label>
           <v-select 
             data-testid="task-category-select"
-            label="Category"
             v-model="props.selTask.category_id"
             :items="categoryStore.categories"
             item-title="name"
@@ -293,6 +336,7 @@ const onMinuteSelected = () => {
           v-model="selectedTime"
           label="Time"
           :prepend-icon="mdiClockOutline"
+          readonly
         >
         <v-menu
           v-model="showTimeMenu"

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Setting } from "../../funcs/commands";
+import { useSettingsStore } from "../../stores/settings";
 
+const settingsStore = useSettingsStore();
 const props = defineProps<{
 	setting: Setting;
 }>();
@@ -33,13 +35,20 @@ const value_ref = computed({
 <template>
   <div v-if="typeof value_ref === 'undefined'">
   </div>
-  <div v-else class="flex items-center justify-between">
+  <div v-else class="flex items-center justify-between py-2 border-b border-light-border dark:border-dark-border last:border-0">
     <div class="flex flex-col">
-      <p class="text-white font-medium">{{props.setting.key}}</p>
-      <p class="text-text-muted text-xs">{{props.setting.description}}</p>
+      <p class="text-lightText-primary dark:text-white font-medium">{{props.setting.key}}</p>
+      <p class="text-lightText-muted dark:text-text-muted text-xs">{{props.setting.description}}</p>
     </div>
     <div v-if="typeof value_ref === 'boolean'">
-      <v-switch class="pr-4" v-model="value_ref" color="orange-lighten-1" base-color="grey-darken-3" inset></v-switch>
+      <v-switch 
+        class="pr-4" 
+        v-model="value_ref" 
+        color="orange-lighten-1" 
+        :base-color="settingsStore.resolvedTheme === 'light' ? 'grey-lighten-1' : 'grey-darken-3'"
+        inset
+        hide-details
+      ></v-switch>
     </div>
     <div v-else-if="typeof value_ref === 'number'">
       <v-number-input
@@ -48,9 +57,12 @@ const value_ref = computed({
         v-model="value_ref"
         :hideInput="false"
         :inset="false"
-        variant="solo-filled"
-        width="150"
+        variant="outlined"
+        density="compact"
+        width="140"
         :min=1
+        color="primary"
+        hide-details
       ></v-number-input>
     </div>
   </div>

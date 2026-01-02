@@ -39,8 +39,10 @@ export const useTasks = defineStore("tasks", () => {
 			tasks.value = fetched.map((t) => ({
 				id: t.id,
 				title: t.title,
+				description: t.description ?? "",
 				category: t.category_id ? catMap.get(t.category_id) || "" : "",
 				category_id: t.category_id,
+				project_id: t.project_id,
 				cycles: t.estimated_pomodoros || 1,
 				completedCycles: sessionTaskMap.get(t.id) || 0,
 				startTime: fromUTCString(t.start_datetime),
@@ -91,7 +93,9 @@ export const useTasks = defineStore("tasks", () => {
 			const payload = {
 				id: 0,
 				title: task.title,
+				description: task.description ?? null,
 				category_id: categoryId,
+				project_id: task.project_id,
 				estimated_pomodoros: task.cycles,
 				start_datetime: toUTCISOString(task.startTime),
 				recurrence_rule: rrule ?? null,
@@ -120,7 +124,9 @@ export const useTasks = defineStore("tasks", () => {
 			const payload = {
 				id: task.id,
 				title: task.title,
+				description: task.description ?? null,
 				category_id: categoryId,
+				project_id: task.project_id,
 				estimated_pomodoros: task.cycles,
 				start_datetime: toUTCISOString(task.startTime),
 				recurrence_rule: rrule ?? null,
@@ -145,7 +151,9 @@ export const useTasks = defineStore("tasks", () => {
 				const payload = {
 					id: task.id,
 					title: task.title,
+					description: task.description ?? null,
 					category_id: task.category_id,
+					project_id: task.project_id,
 					estimated_pomodoros: task.cycles,
 					start_datetime: toUTCISOString(task.startTime),
 					recurrence_rule: task.recurrence_rule ?? null,
@@ -225,7 +233,9 @@ export const useTasks = defineStore("tasks", () => {
 			const payload = {
 				id: task.id,
 				title: task.title,
+				description: task.description ?? null,
 				category_id: task.category_id,
+				project_id: task.project_id,
 				estimated_pomodoros: task.cycles,
 				start_datetime: toUTCISOString(task.startTime),
 				recurrence_rule: task.recurrence_rule ?? null,

@@ -78,7 +78,7 @@ const handleTaskComplete = async (task: Task) => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col pt-12 p-6 bg-light-bg dark:bg-dark-bg text-lightText-primary dark:text-text-primary overflow-hidden">
+  <div class="h-full flex flex-col p-6 bg-light-bg dark:bg-dark-bg text-lightText-primary dark:text-text-primary overflow-hidden">
     
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">

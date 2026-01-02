@@ -86,6 +86,7 @@ export const useTimerStore = defineStore("timer", () => {
 	const isRunning = ref(false);
 	const categoryId = ref<number | null>(null);
 	const taskId = ref<number | null>(null);
+	const projectId = ref<number | null>(null);
 	const currentSessionId = ref<number | null>(null);
 	let endTime: number | undefined;
 
@@ -251,6 +252,7 @@ export const useTimerStore = defineStore("timer", () => {
 					finished: false,
 					category_id: categoryId.value,
 					task_id: taskId.value, // Include task ID
+					project_id: projectId.value, // Include project ID
 					notes: null,
 					created_at: null,
 					last_modified: null
@@ -355,6 +357,10 @@ export const useTimerStore = defineStore("timer", () => {
 		taskId.value = id;
 	};
 
+	const setProjectId = (id: number | null) => {
+		projectId.value = id;
+	};
+
 	// --- Helpers ---
 	const formattedTime = computed(() => {
 		const time = remainingTime.value < 0 ? 0 : remainingTime.value;
@@ -385,6 +391,7 @@ export const useTimerStore = defineStore("timer", () => {
 		sessionStreak,
 		categoryId,
 		taskId,
+		projectId,
 		long_break_interval,
 		isReady,
 
@@ -399,6 +406,7 @@ export const useTimerStore = defineStore("timer", () => {
 		resetTimer,
 		skip,
 		setCategoryId,
-		setTaskId
+		setTaskId,
+		setProjectId
 	};
 });
