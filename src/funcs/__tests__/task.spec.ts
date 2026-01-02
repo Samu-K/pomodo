@@ -247,6 +247,7 @@ describe("Task Functions", () => {
 			title: "Test Task",
 			category: null,
 			category_id: null,
+			project_id: null,
 			cycles: 1,
 			startTime: new Date("2024-03-15T10:00:00Z"),
 			completed: false,

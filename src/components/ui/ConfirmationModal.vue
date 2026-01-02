@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { X } from "lucide-vue-next";
 
-const props = defineProps<{
+defineProps<{
 	title: string;
 	message: string;
 	primaryBtnText: string;

@@ -66,6 +66,7 @@ const selectedTask = ref<Task>({
 	title: "",
 	category: "",
 	category_id: null,
+	project_id: null,
 	cycles: 0,
 	startTime: new Date(),
 	gradient: "",

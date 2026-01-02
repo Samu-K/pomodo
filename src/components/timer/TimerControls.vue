@@ -5,7 +5,7 @@ import type { Category } from "../../funcs/commands";
 import { useSettingsStore } from "../../stores/settings";
 import { TimerMode, useTimerStore } from "../../stores/timer";
 
-const props = defineProps<{
+defineProps<{
 	selectedCategory: Category | null;
 	canStart: boolean;
 }>();
@@ -26,13 +26,6 @@ const allowReset = computed(() => {
 	// Focus mode: only if paused
 	return !timer.isRunning && timer.percent < 100;
 });
-const handleToggle = () => {
-	console.log("TimerControls: toggle clicked", {
-		canStart: props.canStart,
-		isRunning: timer.isRunning
-	});
-	timer.toggleTimer();
-};
 </script>
 
 <template>
