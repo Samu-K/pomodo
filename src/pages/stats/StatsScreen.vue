@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/vue-query";
 import { CheckCircle, ListTodo, Settings, TrendingUp } from "lucide-vue-next";
 import { computed, onMounted, type Ref, ref } from "vue";
 import { useRouter } from "vue-router";
+import EmptyState from "../../components/ui/EmptyState.vue";
 import WeeklyFocusChart from "../../components/stats/WeeklyFocusChart.vue";
 import WeeklyOverview from "../../components/stats/WeeklyOverview.vue";
 import { get_categories } from "../../funcs/db/categories";
@@ -134,6 +135,7 @@ const weeklySessionsRaw = computed(() => {
         </h1>
 
         <button 
+          data-testid="nav-settings"
           @click="router.push('/settings')"
           class="-mt-2 text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors"
         >
@@ -146,32 +148,40 @@ const weeklySessionsRaw = computed(() => {
         <h2 class="text-lg font-semibold text-lightText-primary dark:text-white mb-1">Focus Time  -  Total {{formatDuration(total_seconds_today)}}</h2>
         <h2 class="text-base font-medium text-lightText-primary dark:text-white mb-5">Tasks Done - Total {{todayTaskStats.completed}}</h2>
         
-        <div v-for="item in todaysFocusData" :key="item.category" class="flex items-center mb-5">
-          <div class="flex items-center gap-3 w-24">
-            <div class="w-3 h-3 rounded-full" :class="item.color"></div>
-            <span class="text-lightText-primary dark:text-white text-sm">{{ item.category }}</span>
-          </div>
-          <div class="flex-1 mx-4 h-1.5 bg-light-surface dark:bg-dark-surface rounded-full overflow-hidden">
-            <div 
-              class="h-full rounded-full transition-all duration-500" 
-              :class="item.color"
-              :style="`width: ${item.percentage}%`"
-            ></div>
-          </div>
-          <span class="text-lightText-secondary dark:text-text-secondary text-sm min-w-[60px] text-right">{{ item.time }}</span>
-        </div>
+        <EmptyState 
+          v-if="today_session_count === 0"
+          title="No focus sessions today"
+          description="Ready to get some work done? Start your first focus session to see stats here."
+        />
 
-        <div class="flex items-center justify-end">
-          <button 
-          @click="router.push('/stats/log')"
-          class="text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors bg-light-surface dark:bg-dark-surface px-4 py-2"
-        >
-            View session log
-        </button>
-        </div>
-        <p class="text-lightText-muted dark:text-text-muted text-center text-sm mt-6">
-          {{today_session_count}} focus sessions completed today
-        </p>
+        <template v-else>
+          <div v-for="item in todaysFocusData" :key="item.category" class="flex items-center mb-5">
+            <div class="flex items-center gap-3 w-24">
+              <div class="w-3 h-3 rounded-full" :class="item.color"></div>
+              <span class="text-lightText-primary dark:text-white text-sm">{{ item.category }}</span>
+            </div>
+            <div class="flex-1 mx-4 h-1.5 bg-light-surface dark:bg-dark-surface rounded-full overflow-hidden">
+              <div 
+                class="h-full rounded-full transition-all duration-500" 
+                :class="item.color"
+                :style="`width: ${item.percentage}%`"
+              ></div>
+            </div>
+            <span class="text-lightText-secondary dark:text-text-secondary text-sm min-w-[60px] text-right">{{ item.time }}</span>
+          </div>
+
+          <div class="flex items-center justify-end">
+            <button 
+            @click="router.push('/stats/log')"
+            class="text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors bg-light-surface dark:bg-dark-surface px-4 py-2"
+          >
+              View session log
+          </button>
+          </div>
+          <p class="text-lightText-muted dark:text-text-muted text-center text-sm mt-6">
+            {{today_session_count}} focus sessions completed today
+          </p>
+        </template>
       </section>
 
       <!-- Weekly Overview -->

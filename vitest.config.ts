@@ -23,4 +23,7 @@ export default defineConfig({
             VITE_DEV_MODE: 'false',
         },
     },
+    server: {
+        host: '127.0.0.1',
+    },
 })

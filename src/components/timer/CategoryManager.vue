@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { MinusCircle, PlusCircle } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
+import EmptyState from "../ui/EmptyState.vue";
 import type { Category } from "../../funcs/commands";
 import { useCategoryStore } from "../../stores/categories";
 
@@ -51,8 +52,6 @@ const openEditMode = () => {
 import { useTimerStore } from "../../stores/timer";
 
 const timerStore = useTimerStore();
-
-// ... (existing code)
 
 const saveEdits = async () => {
 	if (!categoryStore.categories || !editableCategories.value) return;
@@ -138,12 +137,15 @@ defineExpose({
             <v-card title="Select category">
                 <v-divider class="mt-1"></v-divider>
 
-                <v-card-text class="px-12" style="height: 300px" >
+                <v-card-text class="px-12" style="height: 380px" >
                     <div v-if="!catEditMode">
-                        <div v-if="!categoryStore.categories || categoryStore.categories.length === 0" class="items-center justify-center">
-                            No categories, create one below.
-                        </div>
-                        <div class="flex flex-col" v-for="cat in categoryStore.categories" :key="cat.id">
+                        <EmptyState 
+                            v-if="!categoryStore.categories || categoryStore.categories.length === 0"
+                            title="No projects yet"
+                            description="Organize your tasks into projects for better focus."
+                        />
+                        
+                        <div v-else class="flex flex-col" v-for="cat in categoryStore.categories" :key="cat.id">
                             <v-btn variant="tonal" class="mt-4" 
                                 @click="() => { emit('select', cat); isActive.value = false; }">
                                 {{ cat.name }}

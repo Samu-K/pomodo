@@ -34,8 +34,10 @@ export default defineConfig({
 
     /* Run your local dev server before starting the tests */
     webServer: {
-        command: 'pnpm run dev',
-        url: 'http://localhost:1420',
+        command: process.platform === 'win32' ? 'pnpm.cmd run dev' : 'pnpm run dev',
+        url: 'http://127.0.0.1:1420',
         reuseExistingServer: !process.env.CI,
+        stdout: 'pipe',
+        stderr: 'pipe',
     },
 });
