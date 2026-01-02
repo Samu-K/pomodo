@@ -219,6 +219,37 @@ async tasksCompleteTaskInstance(parentTaskId: number, date: string) : Promise<Re
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
+},
+async projectsAddProject(project: Project) : Promise<Result<number, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("projects_add_project", { project }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async projectsGetProjects() : Promise<Result<Project[], AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("projects_get_projects") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async projectsUpdateProject(project: Project) : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("projects_update_project", { project }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async projectsDeleteProject(id: number) : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("projects_delete_project", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
 }
 },
 async updateTray(title: string, toggleText: string | null) : Promise<Result<null, string>> {
@@ -243,10 +274,11 @@ async updateTray(title: string, toggleText: string | null) : Promise<Result<null
 
 export type AppError = { message: string }
 export type Category = { id: number; name: string; color: string | null }
-export type Session = { id: number | null; start_time: string; duration: number | null; finished: boolean; category_id: number | null; task_id: number | null; notes: string | null; created_at: string | null; last_modified: string | null }
+export type Project = { id: number; name: string; description: string | null; color: string | null; estimated_pomodoros: number | null; category_id: number | null; is_completed: boolean; created_at: string | null }
+export type Session = { id: number | null; start_time: string; duration: number | null; finished: boolean; category_id: number | null; task_id: number | null; project_id: number | null; notes: string | null; created_at: string | null; last_modified: string | null }
 export type Setting = { id: number; key: string; description: string | null; value: string; category_id: number; data_type: string }
 export type SettingCategory = { id: number; name: string }
-export type Task = { id: number; title: string; category_id: number | null; estimated_pomodoros: number | null; start_datetime: string | null; recurrence_rule: string | null; is_completed: boolean; parent_task_id: number | null; created_at: string | null }
+export type Task = { id: number; title: string; description: string | null; category_id: number | null; project_id: number | null; estimated_pomodoros: number | null; start_datetime: string | null; recurrence_rule: string | null; is_completed: boolean; parent_task_id: number | null; created_at: string | null }
 
 /** tauri-specta globals **/
 

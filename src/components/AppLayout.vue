@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
 	BarChart3,
+	Briefcase,
 	Calendar,
 	ChevronLeft,
 	ListTodo,
@@ -40,6 +41,7 @@ const router = useRouter();
 const activeTab = computed(() => {
 	if (route.path === "/") return "timer";
 	if (route.path.startsWith("/timeline")) return "timeline";
+	if (route.path.startsWith("/projects")) return "projects";
 	if (route.path.startsWith("/tasks")) return "tasks";
 	if (route.path.startsWith("/stats")) return "stats";
 	return "";
@@ -85,7 +87,7 @@ const handleTouchEnd = (e: TouchEvent) => {
 	}
 };
 
-const mainTabs = ["/", "/timeline", "/tasks", "/stats"];
+const mainTabs = ["/", "/timeline", "/projects", "/tasks", "/stats"];
 
 const handleSwipeLeft = () => {
 	// If we are on a sub-page (like settings), do nothing or handle differently?
@@ -111,7 +113,7 @@ const handleSwipeRight = () => {
 
 <template>
   <div 
-    class="fixed inset-0 flex flex-col w-screen"
+    class="fixed inset-0 flex flex-col w-screen pt-[env(safe-area-inset-top)]"
     @touchstart="handleTouchStart"
     @touchend="handleTouchEnd"
   >
@@ -131,10 +133,9 @@ const handleSwipeRight = () => {
 
     <!-- Main Content -->
     <main 
-      class="flex-1 overflow-hidden"
+      class="flex-1 overflow-hidden pt-0"
       :class="[
         hideBottomNav || isMiniMode ? 'bg-black' : 'bg-light-bg dark:bg-dark-bg',
-        isMiniMode ? 'pt-0' : 'pt-14'
       ]"
     >
       <router-view 
@@ -168,6 +169,18 @@ const handleSwipeRight = () => {
         >
           <Calendar :size="24" />
           <span class="text-xs font-medium">Timeline</span>
+        </button>
+
+        <button 
+          data-testid="nav-projects"
+          @click="navigateTo('/projects')"
+          :class="[
+            'flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors',
+            activeTab === 'projects' ? 'text-pomodo-orange' : 'text-lightText-muted dark:text-text-muted hover:text-lightText-secondary dark:hover:text-text-secondary'
+          ]"
+        >
+          <Briefcase :size="24" />
+          <span class="text-xs font-medium">Projects</span>
         </button>
         
         <button 

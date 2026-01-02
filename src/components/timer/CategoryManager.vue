@@ -210,7 +210,12 @@ defineExpose({
 
     <v-dialog v-model="showAddCategoryModal" width="auto" persistent>
         <v-card class="px-6 py-2" title="Add category">
-            <v-text-field label="Name" v-model="newCategory.name"></v-text-field>
+            <div>
+                <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
+                    Name *
+                </label>
+                <v-text-field v-model="newCategory.name" placeholder="Category name" hide-details class="mb-4"></v-text-field>
+            </div>
             <div class="mb-4">
                 <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-3">
                     Color

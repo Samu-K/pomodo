@@ -17,6 +17,7 @@ import type { Task } from "../../defines/task";
 import { useCategoryStore } from "../../stores/categories";
 import { useSettingsStore } from "../../stores/settings";
 import { useTasks } from "../../stores/task";
+import { useProjectStore } from "../../stores/project";
 import { TimerMode, useTimerStore } from "../../stores/timer";
 import { useUIStore } from "../../stores/ui";
 
@@ -25,6 +26,7 @@ const timer = useTimerStore();
 const categoryStore = useCategoryStore();
 const settingsStore = useSettingsStore();
 const tasksStore = useTasks();
+const projectStore = useProjectStore();
 
 const showTaskManager = ref(false);
 const categoryManagerRef = ref<InstanceType<typeof CategoryManager> | null>(
@@ -48,20 +50,37 @@ const selectedTask = computed(() => {
 	);
 });
 
+const selectedProject = computed(() => {
+	if (!timer.projectId) return null;
+	return projectStore.projects.find((p) => p.id === timer.projectId) || null;
+});
+
 const handleTaskSelect = (task: Task) => {
 	timer.setTaskId(task.id);
+	timer.setProjectId(null); // Clear project when task is selected
 	if (task.category_id) {
 		timer.setCategoryId(task.category_id);
 	}
 	showTaskManager.value = false;
 };
 
-const handleTaskClear = () => {
-	timer.setTaskId(null);
+const handleProjectSelect = (projectId: number) => {
+	timer.setProjectId(projectId);
+	timer.setTaskId(null); // Clear task when project is selected
+	const project = projectStore.projects.find((p) => p.id === projectId);
+	if (project?.category_id) {
+		timer.setCategoryId(project.category_id);
+	}
 	showTaskManager.value = false;
 };
 
-const isDark = computed(() => settingsStore.theme === "dark");
+const handleTaskClear = () => {
+	timer.setTaskId(null);
+	timer.setProjectId(null);
+	showTaskManager.value = false;
+};
+
+const isDark = computed(() => settingsStore.resolvedTheme === "dark");
 
 onMounted(async () => {
 	if (categoryStore.categories.length === 0) {
@@ -69,6 +88,9 @@ onMounted(async () => {
 	}
 	if (tasksStore.tasks.length === 0) {
 		await tasksStore.fetchTasks();
+	}
+	if (projectStore.projects.length === 0) {
+		await projectStore.fetchProjects();
 	}
 });
 
@@ -227,7 +249,7 @@ defineExpose({
         @mouseleave="endHold"
     >
         <!-- Settings and Mini View Toggle -->
-        <div v-if="!uiStore.isMiniMode && timer.isReady" class="absolute top-8 right-6 z-20 flex gap-2">
+        <div v-if="!uiStore.isMiniMode && timer.isReady && !uiStore.isMobile" class="absolute top-8 right-6 z-20 flex gap-2">
             <button data-testid="toggle-mini-mode" @click="uiStore.toggleMiniMode" class="p-2 text-text-muted hover:text-pomodo-orange transition-colors">
                 <Minimize2 :size="24"/>
             </button>
@@ -241,6 +263,9 @@ defineExpose({
             <div class="flex flex-col flex-1 min-w-0 justify-center">
                 <div class="text-[10px] uppercase tracking-wider text-text-muted truncate mb-0.5" v-if="timer.taskId && selectedTask">
                     {{ selectedTask.title }}
+                </div>
+                <div class="text-[10px] uppercase tracking-wider text-text-muted truncate mb-0.5" v-else-if="timer.projectId && selectedProject">
+                    {{ selectedProject.name }}
                 </div>
                 <div class="text-[10px] uppercase tracking-wider text-text-muted truncate mb-0.5" v-else-if="selectedCategory">
                     {{ selectedCategory.name }}
@@ -322,6 +347,9 @@ defineExpose({
                         <template v-if="timer.taskId && selectedTask">
                             <span class="font-semibold tracking-wider">{{ selectedTask.title }}</span>
                         </template>
+                        <template v-else-if="timer.projectId && selectedProject">
+                            <span class="font-semibold tracking-wider">{{ selectedProject.name }}</span>
+                        </template>
                         <template v-else-if="selectedCategory">
                             <span class="font-medium tracking-wide">{{ selectedCategory.name }}</span>
                         </template>
@@ -335,6 +363,7 @@ defineExpose({
                     v-if="showTaskManager" 
                     :selectedTaskId="timer.taskId"
                     @select="handleTaskSelect" 
+                    @selectProject="handleProjectSelect"
                     @clear="handleTaskClear"
                     @selectCategory="handleSelectCategory"
                     @close="showTaskManager = false"

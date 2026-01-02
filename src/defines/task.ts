@@ -6,6 +6,7 @@ export interface Task {
 	description?: string;
 	category: string | null;
 	category_id: number | null;
+	project_id: number | null;
 	cycles: number; // estimated_pomodoros
 	startTime: Date; // start_datetime
 	completed: boolean; // is_completed

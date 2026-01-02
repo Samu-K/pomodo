@@ -382,6 +382,7 @@ describe("Tasks Store", () => {
 			expect(invoke).toHaveBeenCalledWith("tasks_add_task", {
 				task: expect.objectContaining({
 					title: "New Task",
+					description: null,
 					estimated_pomodoros: 2,
 					is_completed: false
 				})

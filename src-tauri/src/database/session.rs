@@ -36,6 +36,10 @@ impl SessionActions {
             sql += ", task_id";
             count += 1
         }
+        if session.project_id.is_some() {
+            sql += ", project_id";
+            count += 1
+        }
         sql += ") VALUES ($1";
         for i in 2..count + 1 {
             sql += format!(",${i}").as_str();
@@ -52,6 +56,9 @@ impl SessionActions {
         }
         if session.task_id.is_some() {
             query = query.bind(session.task_id);
+        }
+        if session.project_id.is_some() {
+            query = query.bind(session.project_id);
         }
 
         let res = query
