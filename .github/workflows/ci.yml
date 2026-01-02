@@ -132,7 +132,9 @@ jobs:
   build-ios-rust:
     name: Build Check (iOS Rust)
     needs: build-desktop
-    runs-on: macos-latest
+    runs-on: macos-14
+    env:
+      IPHONEOS_DEPLOYMENT_TARGET: "14.0"
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust stable

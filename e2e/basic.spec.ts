@@ -40,6 +40,11 @@ test.describe('Basic Navigation', () => {
         await page.goto('/');
         await expect(page.locator('.v-progress-circular')).not.toBeVisible();
 
+        // Navigate to Stats first
+        await page.getByTestId('nav-stats').click();
+        await expect(page).toHaveURL(/\/stats/);
+
+        // Then navigate to Settings
         await page.getByTestId('nav-settings').click();
         await expect(page).toHaveURL(/\/settings/);
         await expect(page.getByText('Settings')).toBeVisible();

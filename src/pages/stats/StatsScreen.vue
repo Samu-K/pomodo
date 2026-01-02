@@ -134,6 +134,7 @@ const weeklySessionsRaw = computed(() => {
         </h1>
 
         <button 
+          data-testid="nav-settings"
           @click="router.push('/settings')"
           class="-mt-2 text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors"
         >
