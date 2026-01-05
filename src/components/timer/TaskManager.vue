@@ -46,6 +46,11 @@ const filteredTasks = computed(() => {
 	});
 });
 
+const getProjectName = (projectId: number | null) => {
+	if (!projectId) return null;
+	return projectStore.projects.find((p) => p.id === projectId)?.name;
+};
+
 const selectTask = (task: Task) => {
 	emit("select", task);
 	dialogOpen.value = false;
@@ -91,7 +96,10 @@ const selectProject = (id: number) => {
               >
                 <div class="flex flex-col items-center w-full py-2">
                   <span class="font-medium text-center break-words w-full px-2" style="line-height: 1.3">{{ task.title }}</span>
-                  <span class="text-xs opacity-70 mt-1" v-if="task.category">{{ task.category }}</span>
+                  <span class="text-xs text-pomodo-orange mt-1 font-bold" v-if="task.project_id && getProjectName(task.project_id)">
+                    {{ getProjectName(task.project_id) }}
+                  </span>
+                  <span class="text-xs opacity-70 mt-1" v-else-if="task.category">{{ task.category }}</span>
                 </div>
               </v-btn>
             </div>

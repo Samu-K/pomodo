@@ -160,7 +160,7 @@ watch(
 			if (selectedTask.value) {
 				// Check if we reached the goal
 				// Note: fetchTasks already calculates completedCycles which includes the one we just finished in DB
-				if (selectedTask.value.completedCycles >= selectedTask.value.cycles) {
+				if (selectedTask.value.completedCycles === selectedTask.value.cycles) {
 					showCompletionDialog.value = true;
 				}
 			}
@@ -183,11 +183,16 @@ const handleNotComplete = () => {
 
 const handleAddOvertime = async (amount: number) => {
 	if (selectedTask.value) {
-		const updated = {
-			...selectedTask.value,
-			cycles: selectedTask.value.cycles + amount
-		};
-		await tasksStore.updateTask(updated, false);
+		if (amount > 0) {
+			await tasksStore.updateTask(
+				{
+					...selectedTask.value,
+					cycles: selectedTask.value.cycles + amount
+				},
+				false
+			);
+		}
+		// If amount is 0 (Don't know), just close dialog.
 		showOvertimeDialog.value = false;
 	}
 };
@@ -201,7 +206,7 @@ defineExpose({
     <div 
         class="flex flex-col h-full relative select-none touch-none transition-colors duration-500"
         :class="[
-            isFocusRunning || uiStore.isMiniMode ? 'bg-black' : 'bg-light-bg dark:bg-dark-bg',
+            isFocusRunning || uiStore.isMiniMode ? '#000000' : 'bg-light-bg dark:bg-dark-bg',
             uiStore.isMiniMode ? '' : '-mt-4'
         ]"
         @mousedown="handleStartHold"
@@ -266,7 +271,7 @@ defineExpose({
             </div>
             
             <div v-if="!timer.isReady" class="flex-1 flex items-center justify-center">
-                <v-progress-circular indeterminate color="primary" />
+                <v-progress-circular data-testid="initial-loader" indeterminate color="primary" />
             </div>
 
             <div v-else class="flex-1 flex flex-col items-center justify-center px-6 gap-10 z-10">

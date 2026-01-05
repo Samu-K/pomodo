@@ -10,7 +10,7 @@ test.describe('Basic Navigation', () => {
         await page.goto('/');
 
         // Wait for the loader to disappear
-        await expect(page.locator('.v-progress-circular')).not.toBeVisible({ timeout: 10000 });
+        await expect(page.getByTestId('initial-loader')).not.toBeVisible({ timeout: 10000 });
 
         // Check if the timer is visible
         const timerText = page.locator('.text-timer');
@@ -20,7 +20,7 @@ test.describe('Basic Navigation', () => {
 
     test('should navigate through all bottom tabs', async ({ page }) => {
         await page.goto('/');
-        await expect(page.locator('.v-progress-circular')).not.toBeVisible();
+        await expect(page.getByTestId('initial-loader')).not.toBeVisible();
 
         const tabs = [
             { id: 'nav-timeline', url: /\/timeline/ },
@@ -38,7 +38,7 @@ test.describe('Basic Navigation', () => {
 
     test('should navigate to settings and back', async ({ page }) => {
         await page.goto('/');
-        await expect(page.locator('.v-progress-circular')).not.toBeVisible();
+        await expect(page.getByTestId('initial-loader')).not.toBeVisible();
 
         // Navigate to Stats first
         await page.getByTestId('nav-stats').click();
@@ -58,7 +58,7 @@ test.describe('Basic Navigation', () => {
 test.describe('Timer Functionality', () => {
     test('should select a task and start the timer', async ({ page }) => {
         await page.goto('/');
-        await expect(page.locator('.v-progress-circular')).not.toBeVisible();
+        await expect(page.getByTestId('initial-loader')).not.toBeVisible();
 
         // 1. Select a task
         await page.getByTestId('task-selector').click();
@@ -107,7 +107,7 @@ test.describe('Timer Functionality', () => {
 
     test('should skip to rest and back', async ({ page }) => {
         await page.goto('/');
-        await expect(page.locator('.v-progress-circular')).not.toBeVisible();
+        await expect(page.getByTestId('initial-loader')).not.toBeVisible();
 
         // Focus -> Rest
         await page.getByTestId('skip-timer').click();
@@ -125,7 +125,7 @@ test.describe('Timer Functionality', () => {
         // 2. Finish Focus 2 -> Rest (Long)
 
         await page.goto('/');
-        await expect(page.locator('.v-progress-circular')).not.toBeVisible();
+        await expect(page.getByTestId('initial-loader')).not.toBeVisible();
 
         // We can simulate finishing by clicking skip twice for each "session"
         // Cycle 1
@@ -148,7 +148,7 @@ test.describe('Timer Functionality', () => {
 test.describe('Theme Switching', () => {
     test('should change theme from settings', async ({ page }) => {
         await page.goto('/settings');
-        await expect(page.locator('.v-progress-circular')).not.toBeVisible();
+        await expect(page.getByTestId('initial-loader')).not.toBeVisible();
 
         // Check initial state (should be dark based on mock)
         await expect(page.locator('html')).toHaveClass(/dark/);

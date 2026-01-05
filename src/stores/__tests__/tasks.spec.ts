@@ -403,15 +403,13 @@ describe("Tasks Store", () => {
 		it("creates new category if not found", async () => {
 			const { invoke } = await import("@tauri-apps/api/core");
 
-			vi.mocked(invoke).mockImplementation(
-				async (cmd: string, _args?: unknown) => {
-					if (cmd === "tasks_get_tasks") return [];
-					if (cmd === "categories_get_categories") return [];
-					if (cmd === "categories_add_category") return 42;
-					if (cmd === "tasks_add_task") return 1;
-					return [];
-				}
-			);
+			vi.mocked(invoke).mockImplementation(async (cmd: string, _args?) => {
+				if (cmd === "tasks_get_tasks") return [];
+				if (cmd === "categories_get_categories") return [];
+				if (cmd === "categories_add_category") return 42;
+				if (cmd === "tasks_add_task") return 1;
+				return [];
+			});
 
 			const newTask: Task = {
 				id: 0,

@@ -23,31 +23,32 @@ export async function mockTauri(page: Page) {
             { id: 2, name: 'Exercise', color: '#4CAF50' },
         ];
 
-        (window as any).__TAURI_INTERNALS__ = {
-            invoke: async (cmd: string, args: any) => {
+        (window as object as { __TAURI_INTERNALS__: object }).__TAURI_INTERNALS__ = {
+            invoke: async (cmd: string, args: object) => {
                 console.log(`[Tauri Mock] Invoked command: ${cmd}`, args);
 
                 if (cmd === 'tasks_get_tasks') {
                     const stored = localStorage.getItem('mockTasks');
                     const tasks = stored ? JSON.parse(stored) : [];
-                    return tasks.map((t: any) => ({ ...t, startTime: new Date(t.startTime) }));
+                    return tasks.map((t: { startTime: string }) => ({ ...t, startTime: new Date(t.startTime) }));
                 }
 
                 if (cmd === 'tasks_add_task') {
                     const stored = localStorage.getItem('mockTasks');
                     const tasks = stored ? JSON.parse(stored) : [];
+                    const taskArgs = args as { task: { category_id: number | null, startTime?: string } };
                     const newTask = {
-                        ...args.task,
+                        ...taskArgs.task,
                         id: Math.floor(Math.random() * 1000000),
-                        category: mockCategories.find((c: any) => c.id === args.task.category_id)?.name || '',
-                        startTime: args.task.startTime || new Date().toISOString()
+                        category: mockCategories.find((c: { id: number, name: string }) => c.id === taskArgs.task.category_id)?.name || '',
+                        startTime: taskArgs.task.startTime || new Date().toISOString()
                     };
                     tasks.push(newTask);
                     localStorage.setItem('mockTasks', JSON.stringify(tasks));
                     return newTask.id;
                 }
 
-                const mockResponses: Record<string, any> = {
+                const mockResponses: Record<string, object | string | number | boolean | null> = {
                     'settings_get_all_settings': mockSettings,
                     'settings_get_setting_categories': [{ id: 1, name: 'General' }],
                     'categories_get_categories': mockCategories,
@@ -71,8 +72,8 @@ export async function mockTauri(page: Page) {
             }
         };
 
-        (window as any).__TAURI__ = {
-            invoke: (window as any).__TAURI_INTERNALS__.invoke
+        (window as object as { __TAURI__: object, __TAURI_INTERNALS__: { invoke: object } }).__TAURI__ = {
+            invoke: (window as object as { __TAURI_INTERNALS__: { invoke: object } }).__TAURI_INTERNALS__.invoke
         };
     });
 }

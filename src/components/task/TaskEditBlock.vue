@@ -71,19 +71,34 @@ watch(
 	}
 );
 
-watch(
-	() => props.selTask.project_id,
-	(newVal) => {
-		if (newVal) {
-			props.selTask.category_id = null;
+const updateCategoryFromProject = () => {
+	const projectId = props.selTask.project_id;
+	if (projectId) {
+		const project = projectStore.projects.find((p) => p.id === projectId);
+		if (project?.category_id) {
+			props.selTask.category_id = project.category_id;
 		}
 	}
-);
+};
+
+watch(() => props.selTask.project_id, updateCategoryFromProject, {
+	immediate: true
+});
+
+watch(() => projectStore.projects, updateCategoryFromProject);
 
 watch(
 	() => props.selTask.category_id,
 	(newVal) => {
 		if (newVal) {
+			if (props.selTask.project_id) {
+				const project = projectStore.projects.find(
+					(p) => p.id === props.selTask.project_id
+				);
+				if (project && project.category_id === newVal) {
+					return;
+				}
+			}
 			props.selTask.project_id = null;
 		}
 	}

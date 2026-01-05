@@ -25,7 +25,7 @@ const terminateMock = vi.fn();
 let onMessageCallback: ((e: MessageEvent) => void) | null = null;
 
 class MockWorker {
-	postMessage(data: unknown) {
+	postMessage(data: Parameters<typeof Worker.prototype.postMessage>[0]) {
 		postMessageMock(data);
 	}
 

@@ -10,7 +10,6 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useTheme } from "vuetify";
 import AppLayout from "./components/AppLayout.vue";
-import SplashScreen from "./components/SplashScreen.vue";
 import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
 import CreateTaskModal from "./components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "./components/task/TaskDetailsModal.vue";
@@ -42,9 +41,6 @@ onMounted(async () => {
 	if (!permissionGranted) {
 		await requestPermission();
 	}
-
-	// Minimum splash screen duration of 2 seconds
-	await new Promise((resolve) => setTimeout(resolve, 2000));
 
 	isLoading.value = false;
 });
@@ -163,9 +159,8 @@ function navigateTabs(offset: number) {
 </script>
 
 <template>
-  <SplashScreen v-if="isLoading" />
   <AppLayout
-    v-else
+    v-if="!isLoading"
     :header-title="route.name?.toString() || 'Pomodo'"
     :show-back-button="showBackButton"
     :show-settings-button="false"

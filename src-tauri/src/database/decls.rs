@@ -129,6 +129,8 @@ pub struct Task {
     pub start_datetime: Option<NaiveDateTime>,
     pub recurrence_rule: Option<String>,
     pub is_completed: bool,
+    #[serde(default)]
+    pub completed_pomodoros: i64,
     pub parent_task_id: Option<i64>,
     pub created_at: Option<NaiveDateTime>,
 }

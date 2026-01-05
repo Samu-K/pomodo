@@ -4,8 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
+import OvertimeDialog from "../../../components/timer/OvertimeDialog.vue";
 import { useCategoryStore } from "../../../stores/categories";
 import { useSettingsStore } from "../../../stores/settings";
+import { useTasks } from "../../../stores/task";
 import { TimerMode, useTimerStore } from "../../../stores/timer";
 import TimerScreen from "../TimerScreen.vue";
 
@@ -58,6 +60,18 @@ vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>
 );
 vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id));
 vi.stubGlobal("CSS", { supports: () => false });
+vi.stubGlobal("visualViewport", {
+	width: 1024,
+	height: 768,
+	offsetLeft: 0,
+	offsetTop: 0,
+	pageLeft: 0,
+	pageTop: 0,
+	scale: 1,
+	addEventListener: vi.fn(),
+	removeEventListener: vi.fn(),
+	dispatchEvent: vi.fn()
+});
 
 Object.defineProperty(window, "matchMedia", {
 	writable: true,
@@ -466,6 +480,77 @@ describe("TimerScreen.vue", () => {
 				const toggleBtn = wrapper.find('[data-testid="toggle-mini-mode"]');
 				expect(toggleBtn.exists()).toBe(false);
 			});
+		});
+	});
+	describe("Overtime / Don't Know Logic", () => {
+		it("does nothing to task when Don't Know is selected", async () => {
+			timerStore.taskId = 123;
+			timerStore.mode = TimerMode.REST;
+
+			const task = {
+				id: 123,
+				title: "Test",
+				cycles: 4,
+				completedCycles: 4,
+				category: null,
+				category_id: null,
+				project_id: null,
+				startTime: new Date(),
+				completed: false,
+				gradient: ""
+			};
+			const tasksStore = useTasks();
+			tasksStore.tasks = [task];
+			tasksStore.updateTask = vi.fn(); // Mock updateTask
+
+			await wrapper.vm.$nextTick();
+
+			const overtimeDialog = wrapper.findComponent(OvertimeDialog);
+			expect(overtimeDialog.exists()).toBe(true);
+
+			// Simulate "Don't know" -> emit confirm 0
+			await overtimeDialog.vm.$emit("confirm", 0);
+			await wrapper.vm.$nextTick();
+
+			// Should NOT update task, just close dialog (UI state)
+			expect(tasksStore.updateTask).not.toHaveBeenCalled();
+			expect(wrapper.findComponent(OvertimeDialog).props("modelValue")).toBe(
+				false
+			);
+		});
+
+		it("updates cycles when explicit overtime is added", async () => {
+			const task = {
+				id: 123,
+				title: "Test",
+				cycles: 4,
+				completedCycles: 4,
+				category: null,
+				category_id: null,
+				project_id: null,
+				startTime: new Date(),
+				completed: false,
+				gradient: ""
+			};
+			const tasksStore = useTasks();
+			tasksStore.tasks = [task];
+			tasksStore.updateTask = vi.fn();
+
+			timerStore.taskId = 123; // MUST set taskId for selectedTask to work
+
+			await wrapper.vm.$nextTick();
+			const overtimeDialog = wrapper.findComponent(OvertimeDialog);
+
+			// Add +2 cycles
+			await overtimeDialog.vm.$emit("confirm", 2);
+
+			expect(tasksStore.updateTask).toHaveBeenCalledWith(
+				expect.objectContaining({
+					id: 123,
+					cycles: 6 // 4 + 2
+				}),
+				false
+			);
 		});
 	});
 });

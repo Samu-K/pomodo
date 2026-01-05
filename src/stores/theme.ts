@@ -21,11 +21,11 @@ export const useThemeStore = defineStore("theme", () => {
 	 */
 	function getColor(path: string): string {
 		const parts = path.split(".");
-		let value: Record<string, unknown> | string = themeColors;
+		let value: Record<string, object | string> | string = themeColors;
 
 		for (const part of parts) {
 			if (typeof value === "object" && value && part in value) {
-				value = value[part] as Record<string, unknown> | string;
+				value = value[part] as Record<string, object | string> | string;
 			} else {
 				console.warn(`Color path '${path}' not found in theme`);
 				return "#888888"; // Fallback to gray

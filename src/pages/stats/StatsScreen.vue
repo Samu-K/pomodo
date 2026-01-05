@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/vue-query";
 import { CheckCircle, ListTodo, Settings, TrendingUp } from "lucide-vue-next";
 import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import FocusHeatmap from "../../components/stats/FocusHeatmap.vue";
+import GamificationStats from "../../components/stats/GamificationStats.vue";
 import WeeklyFocusChart from "../../components/stats/WeeklyFocusChart.vue";
 import WeeklyOverview from "../../components/stats/WeeklyOverview.vue";
 import EmptyState from "../../components/ui/EmptyState.vue";
@@ -233,11 +235,18 @@ const weeklySessionsRaw = computed(() => {
             <div class="text-xs text-lightText-muted dark:text-text-muted">Completion</div>
           </div>
         </div>
+
+        <GamificationStats :data="sessionsState.data.value || []" />
       </section>
 
       <!-- Week Chart Preview -->
       <section class="mt-10">
         <WeeklyFocusChart :data="weeklySessionsRaw"/>
+      </section>
+
+      <!-- Focus Heatmap -->
+      <section class="mb-10">
+        <FocusHeatmap :data="sessionsState.data.value || []" />
       </section>
     </div>
   </div>

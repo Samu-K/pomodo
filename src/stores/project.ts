@@ -12,7 +12,7 @@ export const useProjectStore = defineStore("projects", () => {
 			const res = await commands.projectsGetProjects();
 			if (res.status === "error") throw new Error(res.error.message);
 			projects.value = res.data;
-		} catch (e: unknown) {
+		} catch (e) {
 			console.error("Failed to fetch projects", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to fetch projects");
 		}
@@ -24,7 +24,7 @@ export const useProjectStore = defineStore("projects", () => {
 			if (res.status === "error") throw new Error(res.error.message);
 			await fetchProjects();
 			return res.data;
-		} catch (e: unknown) {
+		} catch (e) {
 			console.error("Error adding project", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to add project");
 		}
@@ -35,7 +35,7 @@ export const useProjectStore = defineStore("projects", () => {
 			const res = await commands.projectsUpdateProject(project);
 			if (res.status === "error") throw new Error(res.error.message);
 			await fetchProjects();
-		} catch (e: unknown) {
+		} catch (e) {
 			console.error("Error updating project", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to update project");
 		}
@@ -46,7 +46,7 @@ export const useProjectStore = defineStore("projects", () => {
 			const res = await commands.projectsDeleteProject(id);
 			if (res.status === "error") throw new Error(res.error.message);
 			await fetchProjects();
-		} catch (e: unknown) {
+		} catch (e) {
 			console.error("Error deleting project", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to delete project");
 		}

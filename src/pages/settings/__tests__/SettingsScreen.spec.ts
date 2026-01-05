@@ -151,7 +151,7 @@ describe("SettingsScreen.vue", () => {
 		// Let's verify the state is correct.
 		await wrapper.vm.$nextTick();
 		// accessing internal state for testing
-		expect((wrapper.vm as unknown as SettingsComponent).hasUnsavedChanges).toBe(
+		expect((wrapper.vm as object as SettingsComponent).hasUnsavedChanges).toBe(
 			false
 		);
 	});
@@ -162,17 +162,17 @@ describe("SettingsScreen.vue", () => {
 		settingSection.vm.$emit("change", 1, true);
 		await wrapper.vm.$nextTick();
 
-		expect((wrapper.vm as unknown as SettingsComponent).hasUnsavedChanges).toBe(
+		expect((wrapper.vm as object as SettingsComponent).hasUnsavedChanges).toBe(
 			true
 		);
 	});
 
 	it("Modal works correctly (Save)", async () => {
 		// Manually show modal to test its events
-		(wrapper.vm as unknown as SettingsComponent).showUnsavedChangesModal = true;
-		(wrapper.vm as unknown as SettingsComponent).pendingRoute = "/some-route";
-		(wrapper.vm as unknown as SettingsComponent).hasUnsavedChanges = true;
-		(wrapper.vm as unknown as SettingsComponent).draftSettings = [
+		(wrapper.vm as object as SettingsComponent).showUnsavedChangesModal = true;
+		(wrapper.vm as object as SettingsComponent).pendingRoute = "/some-route";
+		(wrapper.vm as object as SettingsComponent).hasUnsavedChanges = true;
+		(wrapper.vm as object as SettingsComponent).draftSettings = [
 			{ id: 1, value: "true" } as Setting
 		]; // Changed value
 
@@ -188,15 +188,15 @@ describe("SettingsScreen.vue", () => {
 		// Verify save logic ran
 		expect(settingsStore.updateSetting).toHaveBeenCalled();
 		expect(
-			(wrapper.vm as unknown as SettingsComponent).showUnsavedChangesModal
+			(wrapper.vm as object as SettingsComponent).showUnsavedChangesModal
 		).toBe(false);
 	});
 
 	it("Modal works correctly (Discard)", async () => {
-		(wrapper.vm as unknown as SettingsComponent).showUnsavedChangesModal = true;
-		(wrapper.vm as unknown as SettingsComponent).pendingRoute = "/some-route";
-		(wrapper.vm as unknown as SettingsComponent).hasUnsavedChanges = true;
-		(wrapper.vm as unknown as SettingsComponent).draftSettings = [
+		(wrapper.vm as object as SettingsComponent).showUnsavedChangesModal = true;
+		(wrapper.vm as object as SettingsComponent).pendingRoute = "/some-route";
+		(wrapper.vm as object as SettingsComponent).hasUnsavedChanges = true;
+		(wrapper.vm as object as SettingsComponent).draftSettings = [
 			{ id: 1, value: "true" } as Setting
 		]; // Changed value
 
@@ -211,16 +211,16 @@ describe("SettingsScreen.vue", () => {
 		// Verify updateSetting NOT called
 		expect(settingsStore.updateSetting).not.toHaveBeenCalled();
 		expect(
-			(wrapper.vm as unknown as SettingsComponent).showUnsavedChangesModal
+			(wrapper.vm as object as SettingsComponent).showUnsavedChangesModal
 		).toBe(false);
-		expect((wrapper.vm as unknown as SettingsComponent).hasUnsavedChanges).toBe(
+		expect((wrapper.vm as object as SettingsComponent).hasUnsavedChanges).toBe(
 			false
 		);
 	});
 
 	it("Modal works correctly (Cancel)", async () => {
-		(wrapper.vm as unknown as SettingsComponent).showUnsavedChangesModal = true;
-		(wrapper.vm as unknown as SettingsComponent).pendingRoute = "/some-route";
+		(wrapper.vm as object as SettingsComponent).showUnsavedChangesModal = true;
+		(wrapper.vm as object as SettingsComponent).pendingRoute = "/some-route";
 
 		await wrapper.vm.$nextTick();
 
@@ -231,11 +231,9 @@ describe("SettingsScreen.vue", () => {
 		await wrapper.vm.$nextTick();
 
 		expect(
-			(wrapper.vm as unknown as SettingsComponent).showUnsavedChangesModal
+			(wrapper.vm as object as SettingsComponent).showUnsavedChangesModal
 		).toBe(false);
 
-		expect(
-			(wrapper.vm as unknown as SettingsComponent).pendingRoute
-		).toBeNull();
+		expect((wrapper.vm as object as SettingsComponent).pendingRoute).toBeNull();
 	});
 });

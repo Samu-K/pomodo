@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useQuery } from "@tanstack/vue-query";
 import {
 	Briefcase,
 	Check,
@@ -7,18 +8,52 @@ import {
 	Plus,
 	Trash2
 } from "lucide-vue-next";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import CreateTaskModal from "../../components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
 import type { Task } from "../../defines/task";
 import type { Project } from "../../funcs/commands";
+import { get_sessions } from "../../funcs/db/session";
+import { formatDuration } from "../../funcs/stats/date_handling";
 import { useCategoryStore } from "../../stores/categories";
 import { useProjectStore } from "../../stores/project";
+import { useSettingsStore } from "../../stores/settings";
 import { useTasks } from "../../stores/task";
 
 const projectStore = useProjectStore();
 const tasksStore = useTasks();
 const categoryStore = useCategoryStore();
+const settingsStore = useSettingsStore();
+
+const focusDuration = computed(() => {
+	const val = settingsStore.settings.find(
+		(s) => s.key === "Focus Duration"
+	)?.value;
+	return val ? Number(val) : 25; // Default to 25 minutes
+});
+
+const sessionsState = useQuery({
+	queryKey: ["sessions"],
+	queryFn: get_sessions
+});
+
+const getProjectFocusedSeconds = (projectId: number) => {
+	if (!sessionsState.data.value) return 0;
+	return sessionsState.data.value
+		.filter((s) => s.finished && s.project_id === projectId)
+		.reduce((sum, s) => sum + (s.duration || 0), 0);
+};
+
+const formatEstimatedTime = (cycles: number | null | undefined) => {
+	if (!cycles) return "0m";
+	const totalMinutes = cycles * focusDuration.value;
+	const h = Math.floor(totalMinutes / 60);
+	const m = totalMinutes % 60;
+
+	if (h > 0 && m > 0) return `${h}h ${m}m`;
+	if (h > 0) return `${h}h`;
+	return `${m}m`;
+};
 
 const showEditModal = ref(false);
 const editingProject = ref<Project | null>(null);
@@ -153,8 +188,23 @@ const deleteProject = async (id: number) => {
                     <p class="text-xs text-text-muted mt-0.5 truncate" v-if="project.description">
                         {{ project.description }}
                     </p>
-                    <div class="flex items-center gap-3 mt-1 text-[10px] uppercase tracking-wider font-bold">
-                        <span class="text-pomodo-orange">{{ project.estimated_pomodoros }} Pomodoros</span>
+                    <div class="flex gap-6 mt-3 pt-3 border-t border-light-border/50 dark:border-dark-border/30">
+                        <div class="flex flex-col gap-0.5">
+                             <span class="text-[9px] text-text-muted uppercase tracking-wider font-bold">Estimated</span>
+                             <div class="flex items-baseline gap-1.5">
+                                 <span class="text-sm font-bold text-pomodo-orange">{{ project.estimated_pomodoros }}</span>
+                                 <span class="text-[10px] text-text-muted font-medium">cycles</span>
+                             </div>
+                             <span class="text-[10px] text-text-muted/60 font-medium leading-none mt-0.5">({{ formatEstimatedTime(project.estimated_pomodoros) }})</span>
+                        </div>
+                        <div class="flex flex-col gap-0.5 border-l border-light-border/50 dark:border-dark-border/30 pl-6">
+                             <span class="text-[9px] text-text-muted uppercase tracking-wider font-bold">Focused</span>
+                             <div class="flex items-baseline gap-1.5">
+                                 <span class="text-sm font-bold text-green-500">{{ (getProjectFocusedSeconds(project.id) / (focusDuration * 60)).toFixed(1) }}</span>
+                                 <span class="text-[10px] text-text-muted font-medium">cycles</span>
+                             </div>
+                             <span class="text-[10px] text-text-muted/60 font-medium leading-none mt-0.5">({{ formatDuration(getProjectFocusedSeconds(project.id)) }})</span>
+                        </div>
                     </div>
                 </div>
 
@@ -249,6 +299,9 @@ const deleteProject = async (id: number) => {
                   <div class="flex-1">
                     <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
                       Est. Pomodoros
+                      <span class="normal-case opacity-60 ml-1" v-if="editingProject.estimated_pomodoros">
+                        (≈ {{ formatEstimatedTime(editingProject.estimated_pomodoros) }})
+                      </span>
                     </label>
                     <v-text-field
                           v-model.number="editingProject.estimated_pomodoros"

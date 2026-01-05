@@ -4,7 +4,6 @@ import { ref } from "vue";
 import { RecurrenceType } from "../defines/recur";
 import type { Task } from "../defines/task";
 import { commands } from "../funcs/commands";
-import { get_sessions } from "../funcs/db/session";
 import * as db from "../funcs/db/tasks";
 import { fromUTCString, toUTCISOString } from "../funcs/stats/date_handling";
 import { getRecurrenceString } from "../funcs/task";
@@ -18,23 +17,16 @@ export const useTasks = defineStore("tasks", () => {
 
 	async function fetchTasks() {
 		try {
-			const fetched = await db.getTasks();
+			const failedRes = await commands.tasksGetTasks();
+			if (failedRes.status === "error")
+				throw new Error(failedRes.error.message);
+			const fetched = failedRes.data;
+
 			// Fetch categories to map names (using commands directly for now as it's a simple read)
 			const catRes = await commands.categoriesGetCategories();
 			if (catRes.status === "error") throw new Error(catRes.error.message);
 			const categories = catRes.data;
 			const catMap = new Map(categories.map((c) => [c.id, c.name]));
-
-			const sessions = await get_sessions();
-			const sessionTaskMap = new Map<number, number>();
-			sessions.forEach((s) => {
-				if (s.task_id && s.finished) {
-					sessionTaskMap.set(
-						s.task_id,
-						(sessionTaskMap.get(s.task_id) || 0) + 1
-					);
-				}
-			});
 
 			tasks.value = fetched.map((t) => ({
 				id: t.id,
@@ -44,7 +36,7 @@ export const useTasks = defineStore("tasks", () => {
 				category_id: t.category_id,
 				project_id: t.project_id,
 				cycles: t.estimated_pomodoros || 1,
-				completedCycles: sessionTaskMap.get(t.id) || 0,
+				completedCycles: t.completed_pomodoros ?? 0,
 				startTime: fromUTCString(t.start_datetime),
 				completed: t.is_completed,
 				recurrence_rule: t.recurrence_rule ?? undefined,
@@ -60,7 +52,7 @@ export const useTasks = defineStore("tasks", () => {
 				startOfToday,
 				new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 			);
-		} catch (e: unknown) {
+		} catch (e) {
 			console.error("Failed to fetch tasks", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to fetch tasks");
 		}
@@ -100,13 +92,14 @@ export const useTasks = defineStore("tasks", () => {
 				start_datetime: toUTCISOString(task.startTime),
 				recurrence_rule: rrule ?? null,
 				is_completed: false,
+				completed_pomodoros: 0,
 				parent_task_id: null,
 				created_at: null
 			};
 
 			await db.addTask(payload);
 			await fetchTasks();
-		} catch (e: unknown) {
+		} catch (e) {
 			console.error("Error adding task", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to add task");
 		}
@@ -131,13 +124,14 @@ export const useTasks = defineStore("tasks", () => {
 				start_datetime: toUTCISOString(task.startTime),
 				recurrence_rule: rrule ?? null,
 				is_completed: task.completed,
+				completed_pomodoros: task.completedCycles,
 				parent_task_id: task.parent_task_id ?? null,
 				created_at: null // or preserve somehow if needed
 			};
 
 			await db.updateTask(payload);
 			await fetchTasks();
-		} catch (e: unknown) {
+		} catch (e) {
 			console.error("Error updating task", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to update task");
 		}
@@ -158,13 +152,14 @@ export const useTasks = defineStore("tasks", () => {
 					start_datetime: toUTCISOString(task.startTime),
 					recurrence_rule: task.recurrence_rule ?? null,
 					is_completed: true,
+					completed_pomodoros: task.completedCycles,
 					parent_task_id: task.parent_task_id ?? null,
 					created_at: null
 				};
 				await db.updateTask(payload);
 			}
 			await fetchTasks();
-		} catch (e: unknown) {
+		} catch (e) {
 			console.error("Error completing task instance", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to complete task");
 		}
@@ -222,7 +217,7 @@ export const useTasks = defineStore("tasks", () => {
 		try {
 			await db.deleteTask(id);
 			await fetchTasks();
-		} catch (e: unknown) {
+		} catch (e) {
 			console.error("Failed to delete task", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to delete task");
 		}
@@ -240,12 +235,13 @@ export const useTasks = defineStore("tasks", () => {
 				start_datetime: toUTCISOString(task.startTime),
 				recurrence_rule: task.recurrence_rule ?? null,
 				is_completed: !task.completed,
+				completed_pomodoros: task.completedCycles,
 				parent_task_id: task.parent_task_id ?? null,
 				created_at: null
 			};
 			await db.updateTask(payload);
 			await fetchTasks();
-		} catch (e: unknown) {
+		} catch (e) {
 			console.error("Error toggling task completion", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to update task");
 		}
