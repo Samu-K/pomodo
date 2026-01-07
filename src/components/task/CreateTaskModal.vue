@@ -4,6 +4,7 @@ import { ref } from "vue";
 import { RecurrenceType } from "../../defines/recur.ts";
 import { Task } from "../../defines/task.ts";
 import { useTasks } from "../../stores/task";
+import ScrollIndicator from "../ui/ScrollIndicator.vue";
 import TaskEditBlock from "./TaskEditBlock.vue";
 
 const props = defineProps<{
@@ -19,6 +20,7 @@ const curDate = ref<Date>(props.initialDate || new Date());
 const tasksStore = useTasks();
 
 const isOpen = ref(true);
+const scrollContainerRef = ref<HTMLElement | null>(null);
 
 const newTask = ref<Task>({
 	id: 0,
@@ -57,7 +59,10 @@ const onAfterLeave = () => {
     @after-leave="onAfterLeave"
     class="backdrop-blur-sm"
   >
-    <div class="bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full border border-light-border dark:border-dark-border overflow-y-auto shadow-xl mt-[max(1rem,env(safe-area-inset-top))] mb-[max(1rem,env(safe-area-inset-bottom))] max-h-[calc(100vh-max(2rem,env(safe-area-inset-top))-max(2rem,env(safe-area-inset-bottom)))] mx-auto">
+    <div 
+      ref="scrollContainerRef"
+      class="relative bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full border border-light-border dark:border-dark-border overflow-y-auto shadow-xl mt-[max(1rem,env(safe-area-inset-top))] mb-[max(1rem,env(safe-area-inset-bottom))] max-h-[calc(100vh-max(2rem,env(safe-area-inset-top))-max(2rem,env(safe-area-inset-bottom)))] mx-auto"
+    >
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-semibold text-pomodo-orange">Create New Task</h2>
@@ -88,6 +93,8 @@ const onAfterLeave = () => {
           Create Task
         </button>
       </div>
+
+      <ScrollIndicator :scrollContainer="scrollContainerRef" />
     </div>
   </v-dialog>
 </template>

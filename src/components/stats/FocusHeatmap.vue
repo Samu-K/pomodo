@@ -114,7 +114,6 @@ const legend = [
                 location="top"
                 offset="10"
                 open-on-click
-                open-on-hover
             >
                 <template v-slot:activator="{ props }">
                     <div 

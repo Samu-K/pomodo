@@ -85,6 +85,9 @@ onMounted(async () => {
 	if (tasksStore.tasks.length === 0) {
 		await tasksStore.fetchTasks();
 	}
+	if (settingsStore.settings.length === 0) {
+		await settingsStore.fetchSettings();
+	}
 });
 
 // Re-expand tasks when selected date changes OR when tasks are updated OR view mode changes

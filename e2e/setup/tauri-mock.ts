@@ -18,6 +18,8 @@ export async function mockTauri(page: Page) {
             { id: 10, key: 'Vibration', value: 'false', description: 'Vibration', category_id: 1, data_type: 'boolean' },
         ];
 
+        localStorage.setItem('pomodo-welcome-seen', 'true');
+
         const mockCategories = [
             { id: 1, name: 'Work', color: '#FF6B35' },
             { id: 2, name: 'Exercise', color: '#4CAF50' },

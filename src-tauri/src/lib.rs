@@ -66,7 +66,7 @@ macro_rules! tauri_commands {
     $($action:ident :: $method:ident($($param:ident: $param_type:ty),*) -> $ret:ty),*) => {
         $(
             paste! {
-                #[tauri::command(rename_all="snake_case")]
+                #[tauri::command(rename_all="camelCase")]
                 #[specta]
                 async fn [<$action _ $method>]<'r>(
                     state: State<'r, $state_type>,

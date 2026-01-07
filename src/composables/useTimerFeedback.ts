@@ -1,3 +1,4 @@
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { vibrate } from "@tauri-apps/plugin-haptics";
 import {
 	isPermissionGranted,
@@ -42,6 +43,16 @@ export function useTimerFeedback() {
 	};
 
 	const sendTimerNotification = async (isFocus: boolean) => {
+		// Skip notification if window is focused (user is actively using the app)
+		try {
+			const isFocused = await getCurrentWindow().isFocused();
+			if (isFocused) {
+				return;
+			}
+		} catch {
+			// If we can't determine focus state, proceed with notification
+		}
+
 		const notificationsEnabled = settingsStore.settings.find(
 			(s) => s.key === "Push notifications"
 		)?.value;
