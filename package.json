@@ -16,6 +16,14 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Samu-K/pomodo"
+  },
+  "bugs": {
+    "url": "https://github.com/Samu-K/pomodo/issues"
+  },
+  "homepage": "https://github.com/Samu-K/pomodo#readme",
   "dependencies": {
     "@date-io/date-fns": "^3.2.1",
     "@mdi/js": "^7.4.47",

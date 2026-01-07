@@ -38,7 +38,7 @@ A cross-platform Pomodoro timer for Desktop, Android, and iOS.
 
 Having issues? Found a bug?
 
-- [Report an issue](https://github.com/your-username/pomodo/issues)
+- [Report an issue](https://github.com/Samu-K/pomodo/issues)
 - [Contact support](#)
 
 ## Privacy
