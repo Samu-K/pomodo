@@ -9,6 +9,7 @@ import {
 	Trash2
 } from "lucide-vue-next";
 import { computed, onMounted, ref } from "vue";
+import ConfirmationModal from "../../components/ui/ConfirmationModal.vue";
 import CreateTaskModal from "../../components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
 import type { Task } from "../../defines/task";
@@ -65,6 +66,9 @@ const showDetailsModal = ref(false);
 const selectedTask = ref<Task | null>(null);
 
 const expandedProjects = ref<Set<number>>(new Set());
+
+const showDeleteConfirm = ref(false);
+const projectToDelete = ref<Project | null>(null);
 
 onMounted(async () => {
 	await projectStore.fetchProjects();
@@ -129,14 +133,16 @@ const saveProject = async () => {
 	showEditModal.value = false;
 };
 
-const deleteProject = async (id: number) => {
-	if (
-		confirm(
-			"Are you sure you want to delete this project? Tasks linked to this project will remain but will no longer be linked."
-		)
-	) {
-		await projectStore.deleteProject(id);
-	}
+const promptDelete = (project: Project) => {
+	projectToDelete.value = project;
+	showDeleteConfirm.value = true;
+};
+
+const confirmDelete = async () => {
+	if (!projectToDelete.value) return;
+	await projectStore.deleteProject(projectToDelete.value.id);
+	showDeleteConfirm.value = false;
+	projectToDelete.value = null;
 };
 </script>
 
@@ -212,7 +218,7 @@ const deleteProject = async (id: number) => {
                     <v-btn icon variant="text" size="small" @click.stop="openAddTask(project.id)" color="pomodo-orange" data-testid="add-task-to-project-btn">
                         <Plus :size="20" />
                     </v-btn>
-                    <v-btn icon variant="text" size="small" @click.stop="deleteProject(project.id)" color="error">
+                    <v-btn icon variant="text" size="small" @click.stop="promptDelete(project)" color="error">
                         <Trash2 :size="18" />
                     </v-btn>
                 </div>
@@ -344,6 +350,19 @@ const deleteProject = async (id: number) => {
             </v-card-actions>
         </v-card>
     </v-dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <ConfirmationModal
+        v-if="showDeleteConfirm"
+        title="Delete Project?"
+        :message="`Are you sure you want to delete '${projectToDelete?.name}'? Tasks linked to this project will remain but will no longer be linked.`"
+        primaryBtnText="Delete"
+        secondaryBtnText="Cancel"
+        :isDanger="true"
+        @primary="confirmDelete"
+        @secondary="showDeleteConfirm = false"
+        @close="showDeleteConfirm = false"
+    />
 
   </div>
 </template>

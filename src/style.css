@@ -4,12 +4,15 @@
 
 /* Global scrollbar hiding */
 * {
-	-ms-overflow-style: none; /* IE and Edge */
-	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none;
+	/* IE and Edge */
+	scrollbar-width: none;
+	/* Firefox */
 }
 
 *::-webkit-scrollbar {
-	display: none; /* Chrome, Safari and Opera */
+	display: none;
+	/* Chrome, Safari and Opera */
 }
 
 /* Global styles */
@@ -17,6 +20,7 @@
 	html {
 		height: 100%;
 	}
+
 	body {
 		@apply bg-dark-bg text-white antialiased overflow-hidden;
 		overscroll-behavior: none;
@@ -84,6 +88,7 @@
 			transform: translateY(100%);
 			opacity: 0;
 		}
+
 		to {
 			transform: translateY(0);
 			opacity: 1;
@@ -95,6 +100,7 @@
 			transform: translateY(-100%);
 			opacity: 0;
 		}
+
 		to {
 			transform: translateY(0);
 			opacity: 1;

@@ -117,7 +117,6 @@ tauri_commands! {
     projects::delete_project(id: i64) -> NoReturn
 }
 
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder =

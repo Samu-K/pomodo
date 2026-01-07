@@ -57,7 +57,7 @@ const onAfterLeave = () => {
     @after-leave="onAfterLeave"
     class="backdrop-blur-sm"
   >
-    <div class="bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full border border-light-border dark:border-dark-border overflow-scroll shadow-xl">
+    <div class="bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full border border-light-border dark:border-dark-border overflow-y-auto shadow-xl mt-[max(1rem,env(safe-area-inset-top))] mb-[max(1rem,env(safe-area-inset-bottom))] max-h-[calc(100vh-max(2rem,env(safe-area-inset-top))-max(2rem,env(safe-area-inset-bottom)))] mx-auto">
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-semibold text-pomodo-orange">Create New Task</h2>

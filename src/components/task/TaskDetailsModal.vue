@@ -60,13 +60,16 @@ watch(
     v-model="isOpen" 
     max-width="450" 
     @after-leave="onAfterLeave"
-    class="backdrop-blur-sm pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+    class="backdrop-blur-sm"
   >
-    <div class="bg-light-bg dark:bg-dark-bg rounded-2xl p-6 w-full border border-light-border dark:border-dark-border overflow-scroll shadow-xl">
-    
-      <TaskEditBlock :selTask="props.selTask" />
+    <div class="bg-light-bg dark:bg-dark-bg rounded-2xl w-full border border-light-border dark:border-dark-border shadow-xl mt-[max(1rem,env(safe-area-inset-top))] mb-[max(1rem,env(safe-area-inset-bottom))] max-h-[calc(100vh-max(2rem,env(safe-area-inset-top))-max(2rem,env(safe-area-inset-bottom)))] mx-auto flex flex-col">
+      <!-- Scrollable content area -->
+      <div class="flex-1 overflow-y-auto p-6 pb-0">
+        <TaskEditBlock :selTask="props.selTask" />
+      </div>
 
-      <div class="flex gap-3 mt-8">
+      <!-- Fixed button footer -->
+      <div class="flex gap-3 p-6 pt-4 border-t border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg rounded-b-2xl">
         <button 
           @click="deleteTask"
           class="px-4 py-2 bg-light-surface dark:bg-dark-surface border border-red-500/30 text-red-500 rounded-lg font-semibold hover:bg-red-500/10 transition-colors"

@@ -54,6 +54,13 @@ pub async fn create_database(app: Option<&App>) -> Result<Db, String> {
         .run(&db)
         .await
         .map_err(|e| format!("failed to run migrations: {e}"))?;
+    println!("Database init: Dev seed data");
+    /*
+    sqlx::migrate!("./migrations/seed")
+        .run(&db)
+        .await
+        .map_err(|e| format!("failed to run migrations: {e}"))?;
+    */
 
     println!("Database init: success");
     Ok(db)
