@@ -9,9 +9,9 @@ import {
 	Trash2
 } from "lucide-vue-next";
 import { computed, onMounted, ref } from "vue";
-import ConfirmationModal from "../../components/ui/ConfirmationModal.vue";
 import CreateTaskModal from "../../components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
+import ConfirmationModal from "../../components/ui/ConfirmationModal.vue";
 import type { Task } from "../../defines/task";
 import type { Project } from "../../funcs/commands";
 import { get_sessions } from "../../funcs/db/session";
