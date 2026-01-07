@@ -23,15 +23,15 @@ A cross-platform Pomodoro timer for Desktop, Android, and iOS.
 
 | Platform | Link |
 |----------|------|
-| iOS | [App Store](#) |
-| Android | [Google Play](#) |
+| iOS | [App Store](#) *(coming soon)* |
+| Android | [Google Play](#) *(coming soon)* |
 
 ### Desktop
 
 | Platform | Link |
 |----------|------|
-| Windows | [Download .exe](#) |
-| macOS | [Download .dmg](#) |
+| Windows | [Download .exe](#) *(coming soon)* |
+| macOS | [Download .dmg](#) *(coming soon)* |
 | Linux (AUR) | `yay -S pomodo` *(coming soon)* |
 
 ## Support
