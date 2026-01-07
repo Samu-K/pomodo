@@ -32,6 +32,14 @@ impl SessionActions {
             sql += ", category_id";
             count += 1
         }
+        if session.task_id.is_some() {
+            sql += ", task_id";
+            count += 1
+        }
+        if session.project_id.is_some() {
+            sql += ", project_id";
+            count += 1
+        }
         sql += ") VALUES ($1";
         for i in 2..count + 1 {
             sql += format!(",${i}").as_str();
@@ -45,6 +53,12 @@ impl SessionActions {
 
         if session.category_id.is_some() {
             query = query.bind(session.category_id);
+        }
+        if session.task_id.is_some() {
+            query = query.bind(session.task_id);
+        }
+        if session.project_id.is_some() {
+            query = query.bind(session.project_id);
         }
 
         let res = query
@@ -86,6 +100,18 @@ impl SessionActions {
 
         let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
             .bind(cat_id)
+            .fetch(&*self.db)
+            .try_collect()
+            .await?;
+
+        Ok(cats)
+    }
+
+    pub async fn get_task_sessions(&self, task_id: i64) -> SessionGetVec {
+        let sql = "SELECT * FROM sessions WHERE task_id = $1";
+
+        let cats: Vec<Session> = sqlx::query_as::<_, Session>(sql)
+            .bind(task_id)
             .fetch(&*self.db)
             .try_collect()
             .await?;
@@ -141,6 +167,18 @@ impl SessionActions {
         Ok(())
     }
 
+    pub async fn set_session_task(&self, session_id: i64, task_id: i64) -> NoReturn {
+        let sql = "UPDATE sessions SET task_id = $1 WHERE id = $2";
+
+        let _ = sqlx::query(sql)
+            .bind(session_id)
+            .bind(task_id)
+            .execute(&*self.db)
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn set_session_length(&self, session_id: i64, len: u16) -> NoReturn {
         let sql = "UPDATE sessions SET session_length = $1 WHERE id = $2";
 
@@ -158,10 +196,10 @@ impl SessionActions {
      *                      D E L E T E
      * ########################################################################
      */
-    pub async fn delete_session(&self, sessionId: i64) -> NoReturn {
+    pub async fn delete_session(&self, session_id: i64) -> NoReturn {
         let sql = "DELETE FROM sessions WHERE id = $1";
 
-        let _res = sqlx::query(sql).bind(sessionId).execute(&*self.db).await?;
+        let _res = sqlx::query(sql).bind(session_id).execute(&*self.db).await?;
 
         Ok(())
     }

@@ -32,6 +32,7 @@ targets:
       - path: Assets.xcassets
       - path: Externals
       - path: pomodo_iOS
+      - path: PomodoWidget/PomodoAttributes.swift
       - path: assets
         buildPhase: resources
         type: folder
@@ -79,6 +80,9 @@ targets:
       - sdk: Security.framework
       - sdk: UIKit.framework
       - sdk: WebKit.framework
+      - sdk: ActivityKit.framework
+      - target: PomodoWidget
+        embed: true
     preBuildScripts:
       - script: pnpm tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
         name: Build Rust Code
@@ -86,3 +90,29 @@ targets:
         outputFiles:
           - $(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a
           - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a
+  PomodoWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: PomodoWidget
+    info:
+      path: PomodoWidget/Info.plist
+      properties:
+        CFBundleDisplayName: PomodoWidget
+        CFBundleShortVersionString: 1.0
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widget-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.samuk.pomodo.widget
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME: WidgetBackground
+        CODE_SIGN_ENTITLEMENTS: PomodoWidget/PomodoWidget.entitlements
+        IPHONEOS_DEPLOYMENT_TARGET: 16.1
+        TARGETED_DEVICE_FAMILY: 1
+        Thinking: true
+    dependencies:
+      - sdk: SwiftUI.framework
+      - sdk: WidgetKit.framework
+      - sdk: ActivityKit.framework

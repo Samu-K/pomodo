@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
 
     // Disable Vue Devtools to avoid SecurityError from @vue/devtools-kit
-    ; (globalThis as any).__VUE_PROD_DEVTOOLS__ = false
+    ; (globalThis as typeof globalThis & { __VUE_PROD_DEVTOOLS__?: boolean }).__VUE_PROD_DEVTOOLS__ = false
 
 // Mock localStorage
 const localStorageMock = {
@@ -46,7 +46,7 @@ class MockWorker {
         this.onmessage = () => {};
     }
 
-    postMessage(msg: any) {
+    postMessage(msg: Parameters<Worker['postMessage']>[0]) {
         // Default no-op
     }
 
@@ -55,4 +55,4 @@ class MockWorker {
     }
 }
 
-global.Worker = MockWorker as any;
+global.Worker = MockWorker as object as typeof Worker;

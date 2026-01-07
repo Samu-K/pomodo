@@ -3,6 +3,7 @@ import { MinusCircle, PlusCircle } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
 import type { Category } from "../../funcs/commands";
 import { useCategoryStore } from "../../stores/categories";
+import EmptyState from "../ui/EmptyState.vue";
 
 defineProps<{
 	selectedCategory: Category | null | undefined;
@@ -51,8 +52,6 @@ const openEditMode = () => {
 import { useTimerStore } from "../../stores/timer";
 
 const timerStore = useTimerStore();
-
-// ... (existing code)
 
 const saveEdits = async () => {
 	if (!categoryStore.categories || !editableCategories.value) return;
@@ -115,6 +114,11 @@ const confirmDelete = () => {
 	showDeleteConfirm.value = false;
 	categoryToDelete.value = null;
 };
+
+// Expose showDialog so parent can open the dialog programmatically
+defineExpose({
+	showDialog
+});
 </script>
 
 <template>
@@ -133,12 +137,15 @@ const confirmDelete = () => {
             <v-card title="Select category">
                 <v-divider class="mt-1"></v-divider>
 
-                <v-card-text class="px-12" style="height: 300px" >
+                <v-card-text class="px-12" style="height: 380px" >
                     <div v-if="!catEditMode">
-                        <div v-if="!categoryStore.categories || categoryStore.categories.length === 0" class="items-center justify-center">
-                            No categories, create one below.
-                        </div>
-                        <div class="flex flex-col" v-for="cat in categoryStore.categories" :key="cat.id">
+                        <EmptyState 
+                            v-if="!categoryStore.categories || categoryStore.categories.length === 0"
+                            title="No projects yet"
+                            description="Organize your tasks into projects for better focus."
+                        />
+                        
+                        <div v-else class="flex flex-col" v-for="cat in categoryStore.categories" :key="cat.id">
                             <v-btn variant="tonal" class="mt-4" 
                                 @click="() => { emit('select', cat); isActive.value = false; }">
                                 {{ cat.name }}
@@ -203,7 +210,12 @@ const confirmDelete = () => {
 
     <v-dialog v-model="showAddCategoryModal" width="auto" persistent>
         <v-card class="px-6 py-2" title="Add category">
-            <v-text-field label="Name" v-model="newCategory.name"></v-text-field>
+            <div>
+                <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
+                    Name *
+                </label>
+                <v-text-field v-model="newCategory.name" placeholder="Category name" hide-details class="mb-4"></v-text-field>
+            </div>
             <div class="mb-4">
                 <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-3">
                     Color

@@ -2,5 +2,6 @@
     <!-- Base application theme. -->
     <style name="Theme.pomodo" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
+        <item name="android:windowBackground">#0F0F0F</item>
     </style>
 </resources>

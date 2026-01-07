@@ -10,10 +10,6 @@ import { useThemeStore } from "../../../stores/theme";
 import { useTimerStore } from "../../../stores/timer";
 import CategoryManager from "../CategoryManager.vue";
 
-type WritableThemeStore = ReturnType<typeof useThemeStore> & {
-	categoryColors: string[];
-};
-
 // Mock Tauri API
 vi.mock("@tauri-apps/api/core", () => ({
 	invoke: vi.fn()
@@ -313,7 +309,8 @@ describe("CategoryManager.vue", () => {
 
 	it("handles opening edit mode when categories is null", async () => {
 		// Set categories to null to test edge case
-		// @ts-expect-error - Intentionally testing invalid null state
+		// Intentionally testing invalid null state
+		// @ts-expect-error: testing invalid state
 		categoryStore.categories = null;
 
 		// Open dialog
@@ -399,7 +396,10 @@ describe("CategoryManager.vue", () => {
 	it("sets color when creating a new category", async () => {
 		// Setup theme store with colors
 		const themeStore = useThemeStore();
-		(themeStore as WritableThemeStore).categoryColors = ["#ff0000", "#00ff00"];
+		vi.spyOn(themeStore, "categoryColors", "get").mockReturnValue([
+			"#ff0000",
+			"#00ff00"
+		]);
 
 		// Open dialog and add modal
 		await wrapper.findComponent({ name: "VBtn" }).trigger("click");

@@ -75,5 +75,10 @@ tauri_commands! {
     session::delete_session(session_id: i64) -> NoReturn,
     settings::get_setting_value(key: String) -> Result<String, Box<dyn Error>>,
     settings::get_all_settings() -> SettingGetVec,
-    settings::set_setting_value(value: String, key: String) -> NoReturn
+    settings::set_setting_value(value: String, key: String) -> NoReturn,
+    tasks::add_task(task: Task) -> IdReturn,
+    tasks::get_tasks() -> TaskGetVec,
+    tasks::update_task(task: Task) -> NoReturn,
+    tasks::delete_task(id: i64) -> NoReturn,
+    tasks::complete_task_instance(parent_task_id: i64, date: NaiveDateTime) -> IdReturn
 }

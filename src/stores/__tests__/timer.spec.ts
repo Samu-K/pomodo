@@ -10,13 +10,22 @@ vi.mock("../../funcs/db/session", () => ({
 	set_newest_session_complete: vi.fn()
 }));
 
+vi.mock("../../composables/useTimerFeedback", () => ({
+	useTimerFeedback: () => ({
+		triggerAllFeedback: vi.fn(),
+		playSound: vi.fn(),
+		triggerHaptics: vi.fn(),
+		sendTimerNotification: vi.fn()
+	})
+}));
+
 // Mock Worker
 const postMessageMock = vi.fn();
 const terminateMock = vi.fn();
 let onMessageCallback: ((e: MessageEvent) => void) | null = null;
 
 class MockWorker {
-	postMessage(data: unknown) {
+	postMessage(data: Parameters<typeof Worker.prototype.postMessage>[0]) {
 		postMessageMock(data);
 	}
 
@@ -243,7 +252,7 @@ describe("Timer Store", () => {
 			}
 
 			// Wait for async handleComplete
-			await Promise.resolve();
+			await new Promise((resolve) => setTimeout(resolve, 0));
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
 			expect(timerStore.isRunning).toBe(false);
@@ -263,7 +272,7 @@ describe("Timer Store", () => {
 				onMessageCallback({ data: { type: "COMPLETE" } } as MessageEvent);
 			}
 
-			await Promise.resolve();
+			await new Promise((resolve) => setTimeout(resolve, 0));
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
 			expect(timerStore.isRunning).toBe(true);
@@ -281,7 +290,7 @@ describe("Timer Store", () => {
 				onMessageCallback({ data: { type: "COMPLETE" } } as MessageEvent);
 			}
 
-			await Promise.resolve();
+			await new Promise((resolve) => setTimeout(resolve, 0));
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
 			expect(timerStore.remainingTime).toBe(900);

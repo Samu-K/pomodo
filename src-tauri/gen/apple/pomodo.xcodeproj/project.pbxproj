@@ -13,6 +13,7 @@
 		40A8D73C11705557C8338B26 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 9FA20325BDC0BA0ACA014734 /* assets */; };
 		4CF50C1D647965B2F126757A /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3B6341085CA76A2ABC7BCE /* MetalKit.framework */; };
 		774C351E78652BE0D9D1FAAC /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 562195D890F99EDB97FBE3F9 /* main.mm */; };
+		88AD862E2EF99D2C00BCC925 /* pomodo.icon in Resources */ = {isa = PBXBuildFile; fileRef = 88AD862D2EF99D2C00BCC925 /* pomodo.icon */; };
 		9E295D8E57A22D360642E28F /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 33122C83B8909A0FC9F35137 /* libapp.a */; };
 		9F16F99E32FD5B795F78CB63 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6BF09A983F658A501E5D33D7 /* WebKit.framework */; };
 		A77AC225EE343A99E4B2E780 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BC00736A4896576B7DB5517F /* Assets.xcassets */; };
@@ -35,6 +36,7 @@
 		78A5A506F835575CFF20E49F /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		79C9FEAA935873280F854EF0 /* settings.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = settings.rs; sourceTree = "<group>"; };
 		83EB07CC353905A42F61BD77 /* mod.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = mod.rs; sourceTree = "<group>"; };
+		88AD862D2EF99D2C00BCC925 /* pomodo.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = pomodo.icon; sourceTree = "<group>"; };
 		8C3B6341085CA76A2ABC7BCE /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		9513A9C7FDA9957DA9759DEB /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		9F0A465DF7478100A1D2D04E /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -128,6 +130,7 @@
 		4C2E80C150A52A597A0D499D /* pomodo_iOS */ = {
 			isa = PBXGroup;
 			children = (
+				88AD862D2EF99D2C00BCC925 /* pomodo.icon */,
 				E4EC1A139D8AEED353DB0220 /* Info.plist */,
 				B34A541DFFCDDF803574DC83 /* pomodo_iOS.entitlements */,
 			);
@@ -226,6 +229,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A77AC225EE343A99E4B2E780 /* Assets.xcassets in Resources */,
+				88AD862E2EF99D2C00BCC925 /* pomodo.icon in Resources */,
 				10487B54FB53A4A3427F40A1 /* LaunchScreen.storyboard in Resources */,
 				40A8D73C11705557C8338B26 /* assets in Resources */,
 			);
@@ -397,7 +401,8 @@
 		912B14AF0FFDD64AE9F7BD0A /* release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = pomodo;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = pomodo_iOS/pomodo_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_BITCODE = NO;
@@ -407,6 +412,8 @@
 					"\".\"",
 				);
 				INFOPLIST_FILE = pomodo_iOS/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Pomodo;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -425,6 +432,7 @@
 					"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
 					"$(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)",
 				);
+				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.samuk.pomodo;
 				PRODUCT_NAME = "pomodo";
 				SDKROOT = iphoneos;
@@ -436,7 +444,8 @@
 		B1247AB4C83473DE3DD64DEE /* debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = pomodo;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = pomodo_iOS/pomodo_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_BITCODE = NO;
@@ -446,6 +455,8 @@
 					"\".\"",
 				);
 				INFOPLIST_FILE = pomodo_iOS/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Pomodo;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -464,6 +475,7 @@
 					"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
 					"$(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)",
 				);
+				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.samuk.pomodo;
 				PRODUCT_NAME = "pomodo";
 				SDKROOT = iphoneos;

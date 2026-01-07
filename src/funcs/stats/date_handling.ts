@@ -1,7 +1,7 @@
 // Helper to check if a date string is "Today"
-const isToday = (dateString: string | null) => {
-	if (!dateString) return false; // Null check
-	const d = new Date(dateString);
+const isToday = (date: Date | string | null) => {
+	if (!date) return false; // Null check
+	const d = date instanceof Date ? date : new Date(date);
 	const today = new Date();
 	return (
 		d.getDate() === today.getDate() &&
@@ -11,9 +11,9 @@ const isToday = (dateString: string | null) => {
 };
 
 // Helper to check if a date is in the "Current Week"
-const isSameWeek = (dateString: string | null) => {
-	if (!dateString) return false; // Null check
-	const d = new Date(dateString);
+const isSameWeek = (date: Date | string | null) => {
+	if (!date) return false; // Null check
+	const d = date instanceof Date ? date : new Date(date);
 	const today = new Date();
 
 	// Adjust to make Monday index 0, Sunday index 6
@@ -43,4 +43,31 @@ const formatDuration = (seconds: number) => {
 	return `${m}m`;
 };
 
-export { formatDuration, isSameWeek, isToday };
+// Helper to get local ISO string (YYYY-MM-DDTHH:mm:ss)
+const toLocalISOString = (date: Date): string => {
+	const offset = date.getTimezoneOffset() * 60000;
+	const localTime = new Date(date.getTime() - offset);
+	return localTime.toISOString().slice(0, 19);
+};
+
+// Helper to get UTC ISO string for backend
+const toUTCISOString = (date: Date): string => {
+	return date.toISOString().slice(0, 19);
+};
+
+// Helper to create a local Date from a UTC string from backend
+const fromUTCString = (utcString: string | null): Date => {
+	if (!utcString) return new Date();
+	// If it doesn't end with Z, append it so Date() treats it as UTC
+	const normalized = utcString.endsWith("Z") ? utcString : `${utcString}Z`;
+	return new Date(normalized);
+};
+
+export {
+	formatDuration,
+	isSameWeek,
+	isToday,
+	toLocalISOString,
+	toUTCISOString,
+	fromUTCString
+};

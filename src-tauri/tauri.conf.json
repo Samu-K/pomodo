@@ -17,23 +17,12 @@
 				"width": 400,
 				"height": 900,
 				"resizable": true,
-				"minWidth": 350,
-				"minHeight": 600,
+				"minWidth": 150,
+				"minHeight": 100,
 				"decorations": true,
 				"transparent": false,
 				"center": true,
-				"visible": false
-			},
-			{
-				"label": "splashscreen",
-				"title": "Splashscreen",
-				"url": "splashscreen.html",
-				"width": 400,
-				"height": 900,
-				"decorations": false,
-				"center": true,
-				"transparent": true,
-				"alwaysOnTop": true
+				"visible": true
 			}
 		],
 		"security": {

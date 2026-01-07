@@ -28,6 +28,8 @@ describe("Session DB Functions", () => {
 			finished: false,
 			category_id: 1,
 			notes: "Test session",
+			task_id: null,
+			project_id: null,
 			created_at: null,
 			last_modified: null
 		};
@@ -50,6 +52,8 @@ describe("Session DB Functions", () => {
 			finished: false,
 			category_id: 1,
 			notes: "Test session",
+			task_id: null,
+			project_id: null,
 			created_at: null,
 			last_modified: null
 		};
@@ -67,6 +71,8 @@ describe("Session DB Functions", () => {
 				finished: true,
 				category_id: 1,
 				notes: "Test session",
+				task_id: null,
+				project_id: null,
 				created_at: "2023-01-01T00:00:00Z",
 				last_modified: "2023-01-01T00:00:00Z"
 			}

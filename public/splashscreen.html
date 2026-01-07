@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pomodo</title>
     <style>
+        :root {
+            --bg-color: #0F0F0F;
+            --accent-color: #FF5252;
+            --text-color: #E0E0E0;
+        }
         body {
             margin: 0;
             padding: 0;
@@ -12,44 +17,105 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #121212; /* Dark theme background */
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: radial-gradient(circle at center, #1A1A1A 0%, #0F0F0F 100%);
+            color: var(--text-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
             user-select: none;
             cursor: default;
         }
         .container {
             text-align: center;
-            animation: fadeIn 0.5s ease-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+        .logo-wrapper {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: containerIn 1.2s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .logo {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite ease-in-out;
+            width: 90px;
+            height: 90px;
+            z-index: 2;
+            filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.5));
+        }
+        .logo-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            animation: ringPulse 3s infinite ease-in-out;
         }
         h1 {
-            font-size: 24px;
-            font-weight: 500;
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
             margin: 0;
-            opacity: 0.9;
+            opacity: 0;
+            animation: textFadeIn 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation-delay: 0.4s;
+            background: linear-gradient(180deg, #FFFFFF 0%, #A0A0A0 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.8; }
+        .loader {
+            width: 40px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+            opacity: 0;
+            animation: textFadeIn 1s ease forwards;
+            animation-delay: 0.8s;
         }
-        @keyframes fadeIn {
+        .loader-bar {
+            width: 100%;
+            height: 100%;
+            background: var(--accent-color);
+            transform: translateX(-100%);
+            animation: load 2s infinite ease-in-out;
+        }
+        @keyframes containerIn {
+            from { opacity: 0; transform: scale(0.9) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes textFadeIn {
             from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            to { opacity: 0.9; transform: translateY(0); }
+        }
+        @keyframes ringPulse {
+            0% { transform: scale(0.95); opacity: 0.1; }
+            50% { transform: scale(1.05); opacity: 0.3; }
+            100% { transform: scale(0.95); opacity: 0.1; }
+        }
+        @keyframes load {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(0); }
+            100% { transform: translateX(100%); }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Using tauri.svg as placeholder, assuming it's served from root in dev/prod -->
-        <img src="/tauri.svg" alt="Logo" class="logo">
+        <div class="logo-wrapper">
+            <div class="logo-ring"></div>
+            <img src="/transparent_logo.svg" alt="Logo" class="logo">
+        </div>
         <h1>Pomodo</h1>
+        <div class="loader">
+            <div class="loader-bar"></div>
+        </div>
     </div>
 </body>
 </html>

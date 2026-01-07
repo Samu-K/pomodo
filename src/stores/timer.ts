@@ -1,12 +1,15 @@
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
-import type { Session } from "../funcs/commands";
+import { useTimerFeedback } from "../composables/useTimerFeedback";
+import { commands, type Session } from "../funcs/commands";
 import {
 	add_session,
 	delete_session,
 	set_newest_session_complete
 } from "../funcs/db/session";
+import { toUTCISOString } from "../funcs/stats/date_handling";
 import { useSettingsStore } from "./settings";
+import { useUIStore } from "./ui";
 
 export enum TimerMode {
 	FOCUS = 0,
@@ -15,6 +18,7 @@ export enum TimerMode {
 
 export const useTimerStore = defineStore("timer", () => {
 	const settingsStore = useSettingsStore();
+	const ui = useUIStore();
 
 	// --- Settings & Computed Durations ---
 	// Ensure settings are loaded
@@ -23,6 +27,9 @@ export const useTimerStore = defineStore("timer", () => {
 	}
 
 	const focusDuration = computed(() => {
+		if (import.meta.env.VITE_DEV_MODE === "true") {
+			return 10;
+		}
 		const val = settingsStore.settings.find(
 			(s) => s.key === "Focus Duration"
 		)?.value;
@@ -30,6 +37,9 @@ export const useTimerStore = defineStore("timer", () => {
 	});
 
 	const restDuration = computed(() => {
+		if (import.meta.env.VITE_DEV_MODE === "true") {
+			return 5;
+		}
 		const val = settingsStore.settings.find(
 			(s) => s.key === "Short Break Time"
 		)?.value;
@@ -70,6 +80,8 @@ export const useTimerStore = defineStore("timer", () => {
 	const mode = ref<TimerMode>(TimerMode.FOCUS);
 	const isRunning = ref(false);
 	const categoryId = ref<number | null>(null);
+	const taskId = ref<number | null>(null);
+	const projectId = ref<number | null>(null);
 	const currentSessionId = ref<number | null>(null);
 	let endTime: number | undefined;
 
@@ -123,8 +135,20 @@ export const useTimerStore = defineStore("timer", () => {
 
 	const handleComplete = async () => {
 		pauseTimer();
+
+		// Check for notifications
+		const { triggerAllFeedback } = useTimerFeedback();
+		await triggerAllFeedback(mode.value === TimerMode.FOCUS);
+
 		if (mode.value === TimerMode.FOCUS) {
-			await set_newest_session_complete(); // Mark DB entry as finished
+			try {
+				await set_newest_session_complete(); // Mark DB entry as finished
+			} catch (e) {
+				console.error("Error marking session complete:", e);
+				let msg = "Failed to complete session";
+				if (e instanceof Error) msg = e.message;
+				ui.setError(msg);
+			}
 			currentSessionId.value = null; // Session is complete, don't delete on reset
 			sessionStreak.value = sessionStreak.value + 1;
 			if (sessionStreak.value === long_break_interval.value) {
@@ -159,16 +183,25 @@ export const useTimerStore = defineStore("timer", () => {
 			if (categoryId.value !== null && categoryId.value !== undefined) {
 				const new_session: Session = {
 					id: null,
-					start_time: new Date().toISOString().slice(0, 19),
+					start_time: toUTCISOString(new Date()),
 					duration: focusDuration.value,
 					finished: false,
 					category_id: categoryId.value,
+					task_id: taskId.value, // Include task ID
+					project_id: projectId.value, // Include project ID
 					notes: null,
 					created_at: null,
 					last_modified: null
 				};
-				const newId = await add_session(new_session);
-				currentSessionId.value = newId;
+				try {
+					const newId = await add_session(new_session);
+					currentSessionId.value = newId;
+				} catch (e) {
+					console.error("Error creating session:", e);
+					let msg = "Failed to create focus session";
+					if (e instanceof Error) msg = e.message;
+					ui.setError(msg);
+				}
 			}
 		}
 
@@ -177,12 +210,38 @@ export const useTimerStore = defineStore("timer", () => {
 
 		isRunning.value = true;
 		worker.postMessage({ type: "START", payload: { endTime } });
+
+		// Start iOS Live Activity (Dynamic Island / Lock Screen)
+		try {
+			const modeLabel =
+				mode.value === TimerMode.FOCUS
+					? "Focus"
+					: sessionStreak.value >= long_break_interval.value
+						? "Long Break"
+						: "Short Break";
+			await commands.startLiveActivity({
+				expiry_date: endTime / 1000, // Convert to seconds
+				mode: modeLabel,
+				completed_cycles: sessionStreak.value,
+				total_cycles_for_long_rest: long_break_interval.value
+			});
+		} catch (e) {
+			// Silently fail on non-iOS platforms
+			console.debug("Live Activity not available:", e);
+		}
 	};
 
-	const pauseTimer = () => {
+	const pauseTimer = async () => {
 		isRunning.value = false;
 		worker.postMessage({ type: "PAUSE" });
 		endTime = undefined;
+
+		// Stop iOS Live Activity when paused
+		try {
+			await commands.stopLiveActivity();
+		} catch (e) {
+			console.debug("Live Activity stop not available:", e);
+		}
 	};
 
 	const toggleTimer = () => {
@@ -190,7 +249,7 @@ export const useTimerStore = defineStore("timer", () => {
 	};
 
 	const resetTimer = async () => {
-		pauseTimer();
+		await pauseTimer();
 		// if we reset a running focus session, delete it from DB
 		if (mode.value === TimerMode.FOCUS) {
 			if (currentSessionId.value) {
@@ -202,12 +261,14 @@ export const useTimerStore = defineStore("timer", () => {
 					console.log(
 						`Successfully deleted session ID: ${currentSessionId.value}`
 					);
-				} catch (error) {
+				} catch (e) {
 					console.error(
 						`Failed to delete session ${currentSessionId.value}:`,
-						error
+						e
 					);
-					console.error("Error details:", JSON.stringify(error, null, 2));
+					let msg = "Failed to delete session";
+					if (e instanceof Error) msg = e.message;
+					ui.setError(msg);
 					// Continue with reset even if deletion fails
 				} finally {
 					currentSessionId.value = null;
@@ -244,11 +305,22 @@ export const useTimerStore = defineStore("timer", () => {
 			}
 			mode.value = TimerMode.FOCUS;
 			remainingTime.value = focusDuration.value;
+			if (focus_auto_start.value) {
+				startTimer();
+			}
 		}
 	};
 
 	const setCategoryId = (id: number | null | undefined) => {
 		categoryId.value = id ?? null;
+	};
+
+	const setTaskId = (id: number | null) => {
+		taskId.value = id;
+	};
+
+	const setProjectId = (id: number | null) => {
+		projectId.value = id;
 	};
 
 	// --- Helpers ---
@@ -280,6 +352,8 @@ export const useTimerStore = defineStore("timer", () => {
 		mode,
 		sessionStreak,
 		categoryId,
+		taskId,
+		projectId,
 		long_break_interval,
 		isReady,
 
@@ -293,6 +367,8 @@ export const useTimerStore = defineStore("timer", () => {
 		toggleTimer,
 		resetTimer,
 		skip,
-		setCategoryId
+		setCategoryId,
+		setTaskId,
+		setProjectId
 	};
 });

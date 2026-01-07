@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
+import { LogicalSize } from "@tauri-apps/api/dpi";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import {
+	isPermissionGranted,
+	requestPermission
+} from "@tauri-apps/plugin-notification";
 import { useSwipe } from "@vueuse/core";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -12,11 +17,14 @@ import { RecurrenceType } from "./defines/recur.ts";
 import { Task } from "./defines/task.ts";
 import { useSettingsStore } from "./stores/settings";
 import { TimerMode, useTimerStore } from "./stores/timer";
+import { useUIStore } from "./stores/ui";
 
 const route = useRoute();
 const router = useRouter();
 const settingsStore = useSettingsStore();
+const uiStore = useUIStore();
 const vuetifyTheme = useTheme();
+const isLoading = ref(true);
 
 // Initialize theme and splashscreen on app mount
 onMounted(async () => {
@@ -26,22 +34,20 @@ onMounted(async () => {
 	}
 	// Initialize theme from settings
 	await settingsStore.initTheme();
-	vuetifyTheme.global.name.value = settingsStore.theme;
+	vuetifyTheme.global.name.value = settingsStore.resolvedTheme;
 
-	// Close splashscreen after a short delay
-	try {
-		// Small delay to ensure UI is rendered
-		setTimeout(async () => {
-			await invoke("close_splashscreen");
-		}, 1500);
-	} catch (e) {
-		console.error("Splashscreen error:", e);
+	// Request notification permissions
+	const permissionGranted = await isPermissionGranted();
+	if (!permissionGranted) {
+		await requestPermission();
 	}
+
+	isLoading.value = false;
 });
 
 // Watch settings store theme and sync Vuetify theme
 watch(
-	() => settingsStore.theme,
+	() => settingsStore.resolvedTheme,
 	(newTheme) => {
 		vuetifyTheme.global.name.value = newTheme;
 	}
@@ -55,10 +61,13 @@ const selectedTask = ref<Task>({
 	id: 0,
 	title: "",
 	category: "",
+	category_id: null,
+	project_id: null,
 	cycles: 0,
 	startTime: new Date(),
 	gradient: "",
 	completed: false,
+	completedCycles: 0,
 	recurrence: {
 		type: RecurrenceType.NONE
 	}
@@ -66,12 +75,41 @@ const selectedTask = ref<Task>({
 
 const timer = useTimerStore();
 
+watch(
+	[() => timer.isRunning, () => timer.mode],
+	([isRunning, mode]) => {
+		if (isRunning && mode === TimerMode.FOCUS) {
+			document.body.classList.add("focus-mode");
+		} else {
+			document.body.classList.remove("focus-mode");
+		}
+	},
+	{ immediate: true }
+);
+
+watch(
+	() => uiStore.isMiniMode,
+	async (isMini) => {
+		const appWindow = getCurrentWindow();
+		if (isMini) {
+			await appWindow.setSize(new LogicalSize(320, 150));
+			await appWindow.setAlwaysOnTop(true);
+			await appWindow.setResizable(false);
+		} else {
+			await appWindow.setSize(new LogicalSize(400, 900));
+			await appWindow.setAlwaysOnTop(false);
+			await appWindow.setResizable(true);
+			await appWindow.center();
+		}
+	}
+);
+
 const hideBottomNav = computed(() => {
 	return timer.isRunning && timer.mode === TimerMode.FOCUS;
 });
 
 const showBackButton = computed(() => {
-	return route.path === "/settings" || route.path === "/stats/log";
+	return false;
 });
 
 const handleBackClick = () => {
@@ -91,7 +129,7 @@ const openTaskDetails = (task: Task) => {
 // Swipe Navigation
 const tabs = ["/", "/timeline", "/tasks", "/stats"];
 useSwipe(document.body, {
-	onSwipeEnd(_e, direction) {
+	onSwipeEnd(_e: Event, direction: string) {
 		if (direction === "left") {
 			// Swipe Left -> Go Right (Next Tab)
 			if (!showBackButton.value) {
@@ -122,15 +160,16 @@ function navigateTabs(offset: number) {
 
 <template>
   <AppLayout
+    v-if="!isLoading"
     :header-title="route.name?.toString() || 'Pomodo'"
     :show-back-button="showBackButton"
     :show-settings-button="false"
     :hide-bottom-nav="hideBottomNav"
+    :is-mini-mode="uiStore.isMiniMode"
     @back-click="handleBackClick"
     @add-task="handleAddTask"
     @task-details="openTaskDetails"
   >
-    <!-- Content rendered by AppLayout via router-view -->
   </AppLayout>
   
   <!-- Modals -->
@@ -147,4 +186,23 @@ function navigateTabs(offset: number) {
     :selTask="selectedTask"
     @close="showTaskDetails = false"
   />
+
+  <!-- Global Error Notification -->
+  <v-snackbar
+    :model-value="!!uiStore.errorMessage"
+    color="error"
+    location="top"
+    :timeout="5000"
+    @update:model-value="(val) => !val && uiStore.clearError()"
+  >
+    {{ uiStore.errorMessage }}
+    <template #actions>
+      <v-btn
+        variant="text"
+        @click="uiStore.clearError()"
+      >
+        Close
+      </v-btn>
+    </template>
+  </v-snackbar>
 </template>

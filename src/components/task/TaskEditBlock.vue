@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { mdiClockOutline } from "@mdi/js";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { VDateInput } from "vuetify/labs/VDateInput";
+import { useTaskCalculations } from "../../composables/useTaskCalculations";
 import {
 	CustomRecurrence,
 	CustomRecurrenceType,
@@ -12,13 +13,31 @@ import {
 	RepeatUntilType
 } from "../../defines/recur.ts";
 import { Task } from "../../defines/task.ts";
+import { useCategoryStore } from "../../stores/categories.ts";
+import { useProjectStore } from "../../stores/project.ts";
+import { useSettingsStore } from "../../stores/settings.ts";
+
+const projectStore = useProjectStore();
+onMounted(() => {
+	projectStore.fetchProjects();
+});
 
 const props = defineProps<{
 	selTask: Task;
 }>();
 
+const settingsStore = useSettingsStore();
+
+const { calculateTaskDuration, formatDuration } = useTaskCalculations();
+
+const estimatedDurationString = computed(() => {
+	const cycles = props.selTask.cycles || 1;
+	const totalMinutes = calculateTaskDuration(cycles);
+	return formatDuration(totalMinutes);
+});
+
 watch(
-	() => props.selTask.recurrence.type,
+	() => props.selTask.recurrence?.type,
 	async (newType) => {
 		if (newType !== RecurrenceType.NONE) {
 			props.selTask.recurrence = {
@@ -52,7 +71,50 @@ watch(
 	}
 );
 
-const categories = ["work", "study", "personal"];
+const updateCategoryFromProject = () => {
+	const projectId = props.selTask.project_id;
+	if (projectId) {
+		const project = projectStore.projects.find((p) => p.id === projectId);
+		if (project?.category_id) {
+			props.selTask.category_id = project.category_id;
+		}
+	}
+};
+
+watch(() => props.selTask.project_id, updateCategoryFromProject, {
+	immediate: true
+});
+
+watch(() => projectStore.projects, updateCategoryFromProject);
+
+watch(
+	() => props.selTask.category_id,
+	(newVal) => {
+		if (newVal) {
+			if (props.selTask.project_id) {
+				const project = projectStore.projects.find(
+					(p) => p.id === props.selTask.project_id
+				);
+				if (project && project.category_id === newVal) {
+					return;
+				}
+			}
+			props.selTask.project_id = null;
+		}
+	}
+);
+
+const categoryStore = useCategoryStore();
+
+// Fetch categories on mount if not already loaded
+onMounted(async () => {
+	if (settingsStore.settings.length === 0) {
+		await settingsStore.fetchSettings();
+	}
+	if (categoryStore.categories.length === 0) {
+		await categoryStore.fetchCategories();
+	}
+});
 
 /**
  * Checks if a given day ID is in the selectedDays array.
@@ -101,10 +163,19 @@ const selectedDate = computed({
 		return props.selTask.startTime ? new Date(props.selTask.startTime) : null;
 	},
 	set: (value: Date | null) => {
-		if (value && selectedTime.value) {
-			const dateStr = value.toLocaleString().split(",")[0];
-			const combinedDateTime = new Date(`${dateStr}, ${selectedTime.value}:00`);
-			props.selTask.startTime = combinedDateTime;
+		if (value) {
+			const current = props.selTask.startTime
+				? new Date(props.selTask.startTime)
+				: new Date();
+			// Create new date preserving the time from current
+			const newDateTime = new Date(value);
+			newDateTime.setHours(
+				current.getHours(),
+				current.getMinutes(),
+				current.getSeconds(),
+				0
+			);
+			props.selTask.startTime = newDateTime;
 		}
 	}
 });
@@ -116,10 +187,11 @@ const selectedTime = computed({
 			: "";
 	},
 	set: (value: string) => {
-		if (value && selectedDate.value) {
-			const dateStr = selectedDate.value.toLocaleString().split(",")[0];
-			const combinedDateTime = new Date(`${dateStr}, ${value}:00`);
-			props.selTask.startTime = combinedDateTime;
+		if (value && props.selTask.startTime) {
+			const [hours, minutes] = value.split(":").map(Number);
+			const newDateTime = new Date(props.selTask.startTime);
+			newDateTime.setHours(hours, minutes, 0, 0);
+			props.selTask.startTime = newDateTime;
 		}
 	}
 });
@@ -130,6 +202,19 @@ const onMinuteSelected = () => {
 		showTimeMenu.value = false;
 	}, 100);
 };
+
+// Check if project is pre-selected to determine initial mode
+const isProjectSelection = ref(!!props.selTask.project_id);
+
+const toggleSelectionMode = () => {
+	isProjectSelection.value = !isProjectSelection.value;
+	// Clear the other value when switching modes to ensure mutual exclusivity
+	if (isProjectSelection.value) {
+		props.selTask.category_id = null;
+	} else {
+		props.selTask.project_id = null;
+	}
+};
 </script>
 
 <template>
@@ -137,31 +222,71 @@ const onMinuteSelected = () => {
       <div class="space-y-3">
         <!-- Task Name -->
         <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
             Task Name *
           </label>
           <v-text-field
-            label="Task name"
-            placeholder="Enter task name"
-            v-model="props.selTask.title"
-          ></v-text-field>
-        </div>
-
-        <!-- Category -->
+            data-testid="task-name-input"
+            placeholder="Enter task name" v-model="props.selTask.title" ></v-text-field> 
+        </div> <!-- Description -->
         <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-            Category
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
+            Description
           </label>
-          <v-select 
-            label="Category"
-            v-model="props.selTask.category"
-            :items="categories"
-          >
-          </v-select>
+          <v-textarea
+            data-testid="task-description-input"
+            placeholder="Add some notes about this task..."
+            v-model="props.selTask.description"
+            rows="3"
+            auto-grow
+          ></v-textarea>
+        </div>
+        <!-- Project/Category Toggle -->
+        <div>
+          <div v-if="isProjectSelection">
+            <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
+              Project
+            </label>
+            <v-select
+              data-testid="task-project-select"
+              v-model="props.selTask.project_id"
+              :items="projectStore.projects"
+              item-title="name"
+              item-value="id"
+              clearable
+            ></v-select>
+            <p 
+              @click="toggleSelectionMode"
+              class="text-xs text-pomodo-orange cursor-pointer hover:underline"
+            >
+              add to category
+            </p>
+          </div>
+
+          <div v-else>
+            <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
+              Category
+            </label>
+            <v-select 
+              data-testid="task-category-select"
+              v-model="props.selTask.category_id"
+              :items="categoryStore.categories"
+              item-title="name"
+              item-value="id"
+              clearable
+            >
+            </v-select>
+            <p 
+              @click="toggleSelectionMode"
+              class="text-xs text-pomodo-orange cursor-pointer hover:underline"
+            >
+              add to project
+            </p>
+          </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider">
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider">
             Estimated Pomodoros
           </label>
         </div>
@@ -172,12 +297,15 @@ const onMinuteSelected = () => {
           :hideInput="false"
           :inset="false"
           v-model="props.selTask.cycles"
-          class="w-[50%]"
+          class="w-[50%] "
         ></v-number-input>
+        <p class="text-xs text-light dark:text-text-secondary opacity-80 pl-1 -pt-12">
+          ≈ {{ estimatedDurationString }}
+        </p>
 
         <!-- Schedule For -->
         <div>
-          <h2>Scheduling</h2>
+          <h2 class="text-lightText-primary dark:text-text-primary">Scheduling</h2>
         </div>
         <!-- Date -->
         <v-date-input
@@ -190,6 +318,7 @@ const onMinuteSelected = () => {
           v-model="selectedTime"
           label="Time"
           :prepend-icon="mdiClockOutline"
+          readonly
         >
         <v-menu
           v-model="showTimeMenu"
@@ -208,21 +337,22 @@ const onMinuteSelected = () => {
 
         <!-- recurrence -->
         <div>
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
             Repeat 
           </label>
           <v-select 
-            v-model="props.selTask.recurrence.type"
+            data-testid="task-recurrence-select"
+            v-model="props.selTask.recurrence!.type"
             :items="Object.values(RecurrenceType)"
           >
           </v-select>
         </div>
 
         <div
-          v-if="selTask.recurrence.type === RecurrenceType.CUSTOM"
+          v-if="selTask.recurrence?.type === RecurrenceType.CUSTOM"
         >
             <div class="flex gap-1 items-center justify-start">
-              <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+              <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
                 Repeat every
               </label>
               <v-number-input
@@ -245,7 +375,7 @@ const onMinuteSelected = () => {
             >
               <div class="rounded-lg">
                   
-                  <h2 class="mb-4">
+                  <h2 class="mb-4 text-lightText-primary dark:text-text-primary">
                     Repeat on 
                   </h2>
                   
@@ -255,10 +385,10 @@ const onMinuteSelected = () => {
                       :key="day.id"
                       @click="toggleDay(day.id)"
                       :class="[
-                        'w-10 h-10 flex items-center justify-center rounded-full font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-400',
+                        'w-10 h-10 flex items-center justify-center rounded-full font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-light-bg dark:focus:ring-offset-gray-800 focus:ring-pomodo-orange',
                         isSelected(day.id) 
-                          ? 'bg-blue-300 text-gray-900' 
-                          : 'bg-white/10 text-blue-300 hover:bg-white/20'
+                          ? 'bg-pomodo-orange text-white' 
+                          : 'bg-light-surface dark:bg-white/10 text-pomodo-orange dark:text-blue-300 hover:bg-light-border dark:hover:bg-white/20'
                       ]"
                     >
                       {{ day.label }}
@@ -279,8 +409,8 @@ const onMinuteSelected = () => {
             </div>
 
         </div>
-        <div v-if="selTask.recurrence.type !== RecurrenceType.NONE">
-          <label class="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 pt-8">
+        <div v-if="selTask.recurrence?.type !== RecurrenceType.NONE">
+          <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2 pt-8">
             Repeat until 
           </label>
           <v-radio-group v-model="(props.selTask.recurrence as CustomRecurrence).repeatUntilType" >
@@ -290,7 +420,7 @@ const onMinuteSelected = () => {
               <v-date-input
                 v-model="(props.selTask.recurrence as CustomRecurrence).repeatUntilDate" 
                 :disabled="(props.selTask.recurrence as CustomRecurrence).repeatUntilType!== 'two'"
-              </v-date-input>
+              ></v-date-input>
             </div>
             <div class="flex items-center justify-center gap-1">
               <v-radio label="Once repeated" value="three"></v-radio>

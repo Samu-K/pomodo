@@ -2,39 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom scrollbar styles for dark theme */
-@layer utilities {
-	/* Webkit browsers (Chrome, Safari, Edge) */
-	.scrollbar-thin::-webkit-scrollbar {
-		width: 6px;
-		height: 6px;
-	}
-
-	.scrollbar-thin::-webkit-scrollbar-track {
-		background: theme('colors.dark.surface');
-		border-radius: 3px;
-	}
-
-	.scrollbar-thin::-webkit-scrollbar-thumb {
-		background: theme('colors.pomodo.orange');
-		border-radius: 3px;
-	}
-
-	.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-		background: #a06340;
-	}
-
+/* Global scrollbar hiding */
+* {
+	-ms-overflow-style: none;
+	/* IE and Edge */
+	scrollbar-width: none;
 	/* Firefox */
-	.scrollbar-thin {
-		scrollbar-width: thin;
-		scrollbar-color: theme('colors.pomodo.orange') theme('colors.dark.surface');
-	}
+}
+
+*::-webkit-scrollbar {
+	display: none;
+	/* Chrome, Safari and Opera */
 }
 
 /* Global styles */
 @layer base {
+	html {
+		height: 100%;
+	}
+
 	body {
-		@apply bg-dark-bg text-white antialiased;
+		@apply bg-dark-bg text-white antialiased overflow-hidden;
+		overscroll-behavior: none;
+		height: 100%;
+		width: 100%;
+	}
+
+	body.focus-mode {
+		background-color: #000000;
 	}
 
 	/* Light mode override */
@@ -93,6 +88,7 @@
 			transform: translateY(100%);
 			opacity: 0;
 		}
+
 		to {
 			transform: translateY(0);
 			opacity: 1;
@@ -104,6 +100,7 @@
 			transform: translateY(-100%);
 			opacity: 0;
 		}
+
 		to {
 			transform: translateY(0);
 			opacity: 1;
@@ -113,5 +110,5 @@
 
 /* Ensure the app takes full height */
 #app {
-	@apply h-screen overflow-hidden;
+	@apply h-full w-full overflow-hidden;
 }

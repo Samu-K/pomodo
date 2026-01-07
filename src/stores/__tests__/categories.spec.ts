@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useCategoryStore } from "../categories";
+import { useUIStore } from "../ui";
 
 // Mock DB functions
 vi.mock("../../funcs/db/categories", () => ({
@@ -19,10 +20,12 @@ import {
 
 describe("Category Store", () => {
 	let categoryStore: ReturnType<typeof useCategoryStore>;
+	let uiStore: ReturnType<typeof useUIStore>;
 
 	beforeEach(() => {
 		setActivePinia(createPinia());
 		categoryStore = useCategoryStore();
+		uiStore = useUIStore();
 	});
 
 	afterEach(() => {
@@ -51,16 +54,18 @@ describe("Category Store", () => {
 			expect(categoryStore.isLoading).toBe(false);
 		});
 
-		it("fetchCategories handles errors", async () => {
+		it("fetchCategories handles errors and sets ui store error", async () => {
 			vi.mocked(get_categories).mockRejectedValue(new Error("DB Error"));
 
-			await expect(categoryStore.fetchCategories()).rejects.toThrow("DB Error");
+			await categoryStore.fetchCategories();
+
 			expect(categoryStore.isLoading).toBe(false);
+			expect(uiStore.errorMessage).toBe("DB Error");
 		});
 
 		it("createCategory adds a category and refreshes", async () => {
 			const newCategory = { id: 0, name: "New", color: "green" };
-			vi.mocked(add_category).mockResolvedValue(123);
+			vi.mocked(add_category).mockResolvedValue(1);
 			vi.mocked(get_categories).mockResolvedValue([
 				{ id: 1, name: "New", color: "green" }
 			]);

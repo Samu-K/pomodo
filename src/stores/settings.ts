@@ -6,10 +6,12 @@ import {
 	get_settings_categories,
 	set_setting_value
 } from "../funcs/db/settings";
+import { useUIStore } from "./ui";
 
 const THEME_STORAGE_KEY = "pomodo-theme";
 
 export const useSettingsStore = defineStore("settings", () => {
+	const ui = useUIStore();
 	const settings = ref<Setting[]>([]);
 	const categories = ref<SettingCategory[]>([]);
 
@@ -24,6 +26,11 @@ export const useSettingsStore = defineStore("settings", () => {
 			]);
 			settings.value = fetchedSettings;
 			categories.value = fetchedCategories;
+		} catch (e) {
+			console.error("Failed to fetch settings", e);
+			let msg = "Failed to fetch settings";
+			if (e instanceof Error) msg = e.message;
+			ui.setError(msg);
 		} finally {
 			isLoading.value = false;
 		}
@@ -46,7 +53,15 @@ export const useSettingsStore = defineStore("settings", () => {
 			settings.value[settingIndex].value = stringValue;
 		}
 
-		await set_setting_value(id, stringValue);
+		try {
+			await set_setting_value(id, stringValue);
+		} catch (e) {
+			console.error("Failed to update setting", e);
+			let msg = "Failed to update setting";
+			if (e instanceof Error) msg = e.message;
+			ui.setError(msg);
+			// Rollback or ignore? For now, just show error.
+		}
 	};
 
 	// Theme-specific computed properties
@@ -56,13 +71,35 @@ export const useSettingsStore = defineStore("settings", () => {
 
 	const theme = computed(() => {
 		const value = themeSetting.value?.value || "dark";
-		return value as "light" | "dark";
+		return value as "light" | "dark" | "system";
+	});
+
+	/**
+	 * Get the system's preferred color scheme
+	 */
+	const getSystemTheme = (): "light" | "dark" => {
+		if (typeof window !== "undefined" && window.matchMedia) {
+			return window.matchMedia("(prefers-color-scheme: dark)").matches
+				? "dark"
+				: "light";
+		}
+		return "dark"; // Default to dark if can't detect
+	};
+
+	/**
+	 * Get the resolved theme (resolve "system" to actual light/dark)
+	 */
+	const resolvedTheme = computed((): "light" | "dark" => {
+		if (theme.value === "system") {
+			return getSystemTheme();
+		}
+		return theme.value;
 	});
 
 	/**
 	 * Set theme and update database
 	 */
-	const setTheme = async (newTheme: "light" | "dark") => {
+	const setTheme = async (newTheme: "light" | "dark" | "system") => {
 		const setting = themeSetting.value;
 		if (setting) {
 			await updateSetting(setting.id, newTheme);
@@ -73,8 +110,12 @@ export const useSettingsStore = defineStore("settings", () => {
 	/**
 	 * Apply theme to DOM by toggling dark class on html element
 	 */
-	const applyTheme = (themeValue: "light" | "dark") => {
-		if (themeValue === "dark") {
+	const applyTheme = (themeValue: "light" | "dark" | "system") => {
+		// Resolve "system" to actual theme
+		const effectiveTheme =
+			themeValue === "system" ? getSystemTheme() : themeValue;
+
+		if (effectiveTheme === "dark") {
 			document.documentElement.classList.add("dark");
 		} else {
 			document.documentElement.classList.remove("dark");
@@ -83,12 +124,14 @@ export const useSettingsStore = defineStore("settings", () => {
 
 	/**
 	 * Initialize theme - migrate from localStorage if needed, then apply to DOM
+	 * Also set up system theme change listener
 	 */
 	const initTheme = async () => {
 		// One-time migration from localStorage
 		const localStorageTheme = localStorage.getItem(THEME_STORAGE_KEY) as
 			| "light"
 			| "dark"
+			| "system"
 			| null;
 
 		if (localStorageTheme && themeSetting.value) {
@@ -100,6 +143,17 @@ export const useSettingsStore = defineStore("settings", () => {
 			// Just apply current theme
 			applyTheme(theme.value);
 		}
+
+		// Listen for system theme changes if using system theme
+		if (typeof window !== "undefined" && window.matchMedia) {
+			window
+				.matchMedia("(prefers-color-scheme: dark)")
+				.addEventListener("change", () => {
+					if (theme.value === "system") {
+						applyTheme("system");
+					}
+				});
+		}
 	};
 
 	return {
@@ -110,6 +164,7 @@ export const useSettingsStore = defineStore("settings", () => {
 		updateSetting,
 		// Theme
 		theme,
+		resolvedTheme,
 		themeSetting,
 		setTheme,
 		initTheme,

@@ -1,26 +1,63 @@
 pub mod database;
-
-use chrono::NaiveDate;
+pub mod mobile;
+use chrono::{NaiveDate, NaiveDateTime};
 use paste::paste;
 use specta::specta;
 use std::sync::Arc;
+
+use tauri::Emitter;
 use tauri::Manager as _;
 use tauri::State;
+#[cfg(not(mobile))]
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
+    WindowEvent,
+};
 
 use crate::database::{
     category::CategoryActions,
     decls::{
-        Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, Session, SessionGetVec,
-        SettingCatGetVec, SettingGetVec, StringReturn,
+        Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, Project, ProjectGetVec, Session,
+        SessionGetVec, SettingCatGetVec, SettingGetVec, StringReturn, Task, TaskGetVec,
     },
+    project::ProjectActions,
     session::SessionActions,
     settings::SettingActions,
+    task::TaskActions,
 };
 
 pub struct AppState {
     pub categories: CategoryActions,
     pub session: SessionActions,
     pub settings: SettingActions,
+    pub tasks: TaskActions,
+    pub projects: ProjectActions,
+}
+
+pub struct TrayState {
+    #[cfg(not(mobile))]
+    pub toggle_item: MenuItem<tauri::Wry>,
+}
+
+#[tauri::command]
+#[specta]
+async fn update_tray(
+    app: tauri::AppHandle,
+    state: State<'_, TrayState>,
+    title: String,
+    toggle_text: Option<String>,
+) -> Result<(), String> {
+    #[cfg(not(mobile))]
+    {
+        if let Some(tray) = app.tray_by_id("main") {
+            let _ = tray.set_tooltip(Some(title));
+        }
+        if let Some(text) = toggle_text {
+            let _ = state.toggle_item.set_text(text);
+        }
+    }
+    Ok(())
 }
 
 macro_rules! tauri_commands {
@@ -63,24 +100,21 @@ tauri_commands! {
     session::set_session_complete(id: i64) -> NoReturn,
     session::set_session_category(session_id: i64, cat_id: i64) -> NoReturn,
     session::set_session_length(session_id: i64, len: u16) -> NoReturn,
-    session::delete_session(sessionId: i64) -> NoReturn,
+    session::delete_session(session_id: i64) -> NoReturn,
     settings::get_setting_value(key: String) -> StringReturn,
     settings::get_all_settings() -> SettingGetVec,
     settings::set_setting_value(value: String, id: i64) -> NoReturn,
     settings::get_setting_categories() -> SettingCatGetVec,
-    settings::get_settings_for_category(cat_id: i64) -> SettingGetVec
-}
-
-#[tauri::command]
-#[specta::specta]
-async fn close_splashscreen(app: tauri::AppHandle) {
-    if let Some(splashscreen) = app.get_webview_window("splashscreen") {
-        splashscreen.close().unwrap();
-    }
-    if let Some(main_window) = app.get_webview_window("main") {
-        main_window.show().unwrap();
-        main_window.set_focus().unwrap();
-    }
+    settings::get_settings_for_category(cat_id: i64) -> SettingGetVec,
+    tasks::add_task(task: Task) -> IdReturn,
+    tasks::get_tasks() -> TaskGetVec,
+    tasks::update_task(task: Task) -> NoReturn,
+    tasks::delete_task(id: i64) -> NoReturn,
+    tasks::complete_task_instance(parent_task_id: i64, date: NaiveDateTime) -> IdReturn,
+    projects::add_project(project: Project) -> IdReturn,
+    projects::get_projects() -> ProjectGetVec,
+    projects::update_project(project: Project) -> NoReturn,
+    projects::delete_project(id: i64) -> NoReturn
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -109,35 +143,149 @@ pub fn run() {
             settings_set_setting_value,
             settings_get_setting_categories,
             settings_get_settings_for_category,
-            close_splashscreen,
+            tasks_add_task,
+            tasks_get_tasks,
+            tasks_update_task,
+            tasks_delete_task,
+            tasks_complete_task_instance,
+            projects_add_project,
+            projects_get_projects,
+            projects_update_project,
+            projects_delete_project,
+            projects_update_project,
+            projects_delete_project,
+            update_tray,
+            crate::mobile::start_live_activity,
+            crate::mobile::update_live_activity,
+            crate::mobile::stop_live_activity
         ]);
 
     #[cfg(all(debug_assertions, not(mobile)))]
     builder
         .export(
             specta_typescript::Typescript::default()
-                .bigint(specta_typescript::BigIntExportBehavior::Number),
+                .bigint(specta_typescript::BigIntExportBehavior::Number)
+                .header("// @ts-nocheck"),
             "../src/funcs/commands.ts",
         )
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_haptics::init())
-        .plugin(tauri_plugin_keep_screen_on::init())
         .plugin(tauri_plugin_opener::init())
+        // .plugin(tauri_plugin_safe_area_insets_css::init())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
-            tauri::async_runtime::block_on(async move {
-                let db = Arc::new(database::create_database(Some(app)).await);
-                let sa = SessionActions::new(db.clone());
-                let sta = SettingActions::new(db.clone());
-                let ca = CategoryActions::new(db.clone());
-                app.manage(AppState {
-                    categories: ca,
-                    session: sa,
-                    settings: sta,
-                })
+            tauri::async_runtime::block_on(async {
+                println!("Setup: starting async block");
+                match database::create_database(Some(app)).await {
+                    Ok(db) => {
+                        println!("Setup: database created, managing state");
+                        let db = Arc::new(db);
+                        let sa = SessionActions::new(db.clone());
+                        let sta = SettingActions::new(db.clone());
+                        let ca = CategoryActions::new(db.clone());
+                        let ta = TaskActions::new(db.clone());
+                        let pa = ProjectActions::new(db.clone());
+                        app.manage(AppState {
+                            categories: ca,
+                            session: sa,
+                            settings: sta,
+                            tasks: ta,
+                            projects: pa,
+                        });
+                        println!("Setup: state managed");
+                    }
+                    Err(e) => {
+                        eprintln!("Error creating database: {e}");
+                        // Force a visible log for the user
+                        println!("CRITICAL ERROR: {e}");
+                    }
+                }
             });
+
+            // System Tray
+            #[cfg(not(mobile))]
+            {
+                let toggle_i = MenuItem::with_id(app, "toggle", "Start Focus", true, None::<&str>)?;
+                let open_i = MenuItem::with_id(app, "open", "Open", true, None::<&str>)?;
+                let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+                let menu = Menu::with_items(app, &[&toggle_i, &open_i, &quit_i])?;
+
+                let _tray = TrayIconBuilder::with_id("main")
+                    .icon(app.default_window_icon().unwrap().clone())
+                    .menu(&menu)
+                    .show_menu_on_left_click(false)
+                    .on_menu_event(|app, event| match event.id().as_ref() {
+                        "quit" => {
+                            app.exit(0);
+                        }
+                        "open" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        "toggle" => {
+                            let _ = app.emit("tray_toggle", ());
+                        }
+                        _ => {}
+                    })
+                    .on_tray_icon_event(|tray, event| {
+                        if let TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            ..
+                        } = event
+                        {
+                            let app = tray.app_handle();
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                    })
+                    .build(app)?;
+
+                app.manage(TrayState {
+                    toggle_item: toggle_i,
+                });
+            }
+
+            #[cfg(mobile)]
+            app.manage(TrayState {});
+
+            // Window Close Event
+            #[cfg(not(mobile))]
+            if let Some(window) = app.get_webview_window("main") {
+                let window_clone = window.clone();
+                window.on_window_event(move |event| {
+                    if let WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        let _ = window_clone.hide();
+                    }
+                });
+            }
+
+            // Disable content inset adjustment on iOS
+            #[cfg(mobile)]
+            if let Some(window) = app.get_webview_window("main") {
+                window
+                    .with_webview(|webview| {
+                        #[cfg(target_os = "ios")]
+                        unsafe {
+                            use objc::runtime::{Object, Sel};
+                            use objc::{msg_send, sel, sel_impl};
+
+                            let wk_webview = webview.inner() as *mut Object;
+                            let scroll_view: *mut Object = msg_send![wk_webview, scrollView];
+                            let () = msg_send![scroll_view, setContentInsetAdjustmentBehavior: 2];
+                            // 2 = UIScrollViewContentInsetAdjustmentNever
+                        }
+                    })
+                    .expect("failed to run on UI thread");
+            }
+
             Ok(())
         })
         .run(tauri::generate_context!())

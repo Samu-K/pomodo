@@ -1,44 +1,67 @@
 pub mod category;
 pub mod decls;
+pub mod project;
 pub mod session;
 pub mod settings;
+pub mod task;
 
 use decls::Db;
 use sqlx::{migrate::MigrateDatabase, sqlite::SqlitePoolOptions, Sqlite};
 use std::fs::create_dir_all;
 use tauri::{App, Manager as _};
 
-pub async fn create_database(app: Option<&App>) -> Db {
+pub async fn create_database(app: Option<&App>) -> Result<Db, String> {
+    println!("Database init: starting");
     let mut app_dir;
     match app {
         Some(app) => {
-            app_dir = app.path().app_data_dir().expect("Failed to get app dir");
+            println!("Database init: getting app dir");
+            app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
         }
         None => {
             app_dir = std::path::PathBuf::from("/home/samuk/.local/share/com.pomodo.app/");
         }
     };
 
-    create_dir_all(&app_dir).expect("failed to create dir");
+    println!("Database init: creating dir at {:?}", app_dir);
+    create_dir_all(&app_dir).map_err(|e| format!("failed to create dir: {e}"))?;
     println!("Creating db at {app_dir:?}");
     app_dir.push("pomodo.sqlite");
 
-    Sqlite::create_database(
-        format!(
-            "sqlite:{}",
-            app_dir.to_str().expect("path should be something")
-        )
-        .as_str(),
-    )
-    .await
-    .expect("failed to create database");
+    let db_url = format!(
+        "sqlite:{}",
+        app_dir.to_str().ok_or("path should be valid unicode")?
+    );
+    println!("Database init: db_url is {}", db_url);
 
+    if !Sqlite::database_exists(&db_url).await.unwrap_or(false) {
+        println!("Database init: creating database file");
+        Sqlite::create_database(&db_url)
+            .await
+            .map_err(|e| format!("failed to create database: {e}"))?;
+    } else {
+        println!("Database init: database exists");
+    }
+
+    println!("Database init: connecting");
     let db = SqlitePoolOptions::new()
-        .connect(app_dir.to_str().unwrap())
+        .connect(&db_url)
         .await
-        .unwrap();
+        .map_err(|e| format!("Failed to connect to database: {e}"))?;
 
-    sqlx::migrate!("./migrations").run(&db).await.unwrap();
+    println!("Database init: running migrations");
+    sqlx::migrate!("./migrations")
+        .run(&db)
+        .await
+        .map_err(|e| format!("failed to run migrations: {e}"))?;
+    println!("Database init: Dev seed data");
+    /*
+    sqlx::migrate!("./migrations/seed")
+        .run(&db)
+        .await
+        .map_err(|e| format!("failed to run migrations: {e}"))?;
+    */
 
-    db
+    println!("Database init: success");
+    Ok(db)
 }

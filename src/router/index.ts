@@ -4,6 +4,7 @@ import {
 	type RouteRecordRaw
 } from "vue-router";
 import TimerScreen from "../pages/landing/TimerScreen.vue";
+import ProjectListScreen from "../pages/projects/ProjectListScreen.vue";
 import SettingsScreen from "../pages/settings/SettingsScreen.vue";
 import SessionLog from "../pages/stats/SessionLog.vue";
 import StatsScreen from "../pages/stats/StatsScreen.vue";
@@ -25,6 +26,11 @@ const routes: Array<RouteRecordRaw> = [
 		path: "/tasks",
 		name: "Tasks",
 		component: TaskListScreen
+	},
+	{
+		path: "/projects",
+		name: "Projects",
+		component: ProjectListScreen
 	},
 	{
 		path: "/stats",

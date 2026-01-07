@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSettingsStore } from "../settings";
+import { useUIStore } from "../ui";
 
 // Mock DB functions
 vi.mock("../../funcs/db/settings", () => ({
@@ -17,10 +18,12 @@ import {
 
 describe("Settings Store", () => {
 	let settingsStore: ReturnType<typeof useSettingsStore>;
+	let uiStore: ReturnType<typeof useUIStore>;
 
 	beforeEach(() => {
 		setActivePinia(createPinia());
 		settingsStore = useSettingsStore();
+		uiStore = useUIStore();
 	});
 
 	afterEach(() => {
@@ -43,7 +46,7 @@ describe("Settings Store", () => {
 					key: "Theme",
 					value: "Dark",
 					category_id: 1,
-					description: "Theme setting",
+					description: null,
 					data_type: "string"
 				},
 				{
@@ -51,7 +54,7 @@ describe("Settings Store", () => {
 					key: "Notifications",
 					value: "true",
 					category_id: 2,
-					description: "Notifications setting",
+					description: null,
 					data_type: "boolean"
 				}
 			];
@@ -75,14 +78,13 @@ describe("Settings Store", () => {
 			expect(get_settings_categories).toHaveBeenCalledTimes(1);
 		});
 
-		it("handles errors gracefully (optional, depending on store implementation)", async () => {
-			// The current store implementation doesn't have explicit error handling (try/finally only),
-			// but we can at least ensure isLoading is reset.
+		it("handles errors gracefully and sets ui store error", async () => {
 			vi.mocked(get_settings).mockRejectedValue(new Error("DB Error"));
 
-			await expect(settingsStore.fetchSettings()).rejects.toThrow("DB Error");
+			await settingsStore.fetchSettings();
 
 			expect(settingsStore.isLoading).toBe(false);
+			expect(uiStore.errorMessage).toBe("DB Error");
 		});
 	});
 
@@ -95,7 +97,7 @@ describe("Settings Store", () => {
 					key: "Theme",
 					value: "Light",
 					category_id: 1,
-					description: "Theme setting",
+					description: null,
 					data_type: "string"
 				}
 			];
@@ -116,7 +118,7 @@ describe("Settings Store", () => {
 					key: "Notifications",
 					value: "false",
 					category_id: 2,
-					description: "Notifications setting",
+					description: null,
 					data_type: "boolean"
 				}
 			];
@@ -139,7 +141,7 @@ describe("Settings Store", () => {
 					key: "Volume",
 					value: "50",
 					category_id: 3,
-					description: "Volume setting",
+					description: null,
 					data_type: "number"
 				}
 			];
@@ -157,7 +159,7 @@ describe("Settings Store", () => {
 					key: "Theme",
 					value: "Light",
 					category_id: 1,
-					description: "Theme setting",
+					description: null,
 					data_type: "string"
 				}
 			];
