@@ -5,6 +5,7 @@ import type { Page } from '@playwright/test';
  */
 export async function mockTauri(page: Page) {
     await page.addInitScript(() => {
+        (window as any)._isTest = true;
         // Initialize localStorage with defaults if empty
         const defaultSettings = [
             { id: 1, key: 'Focus Duration', value: '1', description: 'Focus duration', category_id: 1, data_type: 'number' },
