@@ -27,13 +27,10 @@ const catEditMode = ref(false);
 const showDeleteConfirm = ref(false);
 const categoryToDelete = ref<Category | null>(null);
 
-import { useThemeStore } from "../../stores/theme";
-
-const themeStore = useThemeStore();
+import AddCategoryDialog from "./AddCategoryDialog.vue";
 
 // Edit Mode State (Deep Copy)
 const editableCategories = ref<Category[]>([]);
-const newCategory = ref<Category>({ name: "", color: "none", id: 0 });
 
 // --- Logic ---
 
@@ -93,12 +90,6 @@ const cancelEdits = () => {
 	editableCategories.value = [];
 };
 
-const createCategory = async () => {
-	await categoryStore.createCategory(newCategory.value);
-	newCategory.value = { id: 0, name: "", color: "none" };
-	showAddCategoryModal.value = false;
-};
-
 // Delete Confirmation
 const promptDelete = (cat: Category) => {
 	categoryToDelete.value = cat;
@@ -141,8 +132,8 @@ defineExpose({
                     <div v-if="!catEditMode">
                         <EmptyState 
                             v-if="!categoryStore.categories || categoryStore.categories.length === 0"
-                            title="No projects yet"
-                            description="Organize your tasks into projects for better focus."
+                            title="No categories"
+                            description="Create a category to get started"
                         />
                         
                         <div v-else class="flex flex-col" v-for="cat in categoryStore.categories" :key="cat.id">
@@ -208,36 +199,7 @@ defineExpose({
         </v-card>
     </v-dialog>
 
-    <v-dialog v-model="showAddCategoryModal" width="auto" persistent>
-        <v-card class="px-6 py-2" title="Add category">
-            <div>
-                <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
-                    Name *
-                </label>
-                <v-text-field v-model="newCategory.name" placeholder="Category name" hide-details class="mb-4"></v-text-field>
-            </div>
-            <div class="mb-4">
-                <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-3">
-                    Color
-                </label>
-                <div class="grid grid-cols-6 gap-2">
-                    <button
-                        v-for="color in themeStore.categoryColors"
-                        :key="color"
-                        @click="newCategory.color = color"
-                        :class="[
-                            'w-8 h-8 rounded-full transition-all hover:scale-110',
-                            newCategory.color === color ? 'ring-2 ring-lightText-primary dark:ring-white ring-offset-2 ring-offset-light-bg dark:ring-offset-dark-bg' : ''
-                        ]"
-                        :style="`background-color: ${color}`"
-                    ></button>
-                </div>
-            </div>
-            <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn text="Cancel" @click="showAddCategoryModal = false"></v-btn>
-                <v-btn color="green-darken-1" text="Create" :disabled="!newCategory.name" @click="createCategory"></v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
+    <AddCategoryDialog 
+        v-model="showAddCategoryModal"
+    />
 </template>

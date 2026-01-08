@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import {
+	addDays,
 	eachDayOfInterval,
-	endOfMonth,
-	endOfWeek,
 	format,
 	isSameMonth,
 	isToday,
@@ -24,12 +23,11 @@ const emit = defineEmits<{
 
 const tasksStore = useTasks();
 
-// Generate calendar grid days
+// Generate calendar grid days (always 6 weeks / 42 days to fill the grid)
 const calendarDays = computed(() => {
 	const monthStart = startOfMonth(props.currentDate);
-	const monthEnd = endOfMonth(monthStart);
 	const startDate = startOfWeek(monthStart, { weekStartsOn: 1 }); // Monday start
-	const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+	const endDate = addDays(startDate, 41);
 
 	return eachDayOfInterval({ start: startDate, end: endDate });
 });

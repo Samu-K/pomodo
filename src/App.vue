@@ -8,14 +8,19 @@ import {
 import { useSwipe } from "@vueuse/core";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useTheme } from "vuetify";
+import { type ThemeInstance, useTheme } from "vuetify";
 import AppLayout from "./components/AppLayout.vue";
-import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
+import PremiumModal from "./components/premium/PremiumModal.vue";
+import ProjectLimitModal from "./components/premium/ProjectLimitModal.vue";
 import CreateTaskModal from "./components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "./components/task/TaskDetailsModal.vue";
+import AddCategoryDialog from "./components/timer/AddCategoryDialog.vue";
+import WelcomeDialog from "./components/WelcomeDialog.vue";
 import { RecurrenceType } from "./defines/recur.ts";
 import { Task } from "./defines/task.ts";
+import { registerShortcuts } from "./funcs/shortcuts";
 import { useSettingsStore } from "./stores/settings";
+import { useThemeStore } from "./stores/theme";
 import { TimerMode, useTimerStore } from "./stores/timer";
 import { useUIStore } from "./stores/ui";
 
@@ -23,8 +28,36 @@ const route = useRoute();
 const router = useRouter();
 const settingsStore = useSettingsStore();
 const uiStore = useUIStore();
+const themeStore = useThemeStore();
 const vuetifyTheme = useTheme();
 const isLoading = ref(true);
+
+// Apply theme overrides
+watch(
+	() => settingsStore.themeOverrides,
+	(newOverrides) => {
+		if (newOverrides && Object.keys(newOverrides).length > 0) {
+			themeStore.applyTheme(newOverrides, vuetifyTheme);
+		} else {
+			themeStore.resetTheme(vuetifyTheme);
+		}
+	},
+	{ deep: true, immediate: true }
+);
+
+// Watch for settings changes to update shortcuts
+const toggleTimerSetting = computed(
+	() => settingsStore.settings.find((s) => s.key === "Toggle Timer")?.value
+);
+
+watch(toggleTimerSetting, async (newValue, oldValue) => {
+	if (newValue && newValue !== oldValue) {
+		console.log(
+			`[App] Toggle timer setting changed from ${oldValue} to ${newValue}, re-registering...`
+		);
+		await registerShortcuts();
+	}
+});
 
 // Initialize theme and splashscreen on app mount
 onMounted(async () => {
@@ -34,7 +67,14 @@ onMounted(async () => {
 	}
 	// Initialize theme from settings
 	await settingsStore.initTheme();
-	vuetifyTheme.global.name.value = settingsStore.resolvedTheme;
+	const themeWithChange = vuetifyTheme as ThemeInstance & {
+		change?: (name: string) => void;
+	};
+	if (typeof themeWithChange.change === "function") {
+		themeWithChange.change(settingsStore.resolvedTheme);
+	} else {
+		vuetifyTheme.global.name.value = settingsStore.resolvedTheme;
+	}
 
 	// Request notification permissions
 	const permissionGranted = await isPermissionGranted();
@@ -42,18 +82,35 @@ onMounted(async () => {
 		await requestPermission();
 	}
 
+	// Check for first boot
+	const welcomeSeen = localStorage.getItem("pomodo-welcome-seen");
+	if (!welcomeSeen) {
+		showWelcomeDialog.value = true;
+	}
+
 	isLoading.value = false;
+
+	// Register shortcuts
+	await registerShortcuts();
 });
 
 // Watch settings store theme and sync Vuetify theme
 watch(
 	() => settingsStore.resolvedTheme,
 	(newTheme) => {
-		vuetifyTheme.global.name.value = newTheme;
+		const themeWithChange = vuetifyTheme as ThemeInstance & {
+			change?: (name: string) => void;
+		};
+		if (typeof themeWithChange.change === "function") {
+			themeWithChange.change(newTheme);
+		} else {
+			vuetifyTheme.global.name.value = newTheme;
+		}
 	}
 );
 
 // Modal states
+const showWelcomeDialog = ref(false);
 const showCreateTask = ref(false);
 const showCreateCategory = ref(false);
 const showTaskDetails = ref(false);
@@ -126,6 +183,17 @@ const openTaskDetails = (task: Task) => {
 	selectedTask.value = task;
 };
 
+const handleWelcomeClose = () => {
+	showWelcomeDialog.value = false;
+	localStorage.setItem("pomodo-welcome-seen", "true");
+};
+
+const handleWelcomeCreateCategories = () => {
+	showWelcomeDialog.value = false;
+	localStorage.setItem("pomodo-welcome-seen", "true");
+	showCreateCategory.value = true;
+};
+
 // Swipe Navigation
 const tabs = ["/", "/timeline", "/tasks", "/stats"];
 useSwipe(document.body, {
@@ -177,14 +245,28 @@ function navigateTabs(offset: number) {
     v-if="showCreateTask" 
     @close="showCreateTask = false"
   />
-  <CreateCategoryModal 
-    v-if="showCreateCategory"
-    @close="showCreateCategory = false"
-  />
   <TaskDetailsModal
     v-if="showTaskDetails"
     :selTask="selectedTask"
     @close="showTaskDetails = false"
+  />
+  <PremiumModal
+    v-if="uiStore.showPremiumModal"
+    @close="uiStore.setPremiumModal(false)"
+  />
+  <ProjectLimitModal
+    v-if="uiStore.showProjectLimitModal"
+    @close="uiStore.setProjectLimitModal(false)"
+  />
+
+  <WelcomeDialog
+    v-if="showWelcomeDialog"
+    @close="handleWelcomeClose"
+    @create-categories="handleWelcomeCreateCategories"
+  />
+
+  <AddCategoryDialog
+    v-model="showCreateCategory"
   />
 
   <!-- Global Error Notification -->

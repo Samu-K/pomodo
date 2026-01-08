@@ -5,6 +5,7 @@ import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import FocusHeatmap from "../../components/stats/FocusHeatmap.vue";
 import GamificationStats from "../../components/stats/GamificationStats.vue";
+import PremiumStats from "../../components/stats/PremiumStats.vue";
 import WeeklyFocusChart from "../../components/stats/WeeklyFocusChart.vue";
 import WeeklyOverview from "../../components/stats/WeeklyOverview.vue";
 import EmptyState from "../../components/ui/EmptyState.vue";
@@ -12,6 +13,7 @@ import { get_categories } from "../../funcs/db/categories";
 import { get_sessions } from "../../funcs/db/session";
 import {
 	formatDuration,
+	fromUTCString,
 	isSameWeek,
 	isToday
 } from "../../funcs/stats/date_handling";
@@ -84,14 +86,16 @@ const sessionsState = useQuery({
 const today_session_count = computed(() => {
 	if (!sessionsState.data.value) return 0;
 	return sessionsState.data.value.filter(
-		(s) => s.finished && s.start_time && isToday(s.start_time)
+		(s) => s.finished && s.start_time && isToday(fromUTCString(s.start_time))
 	).length;
 });
 
 const total_seconds_today = computed(() => {
 	if (!sessionsState.data.value) return 0;
 	return sessionsState.data.value
-		.filter((s) => s.finished && s.start_time && isToday(s.start_time))
+		.filter(
+			(s) => s.finished && s.start_time && isToday(fromUTCString(s.start_time))
+		)
 		.reduce((sum, s) => sum + (s.duration || 0), 0);
 });
 
@@ -99,7 +103,7 @@ const todaysFocusData = computed(() => {
 	if (!sessionsState.data.value || !categoriesState.data.value) return [];
 
 	const todaySessions = sessionsState.data.value.filter(
-		(s) => s.finished && s.start_time && isToday(s.start_time)
+		(s) => s.finished && s.start_time && isToday(fromUTCString(s.start_time))
 	);
 
 	const totalSeconds = todaySessions.reduce(
@@ -130,10 +134,12 @@ const todaysFocusData = computed(() => {
 const weeklySessionsRaw = computed(() => {
 	if (!sessionsState.data.value) return [];
 	return sessionsState.data.value.filter(
-		(s) => s.start_time && isSameWeek(s.start_time)
+		(s) => s.start_time && isSameWeek(fromUTCString(s.start_time))
 	);
 });
 </script>
+
+
 
 <template>
   <div class="flex flex-col h-full bg-light-bg dark:bg-dark-bg">
@@ -181,19 +187,20 @@ const weeklySessionsRaw = computed(() => {
             </div>
             <span class="text-lightText-secondary dark:text-text-secondary text-sm min-w-[60px] text-right">{{ item.time }}</span>
           </div>
+        </template>
 
-          <div class="flex items-center justify-end">
-            <button 
+        <div class="flex items-center justify-end mt-4">
+          <button 
             @click="router.push('/stats/log')"
             class="text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors bg-light-surface dark:bg-dark-surface px-4 py-2"
           >
-              View session log
+            View session log
           </button>
-          </div>
-          <p class="text-lightText-muted dark:text-text-muted text-center text-sm mt-6">
-            {{today_session_count}} focus sessions completed today
-          </p>
-        </template>
+        </div>
+
+        <p v-if="today_session_count > 0" class="text-lightText-muted dark:text-text-muted text-center text-sm mt-6">
+          {{today_session_count}} focus sessions completed today
+        </p>
       </section>
 
       <!-- Weekly Overview -->
@@ -244,10 +251,14 @@ const weeklySessionsRaw = computed(() => {
         <WeeklyFocusChart :data="weeklySessionsRaw"/>
       </section>
 
+      <!-- Advanced Analytics (Premium) -->
+      <PremiumStats :sessions="sessionsState.data.value || []" />
+
       <!-- Focus Heatmap -->
       <section class="mb-10">
-        <FocusHeatmap :data="sessionsState.data.value || []" />
+         <FocusHeatmap :data="sessionsState.data.value || []" />
       </section>
     </div>
   </div>
 </template>
+```

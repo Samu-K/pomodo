@@ -1,21 +1,96 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { ChevronLeft, ChevronRight, Lock } from "lucide-vue-next";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import type { Session } from "../../funcs/commands";
 import { formatDuration } from "../../funcs/stats/date_handling";
+import { useSettingsStore } from "../../stores/settings";
+import { useUIStore } from "../../stores/ui";
+
+// Track which day's tooltip is currently open (null = none open)
+const openTooltipDay = ref<number | null>(null);
+
+// Close tooltip on scroll
+const handleScroll = () => {
+	openTooltipDay.value = null;
+};
+
+onMounted(() => {
+	// Listen for scroll on the window and any scrollable parent
+	window.addEventListener("scroll", handleScroll, true);
+});
+
+onUnmounted(() => {
+	window.removeEventListener("scroll", handleScroll, true);
+});
 
 const props = defineProps<{
 	data: Session[];
 }>();
 
-const daysInMonth = computed(() => {
-	const now = new Date();
-	return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+const settingsStore = useSettingsStore();
+const uiStore = useUIStore();
+
+const currentDate = ref(new Date());
+
+const monthName = computed(() => {
+	return currentDate.value
+		.toLocaleString("default", { month: "long" })
+		.toUpperCase();
 });
 
-const currentMonthData = computed(() => {
+const daysInMonth = computed(() => {
+	return new Date(
+		currentDate.value.getFullYear(),
+		currentDate.value.getMonth() + 1,
+		0
+	).getDate();
+});
+
+const firstDayOffset = computed(() => {
+	const firstDay = new Date(
+		currentDate.value.getFullYear(),
+		currentDate.value.getMonth(),
+		1
+	);
+	return firstDay.getDay();
+});
+
+const isTodayMonth = computed(() => {
 	const now = new Date();
-	const year = now.getFullYear();
-	const month = now.getMonth();
+	return (
+		currentDate.value.getFullYear() === now.getFullYear() &&
+		currentDate.value.getMonth() === now.getMonth()
+	);
+});
+
+const canGoNext = computed(() => {
+	return !isTodayMonth.value;
+});
+
+function prevMonth() {
+	if (!settingsStore.isPremium) {
+		uiStore.setPremiumModal(true);
+		return;
+	}
+	currentDate.value = new Date(
+		currentDate.value.getFullYear(),
+		currentDate.value.getMonth() - 1,
+		1
+	);
+}
+
+function nextMonth() {
+	if (!canGoNext.value) return;
+	currentDate.value = new Date(
+		currentDate.value.getFullYear(),
+		currentDate.value.getMonth() + 1,
+		1
+	);
+}
+
+const currentMonthData = computed(() => {
+	const year = currentDate.value.getFullYear();
+	const month = currentDate.value.getMonth();
 
 	const dailyStats = new Map<number, number>();
 
@@ -52,25 +127,13 @@ function getIntensity(seconds: number) {
 }
 
 const colorMap = {
-	0: "bg-[#ebedf0] dark:bg-[#161b22] border border-black/5 dark:border-white/5",
+	0: "bg-light-border dark:bg-dark-border/50 border border-light-border/50 dark:border-white/5",
 	1: "bg-pomodo-orange/20 border border-pomodo-orange/10",
 	2: "bg-pomodo-orange/40 border border-pomodo-orange/20",
 	3: "bg-pomodo-orange/70 border border-pomodo-orange/30",
 	4: "bg-pomodo-orange"
 };
 
-const monthName = computed(() => {
-	return new Date().toLocaleString("default", { month: "long" });
-});
-
-// Calculate offset for the first day of the month (0 = Sunday, 1 = Monday, etc.)
-const firstDayOffset = computed(() => {
-	const now = new Date();
-	const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-	return firstDay.getDay();
-});
-
-// Legend items
 const legend = [
 	{ label: "0h", intensity: 0 },
 	{ label: "<1h", intensity: 1 },
@@ -83,24 +146,42 @@ const legend = [
 <template>
   <div class="mt-10">
     <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-lightText-primary dark:text-white">Monthly Focus</h2>
-        <div class="flex items-center gap-1">
+        <!-- Month Navigation -->
+        <div class="flex items-center gap-4">
+            <button 
+                @click="prevMonth"
+                class="p-1 hover:bg-light-surface dark:hover:bg-dark-surface rounded-full transition-colors text-pomodo-orange"
+            >
+                <ChevronLeft :size="20" />
+            </button>
+            <h2 class="text-xl font-bold text-lightText-primary dark:text-white tracking-widest">{{ monthName }}</h2>
+            <button 
+                @click="nextMonth"
+                :disabled="!canGoNext"
+                class="p-1 hover:bg-light-surface dark:hover:bg-dark-surface rounded-full transition-colors text-pomodo-orange disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+                <ChevronRight :size="20" />
+            </button>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex items-center gap-1.5">
             <span class="text-xs text-lightText-muted dark:text-text-muted mr-1">Less</span>
             <div 
                 v-for="item in legend" 
                 :key="item.intensity"
-                class="w-3 h-3 rounded-sm"
+                class="w-3.5 h-3.5 rounded-[3px]"
                 :class="colorMap[item.intensity as keyof typeof colorMap]"
-                :title="item.label"
             ></div>
             <span class="text-xs text-lightText-muted dark:text-text-muted ml-1">More</span>
         </div>
     </div>
 
-    <div class="bg-light-surface dark:bg-dark-surface rounded-xl p-6">
-        <div class="grid grid-cols-7 gap-2">
+    <!-- Heatmap Grid -->
+    <div class="bg-light-surface dark:bg-dark-surface rounded-2xl p-8 border border-light-border dark:border-white/5">
+        <div class="grid grid-cols-7 gap-3">
             <!-- Day labels -->
-            <div v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="day" class="text-center text-[10px] uppercase font-bold text-lightText-muted dark:text-text-muted mb-1">
+            <div v-for="day in ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']" :key="day" class="text-center text-[11px] font-bold text-lightText-muted dark:text-text-muted/60 mb-2">
                 {{ day }}
             </div>
 
@@ -113,13 +194,13 @@ const legend = [
                 :key="item.day"
                 location="top"
                 offset="10"
-                open-on-click
-                open-on-hover
+                :model-value="openTooltipDay === item.day"
+                :open-on-hover="false"
             >
-                <template v-slot:activator="{ props }">
+                <template v-slot:activator="{ props: tooltipProps }">
                     <div 
-                        v-bind="props"
-                        class="aspect-square rounded-md transition-colors duration-300 hover:ring-2 hover:ring-pomodo-orange/50 cursor-pointer"
+                        v-bind="tooltipProps"
+                        class="aspect-square rounded-lg transition-all duration-300 hover:ring-2 hover:ring-pomodo-orange/50 cursor-pointer"
                         :class="colorMap[item.intensity as keyof typeof colorMap]"
                     >
                     </div>
@@ -131,12 +212,39 @@ const legend = [
             </v-tooltip>
         </div>
     </div>
+
+    <!-- Premium Paywall Message -->
+    <div v-if="!settingsStore.isPremium" class="mt-6 flex flex-col items-center">
+        <div class="h-[1px] w-full bg-gradient-to-r from-transparent via-light-border dark:via-dark-border to-transparent mb-4"></div>
+        <p class="text-sm text-center text-lightText-muted dark:text-text-muted flex items-center gap-2">
+            Showing current month. 
+            <button 
+                @click="uiStore.setPremiumModal(true)"
+                class="text-pomodo-orange font-semibold hover:underline flex items-center gap-1"
+            >
+                <Lock :size="14" />
+                Upgrade to see all history.
+            </button>
+        </p>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Fallback for environments without Vuetify tooltips being globally configured or for specific styling needs */
 .aspect-square {
     aspect-ratio: 1 / 1;
+}
+
+/* Ensure tooltips background matches theme */
+:global(.v-tooltip > .v-overlay__content) {
+  background: white !important;
+  color: #1a1a1a !important;
+  border: 1px solid #e0e0e0 !important;
+}
+
+:global(.dark .v-tooltip > .v-overlay__content) {
+  background: #2d333b !important;
+  color: white !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
 }
 </style>

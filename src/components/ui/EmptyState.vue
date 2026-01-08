@@ -7,17 +7,6 @@ defineProps<{
 
 <template>
   <div class="flex flex-col items-center justify-center p-8 text-center animate-fade-in h-[60vh]">
-    <!-- Illustration Slot
-    <div class="mb-6 max-w-[280px] opacity-80">
-      <slot name="illustration">
-        <div class="w-32 h-32 rounded-full bg-light-surface dark:bg-dark-surface border-2 border-dashed border-light-border dark:border-dark-border flex items-center justify-center text-text-muted">
-            <span class="text-xs">Illustration Place</span>
-        </div>
-      </slot>
-    </div>
-    -->
-
-    <!-- Content -->
     <h3 class="text-2xl font-bold text-lightText-primary dark:text-white mb-2">
       {{ title }}
     </h3>

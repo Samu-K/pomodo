@@ -3,6 +3,7 @@ import "./style.css"; // Your Tailwind CSS imports
 import App from "./App.vue";
 import "vuetify/styles";
 import { VueQueryPlugin } from "@tanstack/vue-query";
+import VueApexCharts from "vue3-apexcharts";
 import { createVuetify } from "vuetify";
 import { aliases, mdi } from "vuetify/iconsets/mdi-svg";
 
@@ -46,6 +47,7 @@ const app = createApp(App);
 
 // Mount the app
 app.use(VueQueryPlugin);
+app.use(VueApexCharts);
 
 import { createPinia } from "pinia";
 

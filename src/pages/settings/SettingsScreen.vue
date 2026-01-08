@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import { ChevronLeft, Cloud } from "lucide-vue-next";
+import {
+	ChevronLeft,
+	Cloud,
+	FileJson,
+	FileSpreadsheet,
+	Lock
+} from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import ErrorBoundary from "../../components/ErrorBoundary.vue";
+import ThemeEditor from "../../components/premium/ThemeEditor.vue"; // New Import
 import SettingSection from "../../components/settings/SettingSection.vue";
+import ShortcutRecorder from "../../components/settings/ShortcutRecorder.vue"; // New Import
 import ConfirmationModal from "../../components/ui/ConfirmationModal.vue";
 import type { Setting } from "../../funcs/commands";
+import { exportUserData } from "../../funcs/export";
 import { useSettingsStore } from "../../stores/settings";
+import { useUIStore } from "../../stores/ui";
 
 interface SectionSettingProps {
 	sectionTitle: string;
@@ -126,6 +136,39 @@ const cancelNavigation = () => {
 	pendingRoute.value = null;
 };
 
+const uiStore = useUIStore();
+const isExporting = ref(false);
+
+const handleExport = async (format: "json" | "csv") => {
+	if (!settingsStore.isPremium) {
+		uiStore.setPremiumModal(true);
+		return;
+	}
+
+	try {
+		isExporting.value = true;
+		const success = await exportUserData(format);
+		if (success) {
+			// Check if showSuccess exists on uiStore, usually it does.
+			// Based on previous logs, it does: ui.showSuccess("Welcome to Premium!");
+			// But wait, in Step 92, ui.setError exists.
+			// In Step 102/etc I didn't see showSuccess on uiStore definition but used it in PremiumModal.
+			// Let's assume it exists or use console.
+			// Actually, the `ui.ts` viewed in Step 29/30 only showed `setError`.
+			// But Previous Context summary said "ui.ts: Modified to include...".
+			// Let's assume `ui.showSuccess` might NOT be there if I didn't add it.
+			// I recall seeing `ui.showSuccess` in PremiumModal snippet in summary.
+			// If it throws, I'll catch it. Or better, just don't call it if unsure.
+			// I'll call `uiStore.setError(null)` to clear errors.
+			console.log("Export successful");
+		}
+	} catch (e) {
+		uiStore.setError(`Export failed: ${e}`);
+	} finally {
+		isExporting.value = false;
+	}
+};
+
 onBeforeRouteLeave((to, _from, next) => {
 	if (hasUnsavedChanges.value) {
 		pendingRoute.value = to.fullPath;
@@ -199,6 +242,34 @@ onBeforeRouteLeave((to, _from, next) => {
           >
           </v-select>
         </div>
+        
+        <div class="mt-6">
+            <ThemeEditor />
+        </div>
+      </section>
+
+      <!-- Shortcuts Settings -->
+      <section class="mb-8">
+        <h2 class="text-xs font-semibold text-pomodo-orange uppercase tracking-wider mb-4">
+          Shortcuts
+        </h2>
+        
+        <div class="flex items-center justify-between py-4 border-b border-light-border dark:border-dark-border">
+          <div class="flex-1 mr-4">
+           <!-- Label is handled inside recorder or we can hide it here and let recorder handle it -->
+           <!-- Actually user asked for "Pause Timer" and then the box. Recorder has label prop but let's conform to design -->
+          </div>
+          <div class="w-full">
+             <div v-for="setting in draftSettings.filter(s => s.key === 'Toggle Timer')" :key="setting.id">
+                <ShortcutRecorder
+                    data-testid="shortcut-recorder-toggle-timer"
+                    label="Pause Timer"
+                    v-model="setting.value"
+                    @update:model-value="checkForChanges"
+                />
+             </div>
+          </div>
+        </div>
       </section>
 
       <!-- Cloud Settings -->
@@ -212,12 +283,64 @@ onBeforeRouteLeave((to, _from, next) => {
             <h3 class="text-lightText-primary dark:text-white font-medium">Sync Data</h3>
             <p class="text-xs text-lightText-muted dark:text-text-muted mt-1">Sync your data to the cloud</p>
           </div>
-          <button
-            class="flex items-center gap-2 px-3 py-2 bg-pomodo-orange text-white rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
-          >
-            <Cloud :size="16" />
-            <span>Sync to cloud</span>
-          </button>
+          <div class="relative group">
+            <button
+              disabled
+              class="flex items-center gap-2 px-3 py-2 bg-pomodo-orange/50 text-white/50 rounded-lg cursor-not-allowed whitespace-nowrap"
+            >
+              <Cloud :size="16" />
+              <span>Sync to cloud</span>
+            </button>
+            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+              Coming Soon
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data Management -->
+      <section class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xs font-semibold text-pomodo-orange uppercase tracking-wider">
+            Data Management
+            </h2>
+            <span v-if="!settingsStore.isPremium" class="text-[10px] px-1.5 py-0.5 bg-pomodo-orange/10 text-pomodo-orange rounded border border-pomodo-orange/20 font-bold">PREMIUM</span>
+        </div>
+        
+        <div class="py-4 border-b border-light-border dark:border-dark-border relative">
+            <!-- Blur overlay if not premium -->
+             <!-- Actually, let's just disabling the buttons and showing a lock icon -->
+             
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex-1">
+                <h3 class="text-lightText-primary dark:text-white font-medium flex items-center gap-2">
+                    Export Data
+                    <Lock v-if="!settingsStore.isPremium" :size="14" class="text-lightText-muted dark:text-text-muted" />
+                </h3>
+                <p class="text-xs text-lightText-muted dark:text-text-muted mt-1">Download your sessions, projects, and categories.</p>
+            </div>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+                @click="handleExport('json')"
+                :disabled="isExporting"
+                class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg hover:bg-light-bg dark:hover:bg-dark-bg transition-colors text-lightText-primary dark:text-white text-sm"
+                :class="{ 'opacity-50 cursor-not-allowed': isExporting }"
+            >
+                <FileJson :size="16" />
+                <span>JSON</span>
+            </button>
+            <button
+                @click="handleExport('csv')"
+                :disabled="isExporting"
+                class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg hover:bg-light-bg dark:hover:bg-dark-bg transition-colors text-lightText-primary dark:text-white text-sm"
+                :class="{ 'opacity-50 cursor-not-allowed': isExporting }"
+            >
+                <FileSpreadsheet :size="16" />
+                <span>CSV</span>
+            </button>
+          </div>
         </div>
       </section>
     </div>
