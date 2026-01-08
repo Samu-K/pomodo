@@ -2,7 +2,6 @@
 import {
 	ChevronLeft,
 	Cloud,
-	Download,
 	FileJson,
 	FileSpreadsheet,
 	Lock

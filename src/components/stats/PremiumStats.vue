@@ -8,7 +8,7 @@ import ProductivityTimeOfDay from "./ProductivityTimeOfDay.vue";
 import ProjectDistribution from "./ProjectDistribution.vue";
 import TrendAnalysis from "./TrendAnalysis.vue";
 
-const props = defineProps<{
+const { sessions } = defineProps<{
 	sessions: Session[];
 }>();
 
