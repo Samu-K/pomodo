@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
+import { SHOW_PREMIUM_FEATURES } from "../config";
 import type { Setting, SettingCategory } from "../funcs/commands";
 import {
 	get_settings,
@@ -157,11 +158,15 @@ export const useSettingsStore = defineStore("settings", () => {
 	};
 
 	// Premium & Theme Overrides
-	const isPremium = ref(false); // Mocked premium state
+	const _isPremium = ref(false); // Internal state for mock premium
+	const isPremium = computed(() => {
+		if (!SHOW_PREMIUM_FEATURES.value) return true;
+		return _isPremium.value;
+	});
 	const themeOverrides = ref<Record<string, string>>({});
 
 	const setPremium = (status: boolean) => {
-		isPremium.value = status;
+		_isPremium.value = status;
 		// Persist if needed, or just keep in memory for mock
 	};
 

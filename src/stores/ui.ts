@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { SHOW_PREMIUM_FEATURES } from "../config";
 
 export const useUIStore = defineStore("ui", () => {
 	const errorMessage = ref<string | null>(null);
@@ -65,10 +66,12 @@ export const useUIStore = defineStore("ui", () => {
 	const showProjectLimitModal = ref(false);
 
 	function setPremiumModal(value: boolean) {
+		if (!SHOW_PREMIUM_FEATURES.value && value) return;
 		showPremiumModal.value = value;
 	}
 
 	function setProjectLimitModal(value: boolean) {
+		if (!SHOW_PREMIUM_FEATURES.value && value) return;
 		showProjectLimitModal.value = value;
 	}
 
