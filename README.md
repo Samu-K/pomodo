@@ -28,11 +28,23 @@ A cross-platform Pomodoro timer for Desktop, Android, and iOS.
 
 ### Desktop
 
-| Platform | Link |
-|----------|------|
-| Windows | [Download .exe](#) *(coming soon)* |
-| macOS | [Download .dmg](#) *(coming soon)* |
-| Linux (AUR) | `yay -S pomodo` *(coming soon)* |
+| Platform | Format | Link |
+|----------|--------|------|
+| Windows | `.exe` / `.msi` | [Latest Release](https://github.com/Samu-K/pomodo/releases/latest) |
+| macOS | `.dmg` / `.app` | [Latest Release](https://github.com/Samu-K/pomodo/releases/latest) |
+| Linux (Ubuntu/Debian) | `.deb` | [Latest Release](https://github.com/Samu-K/pomodo/releases/latest) |
+| Linux (Generic) | `.AppImage` | [Latest Release](https://github.com/Samu-K/pomodo/releases/latest) |
+| Linux (Arch) | `PKGBUILD` | [See Building from Source](#building-from-source) |
+
+---
+
+## Building from Source (Arch Linux)
+
+1. Clone the repository: `git clone https://github.com/Samu-K/pomodo.git`
+2. Navigate to the directory: `cd pomodo`
+3. Build and install using the provided `PKGBUILD`: `makepkg -si`
+
+For other platforms, follow the [Tauri development guide](https://tauri.app/v2/start/prerequisites/).
 
 ## Support
 
