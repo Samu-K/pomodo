@@ -16,6 +16,8 @@ import { delete_session, get_sessions } from "../../funcs/db/session";
 import { formatDuration } from "../../funcs/stats/date_handling";
 import { useProjectStore } from "../../stores/project";
 import { useTasks } from "../../stores/task";
+import { useSettingsStore } from "../../stores/settings";
+import { useUIStore } from "../../stores/ui";
 
 const queryClient = useQueryClient();
 const router = useRouter();
@@ -50,6 +52,9 @@ onMounted(async () => {
 		await projectStore.fetchProjects();
 	}
 });
+// Premium Limits
+const settingsStore = useSettingsStore();
+const uiStore = useUIStore();
 
 const processedSessions = computed(() => {
 	if (!sessionsState.data.value) return [];
@@ -101,6 +106,46 @@ const processedSessions = computed(() => {
 			};
 		})
 		.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
+	let sessions = [...sessionsState.data.value].filter(
+		(s): s is typeof s & { start_time: string } => !!s.start_time
+	);
+
+	// Sort first
+	sessions.sort(
+		(a, b) =>
+			new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
+	);
+
+	// Apply Premium Limit
+	if (!settingsStore.isPremium && sessions.length > 100) {
+		sessions = sessions.slice(0, 100);
+	}
+
+	return sessions.map((s) => {
+		const date = new Date(s.start_time);
+		const cat = s.category_id ? catMap.get(s.category_id) : null;
+		return {
+			...s,
+			dateObj: date,
+			year: date.getFullYear(),
+			monthIndex: date.getMonth(),
+			monthName: date.toLocaleDateString(undefined, { month: "long" }),
+			categoryName: cat ? cat.name : "Uncategorized",
+			categoryColor: cat?.color ? `bg-${cat.color}` : "bg-pomodo-orange",
+			formattedDate: date.toLocaleDateString(undefined, {
+				month: "short",
+				day: "numeric",
+				hour: "2-digit",
+				minute: "2-digit"
+			})
+		};
+	});
+});
+
+const hasHiddenSessions = computed(() => {
+	if (settingsStore.isPremium) return false;
+	const total = sessionsState.data.value?.length || 0;
+	return total > 100;
 });
 
 const availableYears = computed(() => {
@@ -264,6 +309,18 @@ const cancelDelete = () => {
 					</v-expansion-panel>
 				</v-expansion-panels>
 			</div>
+            
+            <div v-if="hasHiddenSessions" class="mt-6 text-center pb-6">
+                <p class="text-lightText-secondary dark:text-text-secondary text-sm mb-2">
+                    History limited to 100 sessions.
+                </p>
+                <button 
+                    @click="uiStore.setPremiumModal(true)"
+                    class="text-pomodo-orange hover:text-pomodo-red font-medium text-sm"
+                >
+                    Upgrade to view all history
+                </button>
+            </div>
 		</div>
 
 		<!-- Delete Confirmation Modal -->

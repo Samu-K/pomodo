@@ -13,7 +13,11 @@ vi.mock("@tauri-apps/api/core", () => ({
 vi.mock("lucide-vue-next", () => ({
 	ChevronLeft: { template: '<svg class="lucide-chevron-left"></svg>' },
 	X: { template: '<svg class="lucide-x"></svg>' },
-	Cloud: { template: '<svg class="lucide-cloud"></svg>' }
+	Cloud: { template: '<svg class="lucide-cloud"></svg>' },
+	Lock: { template: '<svg class="lucide-lock"></svg>' },
+	FileJson: { template: '<svg class="lucide-file-json"></svg>' },
+	FileSpreadsheet: { template: '<svg class="lucide-file-spreadsheet"></svg>' },
+	Download: { template: '<svg class="lucide-download"></svg>' }
 }));
 
 // Mock Vue Router

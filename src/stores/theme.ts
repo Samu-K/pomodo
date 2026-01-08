@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { computed } from "vue";
+import type { ThemeInstance } from "vuetify";
 import {
 	legacyColorMap,
 	themeColors,
@@ -93,6 +94,77 @@ export const useThemeStore = defineStore("theme", () => {
 		return themeColors.text.secondary;
 	}
 
+	function applyTheme(
+		overrides: Record<string, string>,
+		vuetifyTheme: ThemeInstance
+	) {
+		const root = document.documentElement;
+
+		// CSS Variable Mapping
+		const cssMap: Record<string, string> = {
+			"brand.orange": "--color-pomodo-orange",
+			"brand.red": "--color-pomodo-red",
+			"brand.gold": "--color-pomodo-gold",
+			"brand.brown": "--color-pomodo-brown",
+			"dark.bg": "--color-dark-bg",
+			"dark.surface": "--color-dark-surface",
+			"dark.border": "--color-dark-border",
+			"light.bg": "--color-light-bg",
+			"light.surface": "--color-light-surface",
+			"light.border": "--color-light-border",
+			"text.primary": "--color-text-primary",
+			"text.secondary": "--color-text-secondary",
+			"text.muted": "--color-text-muted",
+			"lightText.primary": "--color-light-text-primary",
+			"lightText.secondary": "--color-light-text-secondary",
+			"lightText.muted": "--color-light-text-muted"
+		};
+
+		for (const [key, value] of Object.entries(overrides)) {
+			// Update CSS Var
+			if (cssMap[key]) {
+				root.style.setProperty(cssMap[key], value);
+			}
+
+			// Update Vuetify
+			if (key === "brand.orange") {
+				vuetifyTheme.themes.value.light.colors.primary = value;
+				vuetifyTheme.themes.value.dark.colors.primary = value;
+			}
+			if (key === "brand.red") {
+				vuetifyTheme.themes.value.light.colors.secondary = value;
+				vuetifyTheme.themes.value.dark.colors.secondary = value;
+			}
+			if (key === "dark.bg")
+				vuetifyTheme.themes.value.dark.colors.background = value;
+			if (key === "light.bg")
+				vuetifyTheme.themes.value.light.colors.background = value;
+			if (key === "dark.surface")
+				vuetifyTheme.themes.value.dark.colors.surface = value;
+			if (key === "light.surface")
+				vuetifyTheme.themes.value.light.colors.surface = value;
+		}
+	}
+
+	function resetTheme(vuetifyTheme: ThemeInstance) {
+		// Reset CSS vars to defaults (from config)
+		// Re-apply defaults
+		const defaults = {
+			"brand.orange": themeColors.brand.orange,
+			"brand.red": themeColors.brand.red,
+			"brand.gold": themeColors.brand.gold,
+			"brand.brown": themeColors.brand.brown,
+			"dark.bg": themeColors.dark.bg,
+			"dark.surface": themeColors.dark.surface,
+			"dark.border": themeColors.dark.border,
+			"light.bg": themeColors.light.bg,
+			"light.surface": themeColors.light.surface,
+			"light.border": themeColors.light.border
+			// ... text colors
+		};
+		applyTheme(defaults, vuetifyTheme);
+	}
+
 	return {
 		// Computed colors
 		colors,
@@ -104,6 +176,8 @@ export const useThemeStore = defineStore("theme", () => {
 		hexToRgba,
 		getCategoryColor,
 		getGradient,
-		resolveColor
+		resolveColor,
+		applyTheme,
+		resetTheme
 	};
 });

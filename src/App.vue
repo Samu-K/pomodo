@@ -8,8 +8,11 @@ import {
 import { useSwipe } from "@vueuse/core";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useTheme } from "vuetify";
+import { type ThemeInstance, useTheme } from "vuetify";
 import AppLayout from "./components/AppLayout.vue";
+import PremiumModal from "./components/premium/PremiumModal.vue";
+import ProjectLimitModal from "./components/premium/ProjectLimitModal.vue";
+import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
 import CreateTaskModal from "./components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "./components/task/TaskDetailsModal.vue";
 import AddCategoryDialog from "./components/timer/AddCategoryDialog.vue";
@@ -17,6 +20,7 @@ import WelcomeDialog from "./components/WelcomeDialog.vue";
 import { RecurrenceType } from "./defines/recur.ts";
 import { Task } from "./defines/task.ts";
 import { useSettingsStore } from "./stores/settings";
+import { useThemeStore } from "./stores/theme";
 import { TimerMode, useTimerStore } from "./stores/timer";
 import { useUIStore } from "./stores/ui";
 
@@ -24,8 +28,22 @@ const route = useRoute();
 const router = useRouter();
 const settingsStore = useSettingsStore();
 const uiStore = useUIStore();
+const themeStore = useThemeStore();
 const vuetifyTheme = useTheme();
 const isLoading = ref(true);
+
+// Apply theme overrides
+watch(
+	() => settingsStore.themeOverrides,
+	(newOverrides) => {
+		if (newOverrides && Object.keys(newOverrides).length > 0) {
+			themeStore.applyTheme(newOverrides, vuetifyTheme);
+		} else {
+			themeStore.resetTheme(vuetifyTheme);
+		}
+	},
+	{ deep: true, immediate: true }
+);
 
 // Initialize theme and splashscreen on app mount
 onMounted(async () => {
@@ -35,7 +53,14 @@ onMounted(async () => {
 	}
 	// Initialize theme from settings
 	await settingsStore.initTheme();
-	vuetifyTheme.global.name.value = settingsStore.resolvedTheme;
+	const themeWithChange = vuetifyTheme as ThemeInstance & {
+		change?: (name: string) => void;
+	};
+	if (typeof themeWithChange.change === "function") {
+		themeWithChange.change(settingsStore.resolvedTheme);
+	} else {
+		vuetifyTheme.global.name.value = settingsStore.resolvedTheme;
+	}
 
 	// Request notification permissions
 	const permissionGranted = await isPermissionGranted();
@@ -56,7 +81,14 @@ onMounted(async () => {
 watch(
 	() => settingsStore.resolvedTheme,
 	(newTheme) => {
-		vuetifyTheme.global.name.value = newTheme;
+		const themeWithChange = vuetifyTheme as ThemeInstance & {
+			change?: (name: string) => void;
+		};
+		if (typeof themeWithChange.change === "function") {
+			themeWithChange.change(newTheme);
+		} else {
+			vuetifyTheme.global.name.value = newTheme;
+		}
 	}
 );
 
@@ -200,6 +232,14 @@ function navigateTabs(offset: number) {
     v-if="showTaskDetails"
     :selTask="selectedTask"
     @close="showTaskDetails = false"
+  />
+  <PremiumModal
+    v-if="uiStore.showPremiumModal"
+    @close="uiStore.setPremiumModal(false)"
+  />
+  <ProjectLimitModal
+    v-if="uiStore.showProjectLimitModal"
+    @close="uiStore.setProjectLimitModal(false)"
   />
 
   <WelcomeDialog

@@ -52,6 +52,7 @@ const value_ref = computed({
     </div>
     <div v-else-if="typeof value_ref === 'number'">
       <v-number-input
+        :data-testid="`setting-${props.setting.key.toLowerCase().replace(/\s+/g, '-')}`"
         :reverse="false"
         controlVariant="split"
         v-model="value_ref"

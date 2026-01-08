@@ -5,6 +5,7 @@ import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import FocusHeatmap from "../../components/stats/FocusHeatmap.vue";
 import GamificationStats from "../../components/stats/GamificationStats.vue";
+import PremiumStats from "../../components/stats/PremiumStats.vue";
 import WeeklyFocusChart from "../../components/stats/WeeklyFocusChart.vue";
 import WeeklyOverview from "../../components/stats/WeeklyOverview.vue";
 import EmptyState from "../../components/ui/EmptyState.vue";
@@ -136,6 +137,8 @@ const weeklySessionsRaw = computed(() => {
 });
 </script>
 
+
+
 <template>
   <div class="flex flex-col h-full bg-light-bg dark:bg-dark-bg">
     <div class="flex-1 overflow-y-auto px-6 py-6">
@@ -182,19 +185,20 @@ const weeklySessionsRaw = computed(() => {
             </div>
             <span class="text-lightText-secondary dark:text-text-secondary text-sm min-w-[60px] text-right">{{ item.time }}</span>
           </div>
+        </template>
 
-          <div class="flex items-center justify-end">
-            <button 
+        <div class="flex items-center justify-end mt-4">
+          <button 
             @click="router.push('/stats/log')"
             class="text-pomodo-orange hover:bg-light-surface dark:hover:bg-dark-surface rounded-lg transition-colors bg-light-surface dark:bg-dark-surface px-4 py-2"
           >
-              View session log
+            View session log
           </button>
-          </div>
-          <p class="text-lightText-muted dark:text-text-muted text-center text-sm mt-6">
-            {{today_session_count}} focus sessions completed today
-          </p>
-        </template>
+        </div>
+
+        <p v-if="today_session_count > 0" class="text-lightText-muted dark:text-text-muted text-center text-sm mt-6">
+          {{today_session_count}} focus sessions completed today
+        </p>
       </section>
 
       <!-- Weekly Overview -->
@@ -245,10 +249,14 @@ const weeklySessionsRaw = computed(() => {
         <WeeklyFocusChart :data="weeklySessionsRaw"/>
       </section>
 
+      <!-- Advanced Analytics (Premium) -->
+      <PremiumStats :sessions="sessionsState.data.value || []" />
+
       <!-- Focus Heatmap -->
       <section class="mb-10">
-        <FocusHeatmap :data="sessionsState.data.value || []" />
+         <FocusHeatmap :data="sessionsState.data.value || []" />
       </section>
     </div>
   </div>
 </template>
+```

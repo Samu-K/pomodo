@@ -156,6 +156,21 @@ export const useSettingsStore = defineStore("settings", () => {
 		}
 	};
 
+	// Premium & Theme Overrides
+	const isPremium = ref(false); // Mocked premium state
+	const themeOverrides = ref<Record<string, string>>({});
+
+	const setPremium = (status: boolean) => {
+		isPremium.value = status;
+		// Persist if needed, or just keep in memory for mock
+	};
+
+	const updateThemeOverride = (key: string, value: string) => {
+		themeOverrides.value[key] = value;
+		// Apply immediately via CSS variables or similar mechanism in theme.ts
+		// For now just updating state
+	};
+
 	return {
 		settings,
 		categories,
@@ -168,6 +183,11 @@ export const useSettingsStore = defineStore("settings", () => {
 		themeSetting,
 		setTheme,
 		initTheme,
-		applyTheme
+		applyTheme,
+		// Premium
+		isPremium,
+		setPremium,
+		themeOverrides,
+		updateThemeOverride
 	};
 });

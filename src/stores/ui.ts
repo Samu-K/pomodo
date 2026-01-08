@@ -61,15 +61,30 @@ export const useUIStore = defineStore("ui", () => {
 		mediaQuery.addEventListener("change", updateMobileStatus);
 	}
 
+	const showPremiumModal = ref(false);
+	const showProjectLimitModal = ref(false);
+
+	function setPremiumModal(value: boolean) {
+		showPremiumModal.value = value;
+	}
+
+	function setProjectLimitModal(value: boolean) {
+		showProjectLimitModal.value = value;
+	}
+
 	return {
 		errorMessage,
 		isMobile,
 		successMessage,
 		isMiniMode,
+		showPremiumModal,
+		showProjectLimitModal,
 		setError,
 		showSuccess,
 		clearError,
 		toggleMiniMode,
-		setMiniMode
+		setMiniMode,
+		setPremiumModal,
+		setProjectLimitModal
 	};
 });

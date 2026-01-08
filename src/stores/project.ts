@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { commands, type Project } from "../funcs/commands";
+import { useSettingsStore } from "./settings";
 import { useUIStore } from "./ui";
 
 export const useProjectStore = defineStore("projects", () => {
@@ -19,6 +20,13 @@ export const useProjectStore = defineStore("projects", () => {
 	}
 
 	async function addProject(project: Project) {
+		const settings = useSettingsStore();
+
+		if (!settings.isPremium && projects.value.length >= 10) {
+			ui.setProjectLimitModal(true);
+			return; // strictly block
+		}
+
 		try {
 			const res = await commands.projectsAddProject(project);
 			if (res.status === "error") throw new Error(res.error.message);

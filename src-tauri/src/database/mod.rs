@@ -54,13 +54,20 @@ pub async fn create_database(app: Option<&App>) -> Result<Db, String> {
         .run(&db)
         .await
         .map_err(|e| format!("failed to run migrations: {e}"))?;
-    println!("Database init: Dev seed data");
-    /*
-    sqlx::migrate!("./migrations/seed")
-        .run(&db)
-        .await
-        .map_err(|e| format!("failed to run migrations: {e}"))?;
-    */
+
+    #[cfg(debug_assertions)]
+    {
+        if std::env::var("POMODO_SKIP_SEEDING").is_err() {
+            println!("Database init: Dev seed data");
+            let seed_sql = include_str!("../../migrations/seed/20260105120000_dev_seed_data.sql");
+            sqlx::query(seed_sql)
+                .execute(&db)
+                .await
+                .map_err(|e| format!("failed to run seed migrations: {e}"))?;
+        } else {
+            println!("Database init: Skipping dev seed data (POMODO_SKIP_SEEDING is set)");
+        }
+    }
 
     println!("Database init: success");
     Ok(db)
