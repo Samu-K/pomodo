@@ -4,7 +4,6 @@ use paste::paste;
 use specta::specta;
 use std::sync::Arc;
 
-use tauri::Emitter;
 use tauri::Manager as _;
 use tauri::State;
 #[cfg(not(mobile))]
@@ -55,6 +54,13 @@ async fn update_tray(
         if let Some(text) = toggle_text {
             let _ = state.toggle_item.set_text(text);
         }
+    }
+    #[cfg(mobile)]
+    {
+        let _ = app;
+        let _ = state;
+        let _ = title;
+        let _ = toggle_text;
     }
     Ok(())
 }
@@ -164,13 +170,19 @@ pub fn run() {
         )
         .expect("Failed to export typescript bindings");
 
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_haptics::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_fs::init());
+
+    #[cfg(not(mobile))]
+    {
+        builder = builder.plugin(tauri_plugin_global_shortcut::Builder::new().build());
+    }
+
+    builder
         // .plugin(tauri_plugin_safe_area_insets_css::init())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
@@ -271,7 +283,7 @@ pub fn run() {
                     .with_webview(|webview| {
                         #[cfg(target_os = "ios")]
                         unsafe {
-                            use objc::runtime::{Object, Sel};
+                            use objc::runtime::Object;
                             use objc::{msg_send, sel, sel_impl};
 
                             let wk_webview = webview.inner() as *mut Object;
