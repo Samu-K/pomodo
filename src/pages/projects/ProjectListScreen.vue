@@ -20,11 +20,13 @@ import { useCategoryStore } from "../../stores/categories";
 import { useProjectStore } from "../../stores/project";
 import { useSettingsStore } from "../../stores/settings";
 import { useTasks } from "../../stores/task";
+import { useUIStore } from "../../stores/ui";
 
 const projectStore = useProjectStore();
 const tasksStore = useTasks();
 const categoryStore = useCategoryStore();
 const settingsStore = useSettingsStore();
+const uiStore = useUIStore();
 
 const focusDuration = computed(() => {
 	const val = settingsStore.settings.find(
@@ -91,6 +93,11 @@ const getProjectTasks = (projectId: number) => {
 };
 
 const openCreate = () => {
+	if (!settingsStore.isPremium && projectStore.projects.length >= 10) {
+		uiStore.setProjectLimitModal(true);
+		return;
+	}
+
 	editingProject.value = {
 		id: 0,
 		name: "",
@@ -310,6 +317,7 @@ const confirmDelete = async () => {
                       </span>
                     </label>
                     <v-text-field
+                          data-testid="estimated-pomodoros-input"
                           v-model.number="editingProject.estimated_pomodoros"
                           type="number"
                           hide-details

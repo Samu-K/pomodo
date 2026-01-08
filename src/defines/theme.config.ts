@@ -80,13 +80,42 @@ export const themeGradients = {
 	grayDark: "linear-gradient(to bottom right, #1a1a1a, #0a0a0a)"
 };
 
-// Tailwind-compatible color export
+// Tailwind-compatible color export using CSS variables for dynamic theming
 export const tailwindColors = {
-	pomodo: themeColors.brand,
-	dark: themeColors.dark,
-	light: themeColors.light,
-	text: themeColors.text,
-	lightText: themeColors.lightText
+	pomodo: {
+		orange: "var(--color-pomodo-orange)",
+		red: "var(--color-pomodo-red)",
+		gold: "var(--color-pomodo-gold)",
+		brown: "var(--color-pomodo-brown)"
+	},
+	dark: {
+		bg: "var(--color-dark-bg)",
+		surface: "var(--color-dark-surface)",
+		border: "var(--color-dark-border)",
+		pure: themeColors.dark.pure // Keep static or add var if needed
+	},
+	light: {
+		bg: "var(--color-light-bg)",
+		surface: "var(--color-light-surface)",
+		border: "var(--color-light-border)",
+		pure: themeColors.light.pure
+	},
+	text: {
+		primary: "var(--color-text-primary)",
+		secondary: "var(--color-text-secondary)",
+		muted: "var(--color-text-muted)"
+	},
+	lightText: {
+		primary: "var(--color-light-text-primary)",
+		secondary: "var(--color-light-text-secondary)",
+		muted: "var(--color-light-text-muted)"
+	},
+	utility: {
+		success: themeColors.utility.success,
+		error: themeColors.utility.error,
+		warning: themeColors.utility.warning,
+		info: themeColors.utility.info
+	}
 };
 
 // Legacy color mappings for backward compatibility

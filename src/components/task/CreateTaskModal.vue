@@ -9,6 +9,7 @@ import TaskEditBlock from "./TaskEditBlock.vue";
 const props = defineProps<{
 	initialDate?: Date;
 	initialProjectId?: number;
+	initialCycles?: number;
 }>();
 
 const emit = defineEmits<{
@@ -26,7 +27,7 @@ const newTask = ref<Task>({
 	category: "",
 	category_id: null,
 	project_id: props.initialProjectId || null,
-	cycles: 1,
+	cycles: props.initialCycles || 1,
 	startTime: curDate.value,
 	recurrence: {
 		type: RecurrenceType.NONE

@@ -1,54 +1,37 @@
 <script setup lang="ts">
 import { endOfMonth, endOfWeek, startOfMonth, startOfWeek } from "date-fns";
 import { Calendar, ChevronLeft, ChevronRight, Plus } from "lucide-vue-next";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { useDisplay } from "vuetify";
 import CreateTaskModal from "../../components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
 import CalendarView from "../../components/timeline/CalendarView.vue";
+import { useTaskCalculations } from "../../composables/useTaskCalculations";
 import type { Task } from "../../defines/task.ts";
-import { useSettingsStore } from "../../stores/settings.ts";
 import { useTasks } from "../../stores/task.ts";
 
 const tasksStore = useTasks();
-const settingsStore = useSettingsStore();
+const { mobile } = useDisplay();
+const { calculateTaskDuration: calcDuration } = useTaskCalculations();
 
 const showCreateModal = ref(false);
 const showDetailsModal = ref(false);
 const selectedTask = ref<Task | null>(null);
 const viewMode = ref<"timeline" | "calendar">("timeline");
 const createTaskDate = ref<Date | undefined>(undefined);
+const createCycles = ref<number>(1);
+const scrollContainerRef = ref<HTMLElement | null>(null);
+
+// Drag-to-create state
+let timelineRect: DOMRect | null = null;
+const isDragging = ref(false);
+const dragStartY = ref(0);
+const dragCurrentY = ref(0);
+const dragStartTime = ref<Date | null>(null);
+const dragCycles = ref(1);
 
 // Constants
 const blockHeight = 16;
-
-// Get timer settings from settings store
-const focusDuration = computed(() => {
-	const val = settingsStore.settings.find(
-		(s) => s.key === "Focus Duration"
-	)?.value;
-	return val ? Number(val) : 25; // Default to 25 minutes
-});
-
-const shortBreakTime = computed(() => {
-	const val = settingsStore.settings.find(
-		(s) => s.key === "Short Break Time"
-	)?.value;
-	return val ? Number(val) : 5; // Default to 5 minutes
-});
-
-const longBreakTime = computed(() => {
-	const val = settingsStore.settings.find(
-		(s) => s.key === "Long Break Time"
-	)?.value;
-	return val ? Number(val) : 15; // Default to 15 minutes
-});
-
-const longBreakInterval = computed(() => {
-	const val = settingsStore.settings.find(
-		(s) => s.key === "Long Break Interval"
-	)?.value;
-	return val ? Number(val) : 4; // Default to every 4 pomodoros
-});
 
 /**
  * Calculate total task duration in minutes, including rest breaks.
@@ -56,27 +39,10 @@ const longBreakInterval = computed(() => {
  * @returns Total duration in minutes (focus time + break time)
  */
 const calculateTaskDuration = (cycles: number): number => {
-	if (cycles <= 0) return 0;
-	if (cycles === 1) return focusDuration.value; // Single cycle, no breaks
-
-	// Focus time
-	const totalFocusTime = cycles * focusDuration.value;
-
-	// Calculate number of breaks (between each focus session)
-	const totalBreaks = cycles - 1;
-
-	// How many long breaks occur?
-	// Long break happens after every longBreakInterval cycles
-	const longBreaksCount = Math.floor(cycles / longBreakInterval.value);
-	const shortBreaksCount = totalBreaks - longBreaksCount;
-
-	// Total break time
-	const totalBreakTime =
-		shortBreaksCount * shortBreakTime.value +
-		longBreaksCount * longBreakTime.value;
-
-	return totalFocusTime + totalBreakTime;
+	return calcDuration(cycles);
 };
+
+const minutesToPixels = (mins: number) => (mins * (blockHeight * 4)) / 60;
 
 const selectedDate = ref<Date>(new Date());
 
@@ -85,6 +51,7 @@ onMounted(async () => {
 	if (tasksStore.tasks.length === 0) {
 		await tasksStore.fetchTasks();
 	}
+	scrollToRecommended();
 });
 
 // Re-expand tasks when selected date changes OR when tasks are updated OR view mode changes
@@ -110,10 +77,6 @@ const updateExpandedTasks = () => {
 	}
 };
 
-watch(selectedDate, updateExpandedTasks, { immediate: true });
-watch(() => tasksStore.tasks, updateExpandedTasks, { deep: true });
-watch(viewMode, updateExpandedTasks);
-
 // Filter expanded tasks for selected date
 const tasksForSelectedDate = computed(() => {
 	const dayStart = new Date(selectedDate.value);
@@ -126,11 +89,11 @@ const tasksForSelectedDate = computed(() => {
 	);
 });
 
-// Dynamic time range based on tasks for the selected date
-const timeRange = computed(() => {
+// Recommended time range for setting the initial viewport
+const recommendedTimeRange = computed(() => {
 	const filtered = tasksForSelectedDate.value;
 	if (filtered.length === 0) {
-		// Default: 8 AM to 6 PM (10 hour range)
+		// Default focus: 8 AM to 6 PM (10 hour range)
 		return { start: 8, end: 18 };
 	}
 
@@ -139,7 +102,7 @@ const timeRange = computed(() => {
 		const durationMins = calculateTaskDuration(t.cycles);
 		return (
 			t.startTime.getHours() +
-			Math.ceil((t.startTime.getMinutes() + durationMins) / 60)
+			Math.floor((t.startTime.getMinutes() + durationMins) / 60)
 		);
 	});
 
@@ -152,9 +115,45 @@ const timeRange = computed(() => {
 	};
 });
 
-const startTime = computed(() => timeRange.value.start);
-const endTime = computed(() => timeRange.value.end);
+// Fixed 00 to 24 range for the grid
+const startTime = computed(() => 0);
+const endTime = computed(() => 24);
 const timeBlockAmount = computed(() => endTime.value - startTime.value);
+
+function calculateTaskPos(time: Date): number {
+	const pos_h = (time.getHours() - startTime.value) * (blockHeight * 4);
+	return pos_h + (time.getMinutes() / 60) * blockHeight * 4;
+}
+
+const scrollToRecommended = async () => {
+	await nextTick();
+	if (scrollContainerRef.value) {
+		const scrollStartHour = recommendedTimeRange.value.start;
+		const pixelsPerHour = blockHeight * 4;
+		const targetScroll = scrollStartHour * pixelsPerHour;
+
+		scrollContainerRef.value.scrollTo({
+			top: targetScroll,
+			behavior: "smooth"
+		});
+	}
+};
+
+watch(
+	selectedDate,
+	() => {
+		updateExpandedTasks();
+		scrollToRecommended();
+	},
+	{ immediate: true }
+);
+watch(() => tasksStore.tasks, updateExpandedTasks, { deep: true });
+watch(viewMode, (newMode) => {
+	updateExpandedTasks();
+	if (newMode === "timeline") {
+		scrollToRecommended();
+	}
+});
 
 const isDateToday = (): boolean => {
 	return selectedDate.value.toDateString() === new Date().toDateString();
@@ -181,17 +180,9 @@ const currentTimePosition = computed(() => {
 	if (!isDateToday()) return -100; // Off-screen when not today
 	const now = new Date();
 	return (
-		(now.getHours() - startTime.value + 1 + now.getMinutes() / 60) *
-		blockHeight *
-		4
+		(now.getHours() - startTime.value + now.getMinutes() / 60) * blockHeight * 4
 	);
 });
-
-function calculateTaskPos(time: Date): number {
-	const adjuster = startTime.value - 1;
-	const pos_h = (time.getHours() - adjuster) * (blockHeight * 4);
-	return pos_h + (time.getMinutes() / 60) * blockHeight * 4;
-}
 
 const goToPrevDate = () => {
 	const newDate = new Date(selectedDate.value);
@@ -241,6 +232,118 @@ const handleCalendarCreateTask = (date: Date) => {
 	createTaskDate.value = date;
 	showCreateModal.value = true;
 };
+
+const handleMouseDown = (e: MouseEvent) => {
+	const isMobile = mobile.value && !window.matchMedia("(hover: hover)").matches;
+	console.log("handleMouseDown triggered", {
+		isMobile,
+		mobile: mobile.value,
+		viewMode: viewMode.value
+	});
+	if (isMobile || viewMode.value !== "timeline") return;
+
+	const target = e.target as HTMLElement;
+	if (target.closest('[data-testid="timeline-task-block"]')) {
+		console.log("Clicked on a task block, ignoring drag.");
+		return;
+	}
+
+	e.preventDefault();
+
+	const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+	timelineRect = rect;
+	const y = e.clientY - rect.top;
+	console.log(
+		`Drag starting at absolute Y: ${y}, viewport clientY: ${e.clientY}`
+	);
+
+	isDragging.value = true;
+
+	// Snap start position to nearest 10 minutes
+	const totalPixelsPerHour = blockHeight * 4;
+	const pixelsPer10Mins = totalPixelsPerHour / 6;
+	const snappedY = Math.round(y / pixelsPer10Mins) * pixelsPer10Mins;
+
+	dragStartY.value = snappedY;
+	dragCurrentY.value = snappedY;
+	dragCycles.value = 1;
+
+	// Calculate start time based on snapped Y
+	const hoursFromStart = snappedY / totalPixelsPerHour;
+	const startTimeValue = startTime.value + hoursFromStart;
+
+	const startHour = Math.floor(startTimeValue);
+	const startMinute = Math.round((startTimeValue - startHour) * 60);
+
+	const date = new Date(selectedDate.value);
+	date.setHours(startHour, startMinute, 0, 0);
+	dragStartTime.value = date;
+
+	window.addEventListener("mousemove", handleMouseMove);
+	window.addEventListener("mouseup", handleMouseUp);
+};
+
+const handleMouseMove = (e: MouseEvent) => {
+	if (!isDragging.value || !timelineRect) return;
+
+	const y = e.clientY - timelineRect.top;
+	dragCurrentY.value = y;
+
+	if (Math.abs(y - dragStartY.value) > 2) {
+		// Just to reduce log noise
+		// console.log(`Dragging... Y: ${y}, Current Cycle Guess: ${dragCycles.value}`);
+	}
+
+	// Calculate how many cycles fit in the drag distance
+	const dragDistance = Math.abs(y - dragStartY.value);
+
+	// Find the number of cycles where calculateTaskDuration(cycles) closest to dragDistance
+	let bestCycles = 1;
+	let minDiff = Math.abs(
+		minutesToPixels(calculateTaskDuration(1)) - dragDistance
+	);
+
+	for (let c = 2; c <= 20; c++) {
+		const durationPx = minutesToPixels(calculateTaskDuration(c));
+		const diff = Math.abs(durationPx - dragDistance);
+		if (diff < minDiff) {
+			minDiff = diff;
+			bestCycles = c;
+		} else if (durationPx > dragDistance + 100) {
+			break;
+		}
+	}
+	dragCycles.value = bestCycles;
+};
+
+const handleMouseUp = () => {
+	if (!isDragging.value) return;
+
+	// Final calculation of start time (if dragged upwards)
+	const actualStartY = Math.min(dragStartY.value, dragCurrentY.value);
+	const totalPixelsPerHour = blockHeight * 4;
+	const hoursFromStart = actualStartY / totalPixelsPerHour;
+	const startTimeValue = startTime.value + hoursFromStart;
+	const startHour = Math.floor(startTimeValue);
+	const startMinute = Math.round((startTimeValue - startHour) * 60);
+
+	const date = new Date(selectedDate.value);
+	date.setHours(startHour, startMinute, 0, 0);
+
+	createTaskDate.value = date;
+	createCycles.value = dragCycles.value;
+	showCreateModal.value = true;
+
+	isDragging.value = false;
+	console.log(`Drag ended. Cycles: ${createCycles.value}, Start: ${date}`);
+	window.removeEventListener("mousemove", handleMouseMove);
+	window.removeEventListener("mouseup", handleMouseUp);
+};
+
+onUnmounted(() => {
+	window.removeEventListener("mousemove", handleMouseMove);
+	window.removeEventListener("mouseup", handleMouseUp);
+});
 </script>
 
 <template>
@@ -300,29 +403,43 @@ const handleCalendarCreateTask = (date: Date) => {
       @createTask="handleCalendarCreateTask"
     />
 
-    <div v-else class="flex-1 overflow-auto">
+    <div v-else ref="scrollContainerRef" class="flex-1 overflow-auto">
       <div class="flex h-full">
         <!-- Time Column -->
-        <div class="w-16 flex-col ">
+        <div class="w-16 flex-col">
           <div 
-            v-for="time in timeBlockAmount+3" 
-            :key="time"
+            v-for="hourIndex in timeBlockAmount" 
+            :key="hourIndex"
             :class="`h-${blockHeight} flex items-center justify-center text-xs text-lightText-muted dark:text-text-muted border-b border-light-border dark:border-dark-border`"
           >
-            <span v-if="startTime+time-2 < 10" class="first">{{ `0${startTime+time-2}` }}</span>
-            <span v-else >{{ `${startTime+time-2}` }}</span>
+            <span>{{ (startTime + hourIndex - 1).toString().padStart(2, '0') }}</span>
           </div>
         </div>
 
         <!-- Tasks Column -->
-        <div class="flex-1 relative">
+        <div 
+          class="flex-1 relative cursor-default select-none"
+          @mousedown="handleMouseDown"
+        >
           <!-- Grid Lines -->
           <div 
-            v-for="(_, index) in timeBlockAmount+3" 
+            v-for="(_, index) in timeBlockAmount" 
             :key="index"
             class="absolute w-full h-16 border-b border-light-border dark:border-dark-border" 
             :style="`top: ${index * (blockHeight*4)}px`"
           ></div>
+
+          <!-- Ghost Task (during drag) -->
+          <div
+            v-if="isDragging"
+            class="absolute left-4 right-4 rounded-lg bg-pomodo-orange/40 border-2 border-pomodo-orange z-[999] pointer-events-none shadow-2xl"
+            :style="`top: ${Math.min(dragStartY, dragCurrentY)}px; height: ${minutesToPixels(calculateTaskDuration(dragCycles))}px;`"
+          >
+            <div class="p-4 bg-pomodo-orange/10 h-full backdrop-blur-[2px]">
+              <h3 class="text-white font-bold text-sm drop-shadow-md">New Task</h3>
+              <p class="text-white font-semibold text-xs mt-1 drop-shadow-md">{{ dragCycles }} pomodoros</p>
+            </div>
+          </div>
 
 
           <!-- Task Blocks -->
@@ -338,7 +455,7 @@ const handleCalendarCreateTask = (date: Date) => {
               { 'opacity-50': task.completed },
               task.cycles === 1 ? 'px-3 flex items-center' : 'p-3'
             ]"
-            :style="`top: ${calculateTaskPos(task.startTime)}px; height: ${calculateTaskDuration(task.cycles)}px;`"
+            :style="`top: ${calculateTaskPos(task.startTime)}px; height: ${minutesToPixels(calculateTaskDuration(task.cycles))}px;`"
           >
             <!-- 1 Cycle: Compact View -->
             <div v-if="task.cycles === 1" class="flex items-center w-full">
@@ -403,6 +520,7 @@ const handleCalendarCreateTask = (date: Date) => {
     <CreateTaskModal
       v-if="showCreateModal"
       :initialDate="createTaskDate"
+      :initialCycles="createCycles"
       @close="handleCreateModalClose"
     />
 

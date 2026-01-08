@@ -16,6 +16,34 @@
 }
 
 /* Global styles */
+:root {
+    /* Brand */
+    --color-pomodo-orange: #b8744f;
+    --color-pomodo-red: #c75450;
+    --color-pomodo-gold: #d4a373;
+    --color-pomodo-brown: #8b5a3c;
+
+    /* Dark Mode */
+    --color-dark-bg: #1a1a1a;
+    --color-dark-surface: #2a2a3a;
+    --color-dark-border: #3a3a4a;
+
+    /* Light Mode */
+    --color-light-bg: #f5f5f5;
+    --color-light-surface: #ffffff;
+    --color-light-border: #e0e0e0;
+
+    /* Text (Dark) */
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #888888;
+    --color-text-muted: #666666;
+
+    /* Text (Light) */
+    --color-light-text-primary: #1a1a1a;
+    --color-light-text-secondary: #666666;
+    --color-light-text-muted: #888888;
+}
+
 @layer base {
 	html {
 		height: 100%;
