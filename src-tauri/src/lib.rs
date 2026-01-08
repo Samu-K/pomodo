@@ -4,6 +4,7 @@ use paste::paste;
 use specta::specta;
 use std::sync::Arc;
 
+use tauri::Emitter;
 use tauri::Manager as _;
 use tauri::State;
 #[cfg(not(mobile))]
@@ -124,7 +125,7 @@ tauri_commands! {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder =
+    let specta_builder =
         tauri_specta::Builder::<tauri::Wry>::new().commands(tauri_specta::collect_commands![
             categories_add_category,
             categories_get_categories,
@@ -161,7 +162,7 @@ pub fn run() {
         ]);
 
     #[cfg(all(debug_assertions, not(mobile)))]
-    builder
+    specta_builder
         .export(
             specta_typescript::Typescript::default()
                 .bigint(specta_typescript::BigIntExportBehavior::Number)
@@ -184,7 +185,7 @@ pub fn run() {
 
     builder
         // .plugin(tauri_plugin_safe_area_insets_css::init())
-        .invoke_handler(builder.invoke_handler())
+        .invoke_handler(specta_builder.invoke_handler())
         .setup(|app| {
             tauri::async_runtime::block_on(async {
                 println!("Setup: starting async block");
