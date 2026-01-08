@@ -29,7 +29,7 @@ export async function mockTauri(page: Page) {
             localStorage.setItem('mockSettings', JSON.stringify(defaultSettings));
         }
         if (!localStorage.getItem('mockCategories')) {
-            localStorage.setItem('mockCategories', JSON.stringify(defaultCategories));
+            localStorage.setItem('mockCategories', JSON.stringify(mockCategories));
         }
         if (!localStorage.getItem('mockProjects')) {
             localStorage.setItem('mockProjects', JSON.stringify([]));

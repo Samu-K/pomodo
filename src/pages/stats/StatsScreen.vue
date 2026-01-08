@@ -93,7 +93,9 @@ const today_session_count = computed(() => {
 const total_seconds_today = computed(() => {
 	if (!sessionsState.data.value) return 0;
 	return sessionsState.data.value
-		.filter((s) => s.finished && s.start_time && isToday(fromUTCString(s.start_time)))
+		.filter(
+			(s) => s.finished && s.start_time && isToday(fromUTCString(s.start_time))
+		)
 		.reduce((sum, s) => sum + (s.duration || 0), 0);
 });
 

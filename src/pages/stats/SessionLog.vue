@@ -15,8 +15,8 @@ import { get_categories } from "../../funcs/db/categories";
 import { delete_session, get_sessions } from "../../funcs/db/session";
 import { formatDuration } from "../../funcs/stats/date_handling";
 import { useProjectStore } from "../../stores/project";
-import { useTasks } from "../../stores/task";
 import { useSettingsStore } from "../../stores/settings";
+import { useTasks } from "../../stores/task";
 import { useUIStore } from "../../stores/ui";
 
 const queryClient = useQueryClient();
@@ -66,7 +66,7 @@ const processedSessions = computed(() => {
 	const taskMap = new Map(tasksStore.tasks.map((t) => [t.id, t]));
 	const projectMap = new Map(projectStore.projects.map((p) => [p.id, p]));
 
-	return [...sessionsState.data.value]
+	let sessions = [...sessionsState.data.value]
 		.filter((s): s is typeof s & { start_time: string } => !!s.start_time)
 		.map((s) => {
 			const date = new Date(s.start_time);
@@ -106,40 +106,13 @@ const processedSessions = computed(() => {
 			};
 		})
 		.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
-	let sessions = [...sessionsState.data.value].filter(
-		(s): s is typeof s & { start_time: string } => !!s.start_time
-	);
-
-	// Sort first
-	sessions.sort(
-		(a, b) =>
-			new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
-	);
 
 	// Apply Premium Limit
 	if (!settingsStore.isPremium && sessions.length > 100) {
 		sessions = sessions.slice(0, 100);
 	}
 
-	return sessions.map((s) => {
-		const date = new Date(s.start_time);
-		const cat = s.category_id ? catMap.get(s.category_id) : null;
-		return {
-			...s,
-			dateObj: date,
-			year: date.getFullYear(),
-			monthIndex: date.getMonth(),
-			monthName: date.toLocaleDateString(undefined, { month: "long" }),
-			categoryName: cat ? cat.name : "Uncategorized",
-			categoryColor: cat?.color ? `bg-${cat.color}` : "bg-pomodo-orange",
-			formattedDate: date.toLocaleDateString(undefined, {
-				month: "short",
-				day: "numeric",
-				hour: "2-digit",
-				minute: "2-digit"
-			})
-		};
-	});
+	return sessions;
 });
 
 const hasHiddenSessions = computed(() => {

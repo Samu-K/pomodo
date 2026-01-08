@@ -8,9 +8,11 @@ import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
 import CalendarView from "../../components/timeline/CalendarView.vue";
 import { useTaskCalculations } from "../../composables/useTaskCalculations";
 import type { Task } from "../../defines/task.ts";
+import { useSettingsStore } from "../../stores/settings";
 import { useTasks } from "../../stores/task.ts";
 
 const tasksStore = useTasks();
+const settingsStore = useSettingsStore();
 const { mobile } = useDisplay();
 const { calculateTaskDuration: calcDuration } = useTaskCalculations();
 

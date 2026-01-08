@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from "vue";
 import { ChevronLeft, ChevronRight, Lock } from "lucide-vue-next";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import type { Session } from "../../funcs/commands";
 import { formatDuration } from "../../funcs/stats/date_handling";
 import { useSettingsStore } from "../../stores/settings";
@@ -16,11 +16,11 @@ const handleScroll = () => {
 
 onMounted(() => {
 	// Listen for scroll on the window and any scrollable parent
-	window.addEventListener('scroll', handleScroll, true);
+	window.addEventListener("scroll", handleScroll, true);
 });
 
 onUnmounted(() => {
-	window.removeEventListener('scroll', handleScroll, true);
+	window.removeEventListener("scroll", handleScroll, true);
 });
 
 const props = defineProps<{

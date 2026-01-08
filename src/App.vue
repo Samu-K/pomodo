@@ -12,7 +12,6 @@ import { type ThemeInstance, useTheme } from "vuetify";
 import AppLayout from "./components/AppLayout.vue";
 import PremiumModal from "./components/premium/PremiumModal.vue";
 import ProjectLimitModal from "./components/premium/ProjectLimitModal.vue";
-import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
 import CreateTaskModal from "./components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "./components/task/TaskDetailsModal.vue";
 import AddCategoryDialog from "./components/timer/AddCategoryDialog.vue";
