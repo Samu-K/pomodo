@@ -1,7 +1,24 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import type { Session } from "../../funcs/commands";
 import { formatDuration } from "../../funcs/stats/date_handling";
+
+// Track which day's tooltip is currently open (null = none open)
+const openTooltipDay = ref<number | null>(null);
+
+// Close tooltip on scroll
+const handleScroll = () => {
+	openTooltipDay.value = null;
+};
+
+onMounted(() => {
+	// Listen for scroll on the window and any scrollable parent
+	window.addEventListener('scroll', handleScroll, true);
+});
+
+onUnmounted(() => {
+	window.removeEventListener('scroll', handleScroll, true);
+});
 
 const props = defineProps<{
 	data: Session[];
@@ -113,11 +130,13 @@ const legend = [
                 :key="item.day"
                 location="top"
                 offset="10"
-                open-on-click
+                :model-value="openTooltipDay === item.day"
+                :open-on-hover="false"
             >
-                <template v-slot:activator="{ props }">
+                <template v-slot:activator="{ props: tooltipProps }">
                     <div 
-                        v-bind="props"
+                        v-bind="tooltipProps"
+                        @click="openTooltipDay = openTooltipDay === item.day ? null : item.day"
                         class="aspect-square rounded-md transition-colors duration-300 hover:ring-2 hover:ring-pomodo-orange/50 cursor-pointer"
                         :class="colorMap[item.intensity as keyof typeof colorMap]"
                     >

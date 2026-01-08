@@ -69,13 +69,11 @@ const processedSessions = computed(() => {
 
 			// Determine display name
 			let displayName = "Uncategorized";
-			let isTask = false;
 
 			if (s.task_id && taskMap.has(s.task_id)) {
-				displayName = taskMap.get(s.task_id)?.title;
-				isTask = true;
+				displayName = taskMap.get(s.task_id)?.title ?? "Uncategorized";
 			} else if (s.project_id && projectMap.has(s.project_id)) {
-				displayName = projectMap.get(s.project_id)?.name;
+				displayName = projectMap.get(s.project_id)?.name ?? "Uncategorized";
 			} else if (cat) {
 				displayName = cat.name;
 			}

@@ -4,7 +4,7 @@ import type { Category } from "../../funcs/commands";
 import { useCategoryStore } from "../../stores/categories";
 import { useThemeStore } from "../../stores/theme";
 
-const props = defineProps<{
+defineProps<{
 	modelValue: boolean;
 }>();
 

@@ -1,5 +1,4 @@
 pub mod database;
-pub mod mobile;
 use chrono::{NaiveDate, NaiveDateTime};
 use paste::paste;
 use specta::specta;
@@ -154,10 +153,7 @@ pub fn run() {
             projects_delete_project,
             projects_update_project,
             projects_delete_project,
-            update_tray,
-            crate::mobile::start_live_activity,
-            crate::mobile::update_live_activity,
-            crate::mobile::stop_live_activity
+            update_tray
         ]);
 
     #[cfg(all(debug_assertions, not(mobile)))]
