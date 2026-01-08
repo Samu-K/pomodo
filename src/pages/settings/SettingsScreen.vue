@@ -11,6 +11,7 @@ import { onBeforeRouteLeave, useRouter } from "vue-router";
 import ErrorBoundary from "../../components/ErrorBoundary.vue";
 import ThemeEditor from "../../components/premium/ThemeEditor.vue"; // New Import
 import SettingSection from "../../components/settings/SettingSection.vue";
+import ShortcutRecorder from "../../components/settings/ShortcutRecorder.vue"; // New Import
 import ConfirmationModal from "../../components/ui/ConfirmationModal.vue";
 import type { Setting } from "../../funcs/commands";
 import { exportUserData } from "../../funcs/export";
@@ -247,6 +248,30 @@ onBeforeRouteLeave((to, _from, next) => {
         </div>
       </section>
 
+      <!-- Shortcuts Settings -->
+      <section class="mb-8">
+        <h2 class="text-xs font-semibold text-pomodo-orange uppercase tracking-wider mb-4">
+          Shortcuts
+        </h2>
+        
+        <div class="flex items-center justify-between py-4 border-b border-light-border dark:border-dark-border">
+          <div class="flex-1 mr-4">
+           <!-- Label is handled inside recorder or we can hide it here and let recorder handle it -->
+           <!-- Actually user asked for "Pause Timer" and then the box. Recorder has label prop but let's conform to design -->
+          </div>
+          <div class="w-full">
+             <div v-for="setting in draftSettings.filter(s => s.key === 'Toggle Timer')" :key="setting.id">
+                <ShortcutRecorder
+                    data-testid="shortcut-recorder-toggle-timer"
+                    label="Pause Timer"
+                    v-model="setting.value"
+                    @update:model-value="checkForChanges"
+                />
+             </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Cloud Settings -->
       <section class="mb-8">
         <h2 class="text-xs font-semibold text-pomodo-orange uppercase tracking-wider mb-4">
@@ -258,12 +283,18 @@ onBeforeRouteLeave((to, _from, next) => {
             <h3 class="text-lightText-primary dark:text-white font-medium">Sync Data</h3>
             <p class="text-xs text-lightText-muted dark:text-text-muted mt-1">Sync your data to the cloud</p>
           </div>
-          <button
-            class="flex items-center gap-2 px-3 py-2 bg-pomodo-orange text-white rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
-          >
-            <Cloud :size="16" />
-            <span>Sync to cloud</span>
-          </button>
+          <div class="relative group">
+            <button
+              disabled
+              class="flex items-center gap-2 px-3 py-2 bg-pomodo-orange/50 text-white/50 rounded-lg cursor-not-allowed whitespace-nowrap"
+            >
+              <Cloud :size="16" />
+              <span>Sync to cloud</span>
+            </button>
+            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+              Coming Soon
+            </div>
+          </div>
         </div>
       </section>
 

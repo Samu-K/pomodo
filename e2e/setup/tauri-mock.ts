@@ -17,6 +17,7 @@ export async function mockTauri(page: Page) {
             { id: 8, key: 'Push notifications', value: 'false', description: 'Push notifications', category_id: 1, data_type: 'boolean' },
             { id: 9, key: 'Sound Alerts', value: 'false', description: 'Sound Alerts', category_id: 1, data_type: 'boolean' },
             { id: 10, key: 'Vibration', value: 'false', description: 'Vibration', category_id: 1, data_type: 'boolean' },
+            { id: 11, key: 'Toggle Timer', value: 'CommandOrControl+Alt+P', description: 'Global toggle timer shortcut', category_id: 1, data_type: 'string' },
         ];
         localStorage.setItem('pomodo-welcome-seen', 'true');
 

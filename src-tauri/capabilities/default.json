@@ -12,6 +12,9 @@
 		"haptics:default",
 		"dialog:default",
 		"fs:default",
+		"global-shortcut:allow-register",
+		"global-shortcut:allow-is-registered",
+		"global-shortcut:allow-unregister-all",
 		{
 			"identifier": "fs:allow-write-text-file",
 			"scope": ["$HOME/**"]

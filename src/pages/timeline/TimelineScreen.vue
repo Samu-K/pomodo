@@ -504,7 +504,7 @@ onUnmounted(() => {
     </button>
 
     <!-- Quick Stats Bar -->
-    <div class="px-6 py-3 bg-light-surface dark:bg-dark-pure border-t border-light-border dark:border-dark-border">
+    <div v-if="viewMode === 'timeline'" class="px-6 py-3 bg-light-surface dark:bg-dark-pure border-t border-light-border dark:border-dark-border">
       <div class="flex justify-around text-xs">
         <div class="text-center">
           <span class="text-lightText-muted dark:text-text-muted block">Scheduled</span>

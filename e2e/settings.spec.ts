@@ -41,4 +41,6 @@ test.describe('Settings', () => {
         // Color options visible
         await expect(page.getByText('Primary Color')).toBeVisible();
     });
+    
+
 });

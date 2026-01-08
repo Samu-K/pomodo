@@ -18,6 +18,7 @@ import AddCategoryDialog from "./components/timer/AddCategoryDialog.vue";
 import WelcomeDialog from "./components/WelcomeDialog.vue";
 import { RecurrenceType } from "./defines/recur.ts";
 import { Task } from "./defines/task.ts";
+import { registerShortcuts } from "./funcs/shortcuts";
 import { useSettingsStore } from "./stores/settings";
 import { useThemeStore } from "./stores/theme";
 import { TimerMode, useTimerStore } from "./stores/timer";
@@ -43,6 +44,20 @@ watch(
 	},
 	{ deep: true, immediate: true }
 );
+
+// Watch for settings changes to update shortcuts
+const toggleTimerSetting = computed(
+	() => settingsStore.settings.find((s) => s.key === "Toggle Timer")?.value
+);
+
+watch(toggleTimerSetting, async (newValue, oldValue) => {
+	if (newValue && newValue !== oldValue) {
+		console.log(
+			`[App] Toggle timer setting changed from ${oldValue} to ${newValue}, re-registering...`
+		);
+		await registerShortcuts();
+	}
+});
 
 // Initialize theme and splashscreen on app mount
 onMounted(async () => {
@@ -74,6 +89,9 @@ onMounted(async () => {
 	}
 
 	isLoading.value = false;
+
+	// Register shortcuts
+	await registerShortcuts();
 });
 
 // Watch settings store theme and sync Vuetify theme

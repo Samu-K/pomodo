@@ -151,8 +151,6 @@ pub fn run() {
             projects_get_projects,
             projects_update_project,
             projects_delete_project,
-            projects_update_project,
-            projects_delete_project,
             update_tray
         ]);
 
@@ -172,6 +170,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         // .plugin(tauri_plugin_safe_area_insets_css::init())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
