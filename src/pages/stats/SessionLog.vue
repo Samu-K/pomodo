@@ -8,16 +8,21 @@ import {
 	Trash,
 	X
 } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import ConfirmationModal from "../../components/ui/ConfirmationModal.vue";
 import { get_categories } from "../../funcs/db/categories";
 import { delete_session, get_sessions } from "../../funcs/db/session";
 import { formatDuration } from "../../funcs/stats/date_handling";
+import { useProjectStore } from "../../stores/project";
 import { useSettingsStore } from "../../stores/settings";
+import { useTasks } from "../../stores/task";
 import { useUIStore } from "../../stores/ui";
 
 const queryClient = useQueryClient();
 const router = useRouter();
+const tasksStore = useTasks();
+const projectStore = useProjectStore();
 
 const categoriesState = useQuery({
 	queryKey: ["categories"],
@@ -39,6 +44,14 @@ const deleteSessionMutation = useMutation({
 const selectedYear = ref(new Date().getFullYear());
 const expandedPanel = ref<number | undefined>(undefined);
 
+onMounted(async () => {
+	if (tasksStore.tasks.length === 0) {
+		await tasksStore.fetchTasks();
+	}
+	if (projectStore.projects.length === 0) {
+		await projectStore.fetchProjects();
+	}
+});
 // Premium Limits
 const settingsStore = useSettingsStore();
 const uiStore = useUIStore();
@@ -49,40 +62,57 @@ const processedSessions = computed(() => {
 	const cats = categoriesState.data.value || [];
 	const catMap = new Map(cats.map((c) => [c.id, c]));
 
-	let sessions = [...sessionsState.data.value].filter(
-		(s): s is typeof s & { start_time: string } => !!s.start_time
-	);
+	// Maps for tasks and projects
+	const taskMap = new Map(tasksStore.tasks.map((t) => [t.id, t]));
+	const projectMap = new Map(projectStore.projects.map((p) => [p.id, p]));
 
-	// Sort first
-	sessions.sort(
-		(a, b) =>
-			new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
-	);
+	let sessions = [...sessionsState.data.value]
+		.filter((s): s is typeof s & { start_time: string } => !!s.start_time)
+		.map((s) => {
+			const date = new Date(s.start_time);
+			const cat = s.category_id ? catMap.get(s.category_id) : null;
+
+			// Determine display name
+			let displayName = "Uncategorized";
+
+			if (s.task_id && taskMap.has(s.task_id)) {
+				displayName = taskMap.get(s.task_id)?.title ?? "Uncategorized";
+			} else if (s.project_id && projectMap.has(s.project_id)) {
+				displayName = projectMap.get(s.project_id)?.name ?? "Uncategorized";
+			} else if (cat) {
+				displayName = cat.name;
+			}
+
+			// If it's a task, try to use its project/category color, otherwise valid category color, else default
+			let color = "bg-pomodo-orange";
+			if (cat?.color) {
+				color = `bg-${cat.color}`;
+			}
+
+			return {
+				...s,
+				dateObj: date,
+				year: date.getFullYear(),
+				monthIndex: date.getMonth(),
+				monthName: date.toLocaleDateString(undefined, { month: "long" }),
+				displayName: displayName,
+				categoryColor: color,
+				formattedDate: date.toLocaleDateString(undefined, {
+					month: "short",
+					day: "numeric",
+					hour: "2-digit",
+					minute: "2-digit"
+				})
+			};
+		})
+		.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
 
 	// Apply Premium Limit
 	if (!settingsStore.isPremium && sessions.length > 100) {
 		sessions = sessions.slice(0, 100);
 	}
 
-	return sessions.map((s) => {
-		const date = new Date(s.start_time);
-		const cat = s.category_id ? catMap.get(s.category_id) : null;
-		return {
-			...s,
-			dateObj: date,
-			year: date.getFullYear(),
-			monthIndex: date.getMonth(),
-			monthName: date.toLocaleDateString(undefined, { month: "long" }),
-			categoryName: cat ? cat.name : "Uncategorized",
-			categoryColor: cat?.color ? `bg-${cat.color}` : "bg-pomodo-orange",
-			formattedDate: date.toLocaleDateString(undefined, {
-				month: "short",
-				day: "numeric",
-				hour: "2-digit",
-				minute: "2-digit"
-			})
-		};
-	});
+	return sessions;
 });
 
 const hasHiddenSessions = computed(() => {
@@ -144,10 +174,21 @@ watch(
 	{ immediate: true }
 );
 
+const sessionToDelete = ref<number | null>(null);
+
 const handleDelete = (id: number) => {
-	if (confirm("Are you sure you want to delete this session?")) {
-		deleteSessionMutation.mutate(id);
+	sessionToDelete.value = id;
+};
+
+const confirmDelete = () => {
+	if (sessionToDelete.value !== null) {
+		deleteSessionMutation.mutate(sessionToDelete.value);
+		sessionToDelete.value = null;
 	}
+};
+
+const cancelDelete = () => {
+	sessionToDelete.value = null;
 };
 </script>
 
@@ -213,7 +254,7 @@ const handleDelete = (id: number) => {
 									<div class="flex items-center gap-4">
 										<div class="w-3 h-3 rounded-full" :class="session.categoryColor"></div>
 										<div class="flex flex-col">
-											<span class="text-lightText-primary dark:text-white font-medium">{{ session.categoryName }}</span>
+											<span class="text-lightText-primary dark:text-white font-medium">{{ session.displayName }}</span>
 											<span class="text-lightText-secondary dark:text-text-secondary text-sm">{{ session.formattedDate }}</span>
 										</div>
 									</div>
@@ -254,6 +295,19 @@ const handleDelete = (id: number) => {
                 </button>
             </div>
 		</div>
+
+		<!-- Delete Confirmation Modal -->
+		<ConfirmationModal
+			v-if="sessionToDelete !== null"
+			title="Delete Session"
+			message="Are you sure you want to delete this session? This action cannot be undone."
+			primary-btn-text="Delete"
+			secondary-btn-text="Cancel"
+			:is-danger="true"
+			@primary="confirmDelete"
+			@secondary="cancelDelete"
+			@close="cancelDelete"
+		/>
 	</div>
 </template>
 

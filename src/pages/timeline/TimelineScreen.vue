@@ -8,9 +8,11 @@ import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
 import CalendarView from "../../components/timeline/CalendarView.vue";
 import { useTaskCalculations } from "../../composables/useTaskCalculations";
 import type { Task } from "../../defines/task.ts";
+import { useSettingsStore } from "../../stores/settings";
 import { useTasks } from "../../stores/task.ts";
 
 const tasksStore = useTasks();
+const settingsStore = useSettingsStore();
 const { mobile } = useDisplay();
 const { calculateTaskDuration: calcDuration } = useTaskCalculations();
 
@@ -50,6 +52,9 @@ const selectedDate = ref<Date>(new Date());
 onMounted(async () => {
 	if (tasksStore.tasks.length === 0) {
 		await tasksStore.fetchTasks();
+	}
+	if (settingsStore.settings.length === 0) {
+		await settingsStore.fetchSettings();
 	}
 	scrollToRecommended();
 });

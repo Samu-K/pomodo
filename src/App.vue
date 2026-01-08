@@ -12,9 +12,10 @@ import { type ThemeInstance, useTheme } from "vuetify";
 import AppLayout from "./components/AppLayout.vue";
 import PremiumModal from "./components/premium/PremiumModal.vue";
 import ProjectLimitModal from "./components/premium/ProjectLimitModal.vue";
-import CreateCategoryModal from "./components/task/CreateCategoryModal.vue";
 import CreateTaskModal from "./components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "./components/task/TaskDetailsModal.vue";
+import AddCategoryDialog from "./components/timer/AddCategoryDialog.vue";
+import WelcomeDialog from "./components/WelcomeDialog.vue";
 import { RecurrenceType } from "./defines/recur.ts";
 import { Task } from "./defines/task.ts";
 import { useSettingsStore } from "./stores/settings";
@@ -66,6 +67,12 @@ onMounted(async () => {
 		await requestPermission();
 	}
 
+	// Check for first boot
+	const welcomeSeen = localStorage.getItem("pomodo-welcome-seen");
+	if (!welcomeSeen) {
+		showWelcomeDialog.value = true;
+	}
+
 	isLoading.value = false;
 });
 
@@ -85,6 +92,7 @@ watch(
 );
 
 // Modal states
+const showWelcomeDialog = ref(false);
 const showCreateTask = ref(false);
 const showCreateCategory = ref(false);
 const showTaskDetails = ref(false);
@@ -157,6 +165,17 @@ const openTaskDetails = (task: Task) => {
 	selectedTask.value = task;
 };
 
+const handleWelcomeClose = () => {
+	showWelcomeDialog.value = false;
+	localStorage.setItem("pomodo-welcome-seen", "true");
+};
+
+const handleWelcomeCreateCategories = () => {
+	showWelcomeDialog.value = false;
+	localStorage.setItem("pomodo-welcome-seen", "true");
+	showCreateCategory.value = true;
+};
+
 // Swipe Navigation
 const tabs = ["/", "/timeline", "/tasks", "/stats"];
 useSwipe(document.body, {
@@ -208,10 +227,6 @@ function navigateTabs(offset: number) {
     v-if="showCreateTask" 
     @close="showCreateTask = false"
   />
-  <CreateCategoryModal 
-    v-if="showCreateCategory"
-    @close="showCreateCategory = false"
-  />
   <TaskDetailsModal
     v-if="showTaskDetails"
     :selTask="selectedTask"
@@ -224,6 +239,16 @@ function navigateTabs(offset: number) {
   <ProjectLimitModal
     v-if="uiStore.showProjectLimitModal"
     @close="uiStore.setProjectLimitModal(false)"
+  />
+
+  <WelcomeDialog
+    v-if="showWelcomeDialog"
+    @close="handleWelcomeClose"
+    @create-categories="handleWelcomeCreateCategories"
+  />
+
+  <AddCategoryDialog
+    v-model="showCreateCategory"
   />
 
   <!-- Global Error Notification -->

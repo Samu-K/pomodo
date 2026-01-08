@@ -3,6 +3,7 @@ import { ref, watch } from "vue";
 import { Task } from "../../defines/task.ts";
 import { useTasks } from "../../stores/task";
 import ConfirmationModal from "../ui/ConfirmationModal.vue";
+import ScrollIndicator from "../ui/ScrollIndicator.vue";
 import TaskEditBlock from "./TaskEditBlock.vue";
 
 const emit = defineEmits<{
@@ -16,6 +17,7 @@ const props = defineProps<{
 const taskStore = useTasks();
 
 const isOpen = ref(true);
+const scrollContainerRef = ref<HTMLElement | null>(null);
 
 const close = () => {
 	isOpen.value = false;
@@ -64,8 +66,12 @@ watch(
   >
     <div class="bg-light-bg dark:bg-dark-bg rounded-2xl w-full border border-light-border dark:border-dark-border shadow-xl mt-[max(1rem,env(safe-area-inset-top))] mb-[max(1rem,env(safe-area-inset-bottom))] max-h-[calc(100vh-max(2rem,env(safe-area-inset-top))-max(2rem,env(safe-area-inset-bottom)))] mx-auto flex flex-col">
       <!-- Scrollable content area -->
-      <div class="flex-1 overflow-y-auto p-6 pb-0">
+      <div 
+        ref="scrollContainerRef"
+        class="relative flex-1 overflow-y-auto p-6 pb-0"
+      >
         <TaskEditBlock :selTask="props.selTask" />
+        <ScrollIndicator :scrollContainer="scrollContainerRef" />
       </div>
 
       <!-- Fixed button footer -->

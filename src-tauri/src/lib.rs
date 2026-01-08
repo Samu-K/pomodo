@@ -1,5 +1,4 @@
 pub mod database;
-pub mod mobile;
 use chrono::{NaiveDate, NaiveDateTime};
 use paste::paste;
 use specta::specta;
@@ -66,7 +65,7 @@ macro_rules! tauri_commands {
     $($action:ident :: $method:ident($($param:ident: $param_type:ty),*) -> $ret:ty),*) => {
         $(
             paste! {
-                #[tauri::command(rename_all="snake_case")]
+                #[tauri::command(rename_all="camelCase")]
                 #[specta]
                 async fn [<$action _ $method>]<'r>(
                     state: State<'r, $state_type>,
@@ -154,10 +153,7 @@ pub fn run() {
             projects_delete_project,
             projects_update_project,
             projects_delete_project,
-            update_tray,
-            crate::mobile::start_live_activity,
-            crate::mobile::update_live_activity,
-            crate::mobile::stop_live_activity
+            update_tray
         ]);
 
     #[cfg(all(debug_assertions, not(mobile)))]

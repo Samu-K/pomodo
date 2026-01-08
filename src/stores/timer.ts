@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
 import { useTimerFeedback } from "../composables/useTimerFeedback";
-import { commands, type Session } from "../funcs/commands";
+import type { Session } from "../funcs/commands";
 import {
 	add_session,
 	delete_session,
@@ -210,38 +210,12 @@ export const useTimerStore = defineStore("timer", () => {
 
 		isRunning.value = true;
 		worker.postMessage({ type: "START", payload: { endTime } });
-
-		// Start iOS Live Activity (Dynamic Island / Lock Screen)
-		try {
-			const modeLabel =
-				mode.value === TimerMode.FOCUS
-					? "Focus"
-					: sessionStreak.value >= long_break_interval.value
-						? "Long Break"
-						: "Short Break";
-			await commands.startLiveActivity({
-				expiry_date: endTime / 1000, // Convert to seconds
-				mode: modeLabel,
-				completed_cycles: sessionStreak.value,
-				total_cycles_for_long_rest: long_break_interval.value
-			});
-		} catch (e) {
-			// Silently fail on non-iOS platforms
-			console.debug("Live Activity not available:", e);
-		}
 	};
 
 	const pauseTimer = async () => {
 		isRunning.value = false;
 		worker.postMessage({ type: "PAUSE" });
 		endTime = undefined;
-
-		// Stop iOS Live Activity when paused
-		try {
-			await commands.stopLiveActivity();
-		} catch (e) {
-			console.debug("Live Activity stop not available:", e);
-		}
 	};
 
 	const toggleTimer = () => {

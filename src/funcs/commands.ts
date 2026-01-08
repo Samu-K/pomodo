@@ -260,15 +260,6 @@ async updateTray(title: string, toggleText: string | null) : Promise<Result<null
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
-},
-async startLiveActivity(config: LiveActivityConfig) : Promise<void> {
-    await TAURI_INVOKE("start_live_activity", { config });
-},
-async updateLiveActivity(update: LiveActivityUpdate) : Promise<void> {
-    await TAURI_INVOKE("update_live_activity", { update });
-},
-async stopLiveActivity() : Promise<void> {
-    await TAURI_INVOKE("stop_live_activity");
 }
 }
 
@@ -284,8 +275,6 @@ async stopLiveActivity() : Promise<void> {
 
 export type AppError = { message: string }
 export type Category = { id: number; name: string; color: string | null }
-export type LiveActivityConfig = { expiry_date: number; mode: string; completed_cycles: number; total_cycles_for_long_rest: number }
-export type LiveActivityUpdate = { expiry_date: number | null; mode: string | null; completed_cycles: number | null }
 export type Project = { id: number; name: string; description: string | null; color: string | null; estimated_pomodoros: number | null; category_id: number | null; is_completed: boolean; created_at: string | null }
 export type Session = { id: number | null; start_time: string; duration: number | null; finished: boolean; category_id: number | null; task_id: number | null; project_id: number | null; notes: string | null; created_at: string | null; last_modified: string | null }
 export type Setting = { id: number; key: string; description: string | null; value: string; category_id: number; data_type: string }

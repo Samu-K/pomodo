@@ -2,12 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global scrollbar hiding */
+/* Global scrollbar hiding and text selection prevention */
 * {
 	-ms-overflow-style: none;
 	/* IE and Edge */
 	scrollbar-width: none;
 	/* Firefox */
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+/* Allow text selection in input fields */
+input,
+textarea,
+[contenteditable="true"] {
+	-webkit-user-select: text;
+	-moz-user-select: text;
+	-ms-user-select: text;
+	user-select: text;
 }
 
 *::-webkit-scrollbar {
@@ -134,9 +148,39 @@
 			opacity: 1;
 		}
 	}
+
+	@keyframes fadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	@keyframes scaleIn {
+		from { 
+			opacity: 0;
+			transform: scale(0.9) translateY(20px);
+		}
+		to { 
+			opacity: 1;
+			transform: scale(1) translateY(0);
+		}
+	}
+
+	.animate-fade-in {
+		animation: fadeIn 0.3s ease-out;
+	}
+
+	.animate-scale-in {
+		animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+	}
 }
 
 /* Ensure the app takes full height */
 #app {
 	@apply h-full w-full overflow-hidden;
+}
+
+/* Make dialog modals stand out from dark background */
+.v-dialog .v-card {
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }

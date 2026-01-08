@@ -13,6 +13,7 @@ import { get_categories } from "../../funcs/db/categories";
 import { get_sessions } from "../../funcs/db/session";
 import {
 	formatDuration,
+	fromUTCString,
 	isSameWeek,
 	isToday
 } from "../../funcs/stats/date_handling";
@@ -85,14 +86,16 @@ const sessionsState = useQuery({
 const today_session_count = computed(() => {
 	if (!sessionsState.data.value) return 0;
 	return sessionsState.data.value.filter(
-		(s) => s.finished && s.start_time && isToday(s.start_time)
+		(s) => s.finished && s.start_time && isToday(fromUTCString(s.start_time))
 	).length;
 });
 
 const total_seconds_today = computed(() => {
 	if (!sessionsState.data.value) return 0;
 	return sessionsState.data.value
-		.filter((s) => s.finished && s.start_time && isToday(s.start_time))
+		.filter(
+			(s) => s.finished && s.start_time && isToday(fromUTCString(s.start_time))
+		)
 		.reduce((sum, s) => sum + (s.duration || 0), 0);
 });
 
@@ -100,7 +103,7 @@ const todaysFocusData = computed(() => {
 	if (!sessionsState.data.value || !categoriesState.data.value) return [];
 
 	const todaySessions = sessionsState.data.value.filter(
-		(s) => s.finished && s.start_time && isToday(s.start_time)
+		(s) => s.finished && s.start_time && isToday(fromUTCString(s.start_time))
 	);
 
 	const totalSeconds = todaySessions.reduce(
@@ -131,7 +134,7 @@ const todaysFocusData = computed(() => {
 const weeklySessionsRaw = computed(() => {
 	if (!sessionsState.data.value) return [];
 	return sessionsState.data.value.filter(
-		(s) => s.start_time && isSameWeek(s.start_time)
+		(s) => s.start_time && isSameWeek(fromUTCString(s.start_time))
 	);
 });
 </script>

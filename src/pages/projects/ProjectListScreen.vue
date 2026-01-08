@@ -42,8 +42,19 @@ const sessionsState = useQuery({
 
 const getProjectFocusedSeconds = (projectId: number) => {
 	if (!sessionsState.data.value) return 0;
+
+	// Get IDs of tasks that belong to this project
+	const projectTaskIds = new Set(
+		tasksStore.tasks.filter((t) => t.project_id === projectId).map((t) => t.id)
+	);
+
 	return sessionsState.data.value
-		.filter((s) => s.finished && s.project_id === projectId)
+		.filter(
+			(s) =>
+				s.finished &&
+				(s.project_id === projectId ||
+					(s.task_id && projectTaskIds.has(s.task_id)))
+		)
 		.reduce((sum, s) => sum + (s.duration || 0), 0);
 };
 
@@ -77,6 +88,9 @@ onMounted(async () => {
 	await tasksStore.fetchTasks();
 	if (categoryStore.categories.length === 0) {
 		await categoryStore.fetchCategories();
+	}
+	if (settingsStore.settings.length === 0) {
+		await settingsStore.fetchSettings();
 	}
 });
 
@@ -186,48 +200,57 @@ const confirmDelete = async () => {
             :key="project.id"
             class="flex flex-col group bg-light-surface dark:bg-dark-surface rounded-xl border border-light-border dark:border-dark-border hover:border-pomodo-orange transition-all cursor-pointer overflow-hidden"
         >
-            <div class="p-4 flex items-center gap-4" @click="openEdit(project)">
-                <div @click.stop="toggleExpand(project.id)" class="p-1 hover:bg-light-border dark:hover:bg-dark-border rounded-lg transition-colors">
-                    <ChevronDown v-if="expandedProjects.has(project.id)" :size="20" />
-                    <ChevronRight v-else :size="20" />
-                </div>
+            <div class="p-4 relative" @click="openEdit(project)">
+                <!-- Invisible expand/collapse click area extending down the left side -->
+                <div @click.stop="toggleExpand(project.id)" class="absolute left-0 top-0 bottom-0 w-16 cursor-pointer"></div>
+                
+                <!-- Header row with expand, icon, name, and actions -->
+                <div class="flex items-center gap-3">
+                    <div class="p-1 hover:bg-light-border dark:hover:bg-dark-border rounded-lg transition-colors pointer-events-none">
+                        <ChevronDown v-if="expandedProjects.has(project.id)" :size="20" />
+                        <ChevronRight v-else :size="20" />
+                    </div>
 
-                <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="`bg-${project.color || 'pomodo-orange'}/10 text-${project.color || 'pomodo-orange'}`">
-                    <Briefcase :size="20" />
-                </div>
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" :class="`bg-${project.color || 'pomodo-orange'}/10 text-${project.color || 'pomodo-orange'}`">
+                        <Briefcase :size="20" />
+                    </div>
 
-                <div class="flex-1 min-w-0">
-                    <h3 class="font-semibold truncate">{{ project.name }}</h3>
-                    <p class="text-xs text-text-muted mt-0.5 truncate" v-if="project.description">
-                        {{ project.description }}
-                    </p>
-                    <div class="flex gap-6 mt-3 pt-3 border-t border-light-border/50 dark:border-dark-border/30">
-                        <div class="flex flex-col gap-0.5">
-                             <span class="text-[9px] text-text-muted uppercase tracking-wider font-bold">Estimated</span>
-                             <div class="flex items-baseline gap-1.5">
-                                 <span class="text-sm font-bold text-pomodo-orange">{{ project.estimated_pomodoros }}</span>
-                                 <span class="text-[10px] text-text-muted font-medium">cycles</span>
-                             </div>
-                             <span class="text-[10px] text-text-muted/60 font-medium leading-none mt-0.5">({{ formatEstimatedTime(project.estimated_pomodoros) }})</span>
-                        </div>
-                        <div class="flex flex-col gap-0.5 border-l border-light-border/50 dark:border-dark-border/30 pl-6">
-                             <span class="text-[9px] text-text-muted uppercase tracking-wider font-bold">Focused</span>
-                             <div class="flex items-baseline gap-1.5">
-                                 <span class="text-sm font-bold text-green-500">{{ (getProjectFocusedSeconds(project.id) / (focusDuration * 60)).toFixed(1) }}</span>
-                                 <span class="text-[10px] text-text-muted font-medium">cycles</span>
-                             </div>
-                             <span class="text-[10px] text-text-muted/60 font-medium leading-none mt-0.5">({{ formatDuration(getProjectFocusedSeconds(project.id)) }})</span>
-                        </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold truncate">{{ project.name }}</h3>
+                        <p class="text-xs text-text-muted mt-0.5 truncate" v-if="project.description">
+                            {{ project.description }}
+                        </p>
+                    </div>
+
+                    <!-- Actions in header row -->
+                    <div class="flex items-center gap-1 shrink-0">
+                        <v-btn icon variant="text" size="small" @click.stop="openAddTask(project.id)" color="pomodo-orange" data-testid="add-task-to-project-btn">
+                            <Plus :size="20" />
+                        </v-btn>
+                        <v-btn icon variant="text" size="small" @click.stop="promptDelete(project)" color="error">
+                            <Trash2 :size="18" />
+                        </v-btn>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-1">
-                    <v-btn icon variant="text" size="small" @click.stop="openAddTask(project.id)" color="pomodo-orange" data-testid="add-task-to-project-btn">
-                        <Plus :size="20" />
-                    </v-btn>
-                    <v-btn icon variant="text" size="small" @click.stop="promptDelete(project)" color="error">
-                        <Trash2 :size="18" />
-                    </v-btn>
+                <!-- Stats row -->
+                <div class="flex gap-6 mt-3 pt-3 ml-12 border-t border-light-border/50 dark:border-dark-border/30">
+                    <div class="flex flex-col gap-0.5">
+                         <span class="text-[9px] text-text-muted uppercase tracking-wider font-bold">Estimated</span>
+                         <div class="flex items-baseline gap-1.5">
+                             <span class="text-sm font-bold text-pomodo-orange">{{ project.estimated_pomodoros }}</span>
+                             <span class="text-[10px] text-text-muted font-medium">cycles</span>
+                         </div>
+                         <span class="text-[10px] text-text-muted/60 font-medium leading-none mt-0.5">({{ formatEstimatedTime(project.estimated_pomodoros) }})</span>
+                    </div>
+                    <div class="flex flex-col gap-0.5 border-l border-light-border/50 dark:border-dark-border/30 pl-6">
+                         <span class="text-[9px] text-text-muted uppercase tracking-wider font-bold">Focused</span>
+                         <div class="flex items-baseline gap-1.5">
+                             <span class="text-sm font-bold text-green-500">{{ (getProjectFocusedSeconds(project.id) / (focusDuration * 60)).toFixed(1) }}</span>
+                             <span class="text-[10px] text-text-muted font-medium">cycles</span>
+                         </div>
+                         <span class="text-[10px] text-text-muted/60 font-medium leading-none mt-0.5">({{ formatDuration(getProjectFocusedSeconds(project.id)) }})</span>
+                    </div>
                 </div>
             </div>
 
@@ -277,7 +300,7 @@ const confirmDelete = async () => {
     />
 
     <!-- Edit Modal -->
-    <v-dialog v-model="showEditModal" max-width="500">
+    <v-dialog v-model="showEditModal" max-width="340" class="mx-4">
         <v-card v-if="editingProject" class="rounded-2xl">
             <v-card-title class="pa-6 pb-0 font-bold text-2xl">
                 {{ editingProject.id === 0 ? 'New Project' : 'Edit Project' }}
@@ -308,14 +331,14 @@ const confirmDelete = async () => {
                   ></v-textarea>
                 </div>
 
-                <div class="flex gap-4">
+                <div class="flex gap-4 items-end">
                   <div class="flex-1">
-                    <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
+                    <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-1">
                       Est. Pomodoros
-                      <span class="normal-case opacity-60 ml-1" v-if="editingProject.estimated_pomodoros">
-                        (≈ {{ formatEstimatedTime(editingProject.estimated_pomodoros) }})
-                      </span>
                     </label>
+                    <span class="block text-[10px] text-text-muted mb-2" v-if="editingProject.estimated_pomodoros">
+                      ≈ {{ formatEstimatedTime(editingProject.estimated_pomodoros) }}
+                    </span>
                     <v-text-field
                           data-testid="estimated-pomodoros-input"
                           v-model.number="editingProject.estimated_pomodoros"

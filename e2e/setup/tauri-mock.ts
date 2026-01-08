@@ -18,8 +18,9 @@ export async function mockTauri(page: Page) {
             { id: 9, key: 'Sound Alerts', value: 'false', description: 'Sound Alerts', category_id: 1, data_type: 'boolean' },
             { id: 10, key: 'Vibration', value: 'false', description: 'Vibration', category_id: 1, data_type: 'boolean' },
         ];
+        localStorage.setItem('pomodo-welcome-seen', 'true');
 
-        const defaultCategories = [
+        const mockCategories = [
             { id: 1, name: 'Work', color: '#FF6B35' },
             { id: 2, name: 'Exercise', color: '#4CAF50' },
         ];
@@ -28,7 +29,7 @@ export async function mockTauri(page: Page) {
             localStorage.setItem('mockSettings', JSON.stringify(defaultSettings));
         }
         if (!localStorage.getItem('mockCategories')) {
-            localStorage.setItem('mockCategories', JSON.stringify(defaultCategories));
+            localStorage.setItem('mockCategories', JSON.stringify(mockCategories));
         }
         if (!localStorage.getItem('mockProjects')) {
             localStorage.setItem('mockProjects', JSON.stringify([]));
