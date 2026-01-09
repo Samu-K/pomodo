@@ -4,6 +4,7 @@ A cross-platform Pomodoro timer for Desktop, Android, and iOS.
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)
+![Build](https://github.com/Samu-K/pomodo/actions/workflows/ci.yml/badge.svg)
 
 ## Features
 
