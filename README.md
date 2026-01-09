@@ -52,7 +52,7 @@ For other platforms, follow the [Tauri development guide](https://tauri.app/v2/s
 Having issues? Found a bug?
 
 - [Report an issue](https://github.com/Samu-K/pomodo/issues)
-- [Contact support](#)
+- [Contact support](mailto:support@kasame.net)
 
 ## Privacy
 
