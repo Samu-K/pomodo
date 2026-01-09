@@ -38,6 +38,11 @@
 			"icons/128x128@2x.png",
 			"icons/icon.icns",
 			"icons/icon.ico"
-		]
+		],
+		"shortDescription": "Cross-platform Pomodoro timer",
+		"longDescription": "Cross-platform Pomodoro timer and task manager for Desktop, Android, and iOS.",
+		"copyright": "© 2026 Kasame",
+		"category": "Productivity",
+		"license": "FSL-1.1-MIT"
 	}
 }
