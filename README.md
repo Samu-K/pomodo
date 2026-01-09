@@ -16,7 +16,29 @@ A cross-platform Pomodoro timer for Desktop, Android, and iOS.
 
 ## Screenshots
 
+Timer Screen
+
 ![Timer Screen](.github/pics/timer_screen.png)
+
+Focus Session
+
+![Focus Session](.github/pics/focus_session.png)
+
+Mini Mode - Always on Top
+
+![Mini Mode (Always on Top) ](.github/pics/mini_mode.png)
+
+Tasks Timeline
+
+![Tasks Timeline](.github/pics/timeline.png)
+
+Project Managment
+
+![Project Managment](.github/pics/projects.png)
+
+Theme customization
+
+![Theme customization](.github/pics/custom_theme.png)
 
 ## Download
 
