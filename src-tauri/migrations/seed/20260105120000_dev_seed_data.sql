@@ -45,11 +45,13 @@ WITH RECURSIVE
     )
 
 SELECT 
-    -- START TIME: Date + Random Hour (08:00 to 22:00) + Random Minute
-    datetime(d.dt, '+' || (8 + abs(random()) % 14) || ' hours', '+' || (abs(random()) % 60) || ' minutes') as start_time,
+    -- START TIME: Date + Slot-based Hour (2h spacing) + Random Minute (0-15)
+    -- Slots: 08:xx, 10:xx, 12:xx, 14:xx, 16:xx, 18:xx, 20:xx, 22:xx
+    datetime(d.dt, '+' || (8 + (s.i - 1) * 2) || ' hours', '+' || (abs(random()) % 15) || ' minutes') as start_time,
     
-    -- DURATION: 15 to 120 mins (in seconds)
-    ((abs(random()) % 106) + 15) * 60 as duration,
+    -- DURATION: 25 to 90 mins (in seconds)
+    -- Max logic: Start 00:15 + 90m = 01:45. Next slot starts at 02:00. Guaranteed 15m gap.
+    ((abs(random()) % 66) + 25) * 60 as duration,
     
     -- FINISHED: 85% chance true
     CASE WHEN (abs(random()) % 100) < 85 THEN 1 ELSE 0 END as finished,
