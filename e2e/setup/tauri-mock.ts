@@ -19,6 +19,7 @@ export async function mockTauri(page: Page) {
             { id: 9, key: 'Sound Alerts', value: 'false', description: 'Sound Alerts', category_id: 1, data_type: 'boolean' },
             { id: 10, key: 'Vibration', value: 'false', description: 'Vibration', category_id: 1, data_type: 'boolean' },
             { id: 11, key: 'Toggle Timer', value: 'CommandOrControl+Alt+P', description: 'Global toggle timer shortcut', category_id: 1, data_type: 'string' },
+            { id: 12, key: 'Timer Presets', value: '[]', description: 'Custom timer presets stored as JSON', category_id: 1, data_type: 'string' },
         ];
         localStorage.setItem('pomodo-welcome-seen', 'true');
 
@@ -62,7 +63,7 @@ export async function mockTauri(page: Page) {
                     return getStored('mockSettings');
                 }
                 if (cmd === 'settings_get_setting_categories') {
-                    return [{ id: 1, name: 'General' }];
+                    return [{ id: 1, name: 'timer' }];
                 }
                 if (cmd === 'settings_set_setting_value') {
                     const settings = getStored('mockSettings');

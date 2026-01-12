@@ -4,11 +4,11 @@ import {
 	Cloud,
 	FileJson,
 	FileSpreadsheet,
+	LayoutGrid,
 	Lock,
 	Save,
-	LayoutGrid,
-	X,
-	Trash2
+	Trash2,
+	X
 } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
