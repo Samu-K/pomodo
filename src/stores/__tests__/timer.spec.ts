@@ -15,7 +15,9 @@ vi.mock("../../composables/useTimerFeedback", () => ({
 		triggerAllFeedback: vi.fn(),
 		playSound: vi.fn(),
 		triggerHaptics: vi.fn(),
-		sendTimerNotification: vi.fn()
+		sendTimerNotification: vi.fn(),
+		scheduleFinishedNotification: vi.fn(),
+		cancelScheduledNotification: vi.fn()
 	})
 }));
 
@@ -192,28 +194,28 @@ describe("Timer Store", () => {
 			expect(postMessageMock).toHaveBeenCalledWith({ type: "PAUSE" });
 		});
 
-		it("skip switches modes", () => {
+		it("skip switches modes", async () => {
 			timerStore.mode = TimerMode.FOCUS;
 			timerStore.sessionStreak = 0;
 
-			timerStore.skip();
+			await timerStore.skip();
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
 			expect(timerStore.sessionStreak).toBe(1);
 			expect(timerStore.remainingTime).toBe(300);
 			expect(postMessageMock).toHaveBeenCalledWith({ type: "PAUSE" });
 
-			timerStore.skip();
+			await timerStore.skip();
 
 			expect(timerStore.mode).toBe(TimerMode.FOCUS);
 			expect(timerStore.remainingTime).toBe(1500);
 		});
 
-		it("skip handles long break", () => {
+		it("skip handles long break", async () => {
 			timerStore.mode = TimerMode.FOCUS;
 			timerStore.sessionStreak = 3;
 
-			timerStore.skip();
+			await timerStore.skip();
 
 			expect(timerStore.mode).toBe(TimerMode.REST);
 			expect(timerStore.sessionStreak).toBe(4);
