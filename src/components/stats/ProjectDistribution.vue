@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useTheme } from "vuetify";
 import type { Session } from "../../funcs/commands";
+import { fromUTCString, isToday } from "../../funcs/stats/date_handling";
 import { useCategoryStore } from "../../stores/categories";
 import { useProjectStore } from "../../stores/project";
 
@@ -13,17 +14,51 @@ const theme = useTheme();
 const categoryStore = useCategoryStore();
 const projectStore = useProjectStore();
 
+type Timeframe = "1D" | "1M" | "1Y" | "YTD";
+const timeframes: Timeframe[] = ["1D", "1M", "1Y", "YTD"];
+const selectedTimeframe = ref<Timeframe>("1D");
+
 onMounted(() => {
 	if (categoryStore.categories.length === 0) categoryStore.fetchCategories();
 	if (projectStore.projects.length === 0) projectStore.fetchProjects();
 });
 
+const filteredSessions = computed(() => {
+	const now = new Date();
+	const sessions = props.sessions.filter((s) => s.duration);
+
+	switch (selectedTimeframe.value) {
+		case "1D":
+			return sessions.filter(
+				(s) => s.start_time && isToday(fromUTCString(s.start_time))
+			);
+		case "1M": {
+			const cutoff = new Date(now);
+			cutoff.setDate(now.getDate() - 30);
+			return sessions.filter(
+				(s) => s.start_time && fromUTCString(s.start_time) >= cutoff
+			);
+		}
+		case "1Y": {
+			const cutoff = new Date(now);
+			cutoff.setDate(now.getDate() - 365);
+			return sessions.filter(
+				(s) => s.start_time && fromUTCString(s.start_time) >= cutoff
+			);
+		}
+		case "YTD": {
+			const startOfYear = new Date(now.getFullYear(), 0, 1);
+			return sessions.filter(
+				(s) => s.start_time && fromUTCString(s.start_time) >= startOfYear
+			);
+		}
+	}
+});
+
 const projectStats = computed(() => {
 	const map = new Map<string, number>();
 
-	props.sessions.forEach((s) => {
-		if (!s.duration) return;
-
+	filteredSessions.value.forEach((s) => {
 		let name = "Uncategorized";
 		if (s.project_id) {
 			const project = projectStore.projects.find((p) => p.id === s.project_id);
@@ -35,7 +70,7 @@ const projectStats = computed(() => {
 			name = category ? category.name : `Category #${s.category_id}`;
 		}
 
-		map.set(name, (map.get(name) || 0) + s.duration);
+		map.set(name, (map.get(name) || 0) + (s.duration || 0));
 	});
 
 	return Array.from(map.entries())
@@ -74,7 +109,16 @@ const chartOptions = computed(() => {
 		tooltip: {
 			theme: isDark ? "dark" : "light",
 			y: {
-				formatter: (val: number) => `${Math.round(val / 60)} mins`
+				formatter: (val: number) => {
+					// Format minutes/hours based on magnitude
+					const mins = Math.round(val / 60);
+					if (mins >= 60) {
+						const h = Math.floor(mins / 60);
+						const m = mins % 60;
+						return m > 0 ? `${h}h ${m}m` : `${h}h`;
+					}
+					return `${mins} mins`;
+				}
 			}
 		},
 		// Pomodo Palette
@@ -85,7 +129,24 @@ const chartOptions = computed(() => {
 
 <template>
 	<div class="bg-light-surface dark:bg-dark-surface rounded-xl p-4 border border-light-border dark:border-dark-border">
-		<h3 class="text-lg font-semibold text-lightText-primary dark:text-white mb-4">Distribution by Category</h3>
+		<div class="flex items-center justify-between mb-4">
+			<h3 class="text-lg font-semibold text-lightText-primary dark:text-white">Distribution by Category</h3>
+			
+			<div class="flex bg-light-bg dark:bg-dark-bg rounded-lg p-1 gap-1">
+				<button
+					v-for="tf in timeframes"
+					:key="tf"
+					@click="selectedTimeframe = tf"
+					class="px-2 py-0.5 text-xs font-medium rounded transition-colors"
+					:class="selectedTimeframe === tf 
+						? 'bg-light-surface dark:bg-dark-surface text-pomodo-orange shadow-sm' 
+						: 'text-lightText-muted dark:text-text-muted hover:text-lightText-primary dark:hover:text-white'"
+				>
+					{{ tf }}
+				</button>
+			</div>
+		</div>
+
 		<apexchart
 			type="donut"
 			height="250"

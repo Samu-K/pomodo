@@ -1,34 +1,80 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import type { Session } from "../../funcs/commands";
+import { fromUTCString, isToday } from "../../funcs/stats/date_handling";
 
 // 2. Receive data from parent
 const props = defineProps<{
 	data: Session[];
 }>();
 
-// 3. Internal Logic: Transform raw sessions into Chart Bars
+// 3. Timeframe Logic
+type Timeframe = "1D" | "1M" | "1Y" | "YTD";
+const timeframes: Timeframe[] = ["1D", "1M", "1Y", "YTD"];
+const selectedTimeframe = ref<Timeframe>("1D");
+
+const filteredSessions = computed(() => {
+	const now = new Date();
+	const list = props.data || [];
+
+	switch (selectedTimeframe.value) {
+		case "1D": // Current Week (or just Today?) -> logic below implies averaging over timeframe.
+			// For "1D" in this context (Weekly Chart), users might expect "This Week" or "Last 24h"?
+			// But matching ProductivityTimeOfDay "1D" means "Today".
+			// If we filter to "Today", the chart will show only the current day's bar.
+			return list.filter((s) => isToday(fromUTCString(s.start_time)));
+		case "1M": {
+			const cutoff = new Date(now);
+			cutoff.setDate(now.getDate() - 30);
+			return list.filter((s) => fromUTCString(s.start_time) >= cutoff);
+		}
+		case "1Y": {
+			const cutoff = new Date(now);
+			cutoff.setDate(now.getDate() - 365);
+			return list.filter((s) => fromUTCString(s.start_time) >= cutoff);
+		}
+		case "YTD": {
+			const startOfYear = new Date(now.getFullYear(), 0, 1);
+			return list.filter((s) => fromUTCString(s.start_time) >= startOfYear);
+		}
+	}
+});
+
+// 4. Transform raw sessions into Chart Bars
 const chartData = computed(() => {
 	const days = ["M", "T", "W", "T", "F", "S", "S"];
 	const dailyTotals = new Array(7).fill(0);
+	const uniqueWeeks = new Set<string>();
 
 	// Aggregate
-	const list = props.data || [];
-	list.forEach((s) => {
+	filteredSessions.value.forEach((s) => {
 		if (s.finished && s.start_time) {
-			const d = new Date(s.start_time);
+			const d = fromUTCString(s.start_time);
 			// Convert Sunday(0)-Saturday(6) to Monday(0)-Sunday(6)
 			const dayIndex = (d.getDay() + 6) % 7;
 			dailyTotals[dayIndex] += s.duration;
+
+			// Track Unique Weeks for divisor (using Monday of that week as key)
+			const monday = new Date(d);
+			monday.setDate(d.getDate() - dayIndex);
+			monday.setHours(0, 0, 0, 0);
+			uniqueWeeks.add(monday.toDateString());
 		}
 	});
 
+	// Divisor Logic
+	// If 1D, we show totals (Divisor 1).
+	// If longer timeframe, we show Average Weekly Profile (divide by count of active weeks).
+	const divisor =
+		selectedTimeframe.value === "1D" ? 1 : Math.max(1, uniqueWeeks.size);
+
 	// Scale
-	const maxDuration = Math.max(...dailyTotals, 1); // Prevent divide by zero
+	const values = dailyTotals.map((t) => t / divisor);
+	const maxDuration = Math.max(...values, 1); // Prevent divide by zero
 
 	// Map to View Model
 	return days.map((label, index) => {
-		const seconds = dailyTotals[index];
+		const seconds = values[index];
 		return {
 			label,
 			valueDisplay: (seconds / 3600).toFixed(1),
@@ -38,7 +84,7 @@ const chartData = computed(() => {
 	});
 });
 
-// 3. UI State (Local to this component)
+// 5. UI State (Local to this component)
 const activeDayIndex = ref<number | null>(null);
 const chartContainerRef = ref<HTMLElement | null>(null);
 
@@ -50,7 +96,7 @@ const toggleTooltip = (index: number) => {
 	}
 };
 
-// 4. Click Outside Logic
+// 6. Click Outside Logic
 const handleClickOutside = (event: MouseEvent) => {
 	if (activeDayIndex.value !== null) {
 		if (
@@ -62,7 +108,7 @@ const handleClickOutside = (event: MouseEvent) => {
 	}
 };
 
-// 5. Lifecycle Hooks for Event Listeners
+// 7. Lifecycle Hooks for Event Listeners
 onMounted(() => {
 	document.addEventListener("click", handleClickOutside);
 });
@@ -74,7 +120,23 @@ onUnmounted(() => {
 
 <template>
   <section class="mt-10">
-    <h2 class="text-lg font-semibold text-lightText-primary dark:text-white mb-5">Activity Chart</h2>
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-semibold text-lightText-primary dark:text-white">Activity Chart</h2>
+      
+      <div class="flex bg-light-bg dark:bg-dark-bg rounded-lg p-1 gap-1">
+        <button
+          v-for="tf in timeframes"
+          :key="tf"
+          @click="selectedTimeframe = tf"
+          class="px-2 py-0.5 text-xs font-medium rounded transition-colors"
+          :class="selectedTimeframe === tf 
+            ? 'bg-light-surface dark:bg-dark-surface text-pomodo-orange shadow-sm' 
+            : 'text-lightText-muted dark:text-text-muted hover:text-lightText-primary dark:hover:text-white'"
+        >
+          {{ tf }}
+        </button>
+      </div>
+    </div>
     
     <div 
       ref="chartContainerRef"
@@ -94,6 +156,7 @@ onUnmounted(() => {
           >
             <span class="text-xs text-pomodo-orange font-mono font-bold">
               {{ day.valueDisplay }}h
+              <span v-if="selectedTimeframe !== '1D'" class="text-[0.6rem] font-normal text-lightText-muted dark:text-text-muted">avg</span>
             </span>
             <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-light-bg dark:bg-dark-bg border-r border-b border-light-border dark:border-dark-border rotate-45"></div>
           </div>
