@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { X } from "lucide-vue-next";
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import {
+	type OverlapInfo,
+	useTaskOverlap
+} from "../../composables/useTaskOverlap";
 import { RecurrenceType } from "../../defines/recur.ts";
 import { Task } from "../../defines/task.ts";
 import { useTasks } from "../../stores/task";
+import ConfirmationModal from "../ui/ConfirmationModal.vue";
 import ScrollIndicator from "../ui/ScrollIndicator.vue";
 import TaskEditBlock from "./TaskEditBlock.vue";
 
@@ -19,9 +24,12 @@ const emit = defineEmits<{
 
 const curDate = ref<Date>(props.initialDate || new Date());
 const tasksStore = useTasks();
+const { checkForOverlap } = useTaskOverlap();
 
 const isOpen = ref(true);
 const scrollContainerRef = ref<HTMLElement | null>(null);
+const showOverlapWarning = ref(false);
+const overlapInfo = ref<OverlapInfo | null>(null);
 
 const newTask = ref<Task>({
 	id: 0,
@@ -43,9 +51,39 @@ const close = () => {
 	isOpen.value = false;
 };
 
+const overlapWarningMessage = computed(() => {
+	if (!overlapInfo.value) return "";
+	const task = overlapInfo.value.overlappingTask;
+	const startTime = task.startTime.toLocaleTimeString([], {
+		hour: "2-digit",
+		minute: "2-digit"
+	});
+	return `This task overlaps with "${task.title}" scheduled at ${startTime}. Do you want to create it anyway?`;
+});
+
 const saveTask = async () => {
+	// Check for overlaps before saving
+	const overlap = checkForOverlap(newTask.value, tasksStore.tasks);
+	if (overlap) {
+		overlapInfo.value = overlap;
+		showOverlapWarning.value = true;
+		return;
+	}
+
 	await tasksStore.addTask(newTask.value);
 	close();
+};
+
+const confirmCreateWithOverlap = async () => {
+	showOverlapWarning.value = false;
+	overlapInfo.value = null;
+	await tasksStore.addTask(newTask.value);
+	close();
+};
+
+const cancelOverlapWarning = () => {
+	showOverlapWarning.value = false;
+	overlapInfo.value = null;
 };
 
 const onAfterLeave = () => {
@@ -97,6 +135,17 @@ const onAfterLeave = () => {
 
       <ScrollIndicator :scrollContainer="scrollContainerRef" />
     </div>
+
+    <ConfirmationModal 
+      v-if="showOverlapWarning"
+      title="Schedule Conflict"
+      :message="overlapWarningMessage"
+      primaryBtnText="Create Anyway"
+      secondaryBtnText="Cancel"
+      @primary="confirmCreateWithOverlap"
+      @secondary="cancelOverlapWarning"
+      @close="cancelOverlapWarning"
+    />
   </v-dialog>
 </template>
 

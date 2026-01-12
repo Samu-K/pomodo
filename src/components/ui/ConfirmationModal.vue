@@ -37,12 +37,14 @@ const emit = defineEmits<{
       <!-- Actions -->
       <div class="flex gap-3">
         <button 
+          data-testid="confirmation-secondary-btn"
           @click="emit('secondary')"
           class="flex-1 py-3 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg text-lightText-secondary dark:text-text-secondary font-semibold hover:bg-light-border dark:hover:bg-dark-border transition-colors"
         >
           {{ secondaryBtnText }}
         </button>
         <button 
+          data-testid="confirmation-primary-btn"
           @click="emit('primary')"
           class="flex-1 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity shadow-lg"
           :class="isDanger ? 'bg-red-500 hover:bg-red-600' : 'bg-gradient-to-r from-pomodo-orange to-pomodo-red'"
