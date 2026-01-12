@@ -451,7 +451,6 @@ onUnmounted(() => {
           <button
             data-testid="timeline-task-block"
             @click="openTaskDetails(task)"
-            :disabled="task.completed"
             v-for="task in tasksForSelectedDate"
             :key="task.id + '_' + task.startTime.toISOString()"
             class="absolute left-4 right-4 rounded-lg cursor-pointer hover:scale-[1.02] transition-transform shadow-lg text-left overflow-hidden border border-white/10"
