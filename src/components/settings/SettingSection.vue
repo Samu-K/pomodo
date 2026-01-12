@@ -15,9 +15,12 @@ const emit =
 </script>
 <template>
   <section class="mb-8">
-    <h2 class="text-xs font-semibold text-pomodo-orange uppercase tracking-wider mb-4">
-      {{props.sectionTitle}}
-    </h2>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xs font-semibold text-pomodo-orange uppercase tracking-wider">
+        {{props.sectionTitle}}
+      </h2>
+      <slot name="header-actions"></slot>
+    </div>
     <ErrorBoundary v-for="stt in settings">
       <SettingBox :setting="stt" @change="(id, val) => emit('change', id, val)"/>
     </ErrorBoundary>
