@@ -161,16 +161,18 @@ defineExpose({
 
                 <v-divider></v-divider>
 
-                <v-card-actions >
-                    <v-btn text="Cancel" @click="isActive.value = false" v-if="!catEditMode"></v-btn>
+                <v-card-actions style="display: grid !important; grid-template-columns: 1fr 1fr 1fr;" v-if="!catEditMode">
+                    <div class="flex justify-start">
+                        <v-btn text="Cancel" @click="isActive.value = false"></v-btn>
+                    </div>
 
-                    <v-spacer></v-spacer>
-                    <v-btn variant="elevated" color="#09402B" @click="showAddCategoryModal = true" v-if="!catEditMode">
-                        <PlusCircle/>
-                    </v-btn>
-                    <v-spacer></v-spacer>
+                    <div class="flex justify-center">
+                        <v-btn variant="elevated" color="#09402B" @click="showAddCategoryModal = true">
+                            <PlusCircle/>
+                        </v-btn>
+                    </div>
 
-                    <template v-if="!catEditMode">
+                    <div class="flex justify-end">
                         <v-btn
                             color="surface-variant"
                             text="Edit"
@@ -178,11 +180,11 @@ defineExpose({
                             :disabled="!categoryStore.categories || categoryStore.categories.length === 0"
                             @click="openEditMode"
                         ></v-btn>
-                    </template>
-                    <template v-else>
-                        <v-btn text="Cancel" @click="cancelEdits"></v-btn>
-                        <v-btn color="surface-variant" text="Save" variant="flat" @click="saveEdits"></v-btn>
-                    </template>
+                    </div>
+                </v-card-actions>
+                <v-card-actions v-else>
+                    <v-btn text="Cancel" @click="cancelEdits"></v-btn>
+                    <v-btn color="surface-variant" text="Save" variant="flat" @click="saveEdits"></v-btn>
                 </v-card-actions>
             </v-card>
         </template>

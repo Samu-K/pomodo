@@ -9,6 +9,7 @@ import {
 	Trash2
 } from "lucide-vue-next";
 import { computed, onMounted, ref } from "vue";
+import ProjectEditModal from "../../components/project/ProjectEditModal.vue";
 import CreateTaskModal from "../../components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "../../components/task/TaskDetailsModal.vue";
 import ConfirmationModal from "../../components/ui/ConfirmationModal.vue";
@@ -144,12 +145,11 @@ const handleTaskComplete = async (task: Task) => {
 	await tasksStore.toggleTaskCompletion(task);
 };
 
-const saveProject = async () => {
-	if (!editingProject.value) return;
-	if (editingProject.value.id === 0) {
-		await projectStore.addProject(editingProject.value);
+const saveProject = async (projectData: Project) => {
+	if (projectData.id === 0) {
+		await projectStore.addProject(projectData);
 	} else {
-		await projectStore.updateProject(editingProject.value);
+		await projectStore.updateProject(projectData);
 	}
 	showEditModal.value = false;
 };
@@ -299,88 +299,12 @@ const confirmDelete = async () => {
         @close="() => { showDetailsModal = false; selectedTask = null; }"
     />
 
-    <!-- Edit Modal -->
-    <v-dialog v-model="showEditModal" max-width="340" class="mx-4">
-        <v-card v-if="editingProject" class="rounded-2xl">
-            <v-card-title class="pa-6 pb-0 font-bold text-2xl">
-                {{ editingProject.id === 0 ? 'New Project' : 'Edit Project' }}
-            </v-card-title>
-            
-            <v-card-text class="pa-6 pt-4 space-y-4">
-                <div>
-                  <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
-                    Project Name *
-                  </label>
-                  <v-text-field
-                      v-model="editingProject.name"
-                      placeholder="Enter project name"
-                      hide-details
-                  ></v-text-field>
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
-                    Description
-                  </label>
-                  <v-textarea
-                      v-model="editingProject.description"
-                      placeholder="Brief description of the project"
-                      rows="2"
-                      auto-grow
-                      hide-details
-                  ></v-textarea>
-                </div>
-
-                <div class="flex gap-4 items-end">
-                  <div class="flex-1">
-                    <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-1">
-                      Est. Pomodoros
-                    </label>
-                    <span class="block text-[10px] text-text-muted mb-2" v-if="editingProject.estimated_pomodoros">
-                      ≈ {{ formatEstimatedTime(editingProject.estimated_pomodoros) }}
-                    </span>
-                    <v-text-field
-                          data-testid="estimated-pomodoros-input"
-                          v-model.number="editingProject.estimated_pomodoros"
-                          type="number"
-                          hide-details
-                          min="1"
-                      ></v-text-field>
-                  </div>
-                  
-                  <div class="flex-1">
-                    <label class="block text-xs font-semibold text-lightText-secondary dark:text-text-secondary uppercase tracking-wider mb-2">
-                      Category
-                    </label>
-                    <v-select
-                        v-model="editingProject.category_id"
-                        :items="categoryStore.categories"
-                        item-title="name"
-                        item-value="id"
-                        clearable
-                        hide-details
-                    ></v-select>
-                  </div>
-                </div>
-            </v-card-text>
-
-            <v-divider></v-divider>
-
-            <v-card-actions class="pa-6">
-                <v-btn variant="text" @click="showEditModal = false">Cancel</v-btn>
-                <v-spacer></v-spacer>
-                <v-btn 
-                    color="pomodo-orange" 
-                    variant="flat" 
-                    class="px-8 rounded-lg"
-                    @click="saveProject"
-                    :disabled="!editingProject.name"
-                >
-                    Save
-                </v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
+    <ProjectEditModal
+        v-if="showEditModal && editingProject"
+        :project="editingProject"
+        @save="saveProject"
+        @close="() => { showEditModal = false; editingProject = null; }"
+    />
 
     <!-- Delete Confirmation Dialog -->
     <ConfirmationModal

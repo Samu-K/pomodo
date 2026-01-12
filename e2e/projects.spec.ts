@@ -18,7 +18,7 @@ test.describe('Projects Management', () => {
         const nameInput = page.getByPlaceholder('Enter project name');
         await nameInput.fill('E2E Project');
         
-        await page.getByRole('button', { name: 'Save' }).click();
+        await page.getByRole('button', { name: 'Create Project' }).click();
         
         // Verify project created
         await expect(page.getByText('E2E Project')).toBeVisible();
