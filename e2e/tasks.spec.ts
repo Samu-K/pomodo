@@ -61,4 +61,101 @@ test.describe('Task Management', () => {
         await page.getByTestId('skip-timer').click();
         await expect(page.getByText('REST')).toBeVisible();
     });
+
+    test('shows overlap warning when creating task at conflicting time', async ({ page }) => {
+        // Setup: Pre-create a task at current time (new tasks default to current time, causing overlap)
+        const now = new Date();
+        
+        await page.addInitScript((dateStr) => {
+            localStorage.setItem('mockTasks', JSON.stringify([{
+                id: 1,
+                title: 'Existing Task',
+                estimated_pomodoros: 2,
+                completed_pomodoros: 0,
+                is_completed: false,
+                category_id: 1,
+                start_datetime: dateStr
+            }]));
+        }, now.toISOString());
+
+        await page.goto('/tasks');
+        await expect(page.getByTestId('initial-loader')).not.toBeVisible();
+
+        // Open create task modal
+        await page.getByTestId('add-task-fab').click();
+        await expect(page.getByText('Create New Task')).toBeVisible();
+
+        // Fill in task title (time defaults to current time, which overlaps with existing task)
+        await page.getByTestId('task-name-input').locator('input').fill('Overlapping Task');
+
+        // Try to create the task
+        await page.getByTestId('confirm-create-task').click();
+
+        // Should show overlap warning modal
+        await expect(page.getByText('Schedule Conflict')).toBeVisible();
+        await expect(page.getByText(/overlaps with "Existing Task"/)).toBeVisible();
+    });
+
+    test('can create overlapping task after confirming warning', async ({ page }) => {
+        const now = new Date();
+        
+        await page.addInitScript((dateStr) => {
+            localStorage.setItem('mockTasks', JSON.stringify([{
+                id: 1,
+                title: 'Existing Task',
+                estimated_pomodoros: 2,
+                completed_pomodoros: 0,
+                is_completed: false,
+                category_id: 1,
+                start_datetime: dateStr
+            }]));
+        }, now.toISOString());
+
+        await page.goto('/tasks');
+        await expect(page.getByTestId('initial-loader')).not.toBeVisible();
+
+        // Create overlapping task
+        await page.getByTestId('add-task-fab').click();
+        await page.getByTestId('task-name-input').locator('input').fill('New Overlapping Task');
+        await page.getByTestId('confirm-create-task').click();
+
+        // Confirm despite overlap
+        await expect(page.getByText('Schedule Conflict')).toBeVisible();
+        await page.getByText('Create Anyway').click();
+
+        // Task should be created and visible
+        await expect(page.getByText('New Overlapping Task')).toBeVisible();
+    });
+
+    test('can cancel creating overlapping task', async ({ page }) => {
+        const now = new Date();
+        
+        await page.addInitScript((dateStr) => {
+            localStorage.setItem('mockTasks', JSON.stringify([{
+                id: 1,
+                title: 'Existing Task',
+                estimated_pomodoros: 2,
+                completed_pomodoros: 0,
+                is_completed: false,
+                category_id: 1,
+                start_datetime: dateStr
+            }]));
+        }, now.toISOString());
+
+        await page.goto('/tasks');
+        await expect(page.getByTestId('initial-loader')).not.toBeVisible();
+
+        // Try to create overlapping task
+        await page.getByTestId('add-task-fab').click();
+        await page.getByTestId('task-name-input').locator('input').fill('Cancelled Task');
+        await page.getByTestId('confirm-create-task').click();
+
+        // Cancel the overlap warning
+        await expect(page.getByText('Schedule Conflict')).toBeVisible();
+        await page.getByTestId('confirmation-secondary-btn').click();
+
+        // Should still be in create modal
+        await expect(page.getByText('Create New Task')).toBeVisible();
+        await expect(page.getByText('Schedule Conflict')).not.toBeVisible();
+    });
 });
