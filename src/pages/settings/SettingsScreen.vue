@@ -4,7 +4,11 @@ import {
 	Cloud,
 	FileJson,
 	FileSpreadsheet,
-	Lock
+	Lock,
+	Save,
+	LayoutGrid,
+	X,
+	Trash2
 } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
@@ -178,6 +182,96 @@ onBeforeRouteLeave((to, _from, next) => {
 		next();
 	}
 });
+
+// Timer Presets Logic
+interface TimerPreset {
+	name: string;
+	focus: number;
+	rest: number;
+	interval: number;
+	longRest: number;
+}
+
+const presetName = ref("");
+const showPresetDialog = ref(false);
+
+const customPresets = computed<TimerPreset[]>(() => {
+	const setting = draftSettings.value.find((s) => s.key === "Timer Presets");
+	if (setting?.value) {
+		try {
+			return JSON.parse(setting.value);
+		} catch (e) {
+			console.error("Failed to parse timer presets", e);
+		}
+	}
+	return [];
+});
+
+const builtInPresets: TimerPreset[] = [
+	{
+		name: "Default",
+		focus: 25,
+		rest: 5,
+		interval: 4,
+		longRest: 15
+	}
+];
+
+const applyPreset = (preset: TimerPreset) => {
+	const map: Record<string, number> = {
+		"Focus Duration": preset.focus,
+		"Short Break Time": preset.rest,
+		"Long Break Interval": preset.interval,
+		"Long Break Time": preset.longRest
+	};
+
+	for (const [key, value] of Object.entries(map)) {
+		const setting = draftSettings.value.find((s) => s.key === key);
+		if (setting) {
+			setting.value = String(value);
+		}
+	}
+	checkForChanges();
+};
+
+const handleSavePreset = () => {
+	if (!presetName.value.trim()) return;
+
+	const getVal = (key: string) =>
+		Number(draftSettings.value.find((s) => s.key === key)?.value || 0);
+
+	const newPreset: TimerPreset = {
+		name: presetName.value.trim(),
+		focus: getVal("Focus Duration"),
+		rest: getVal("Short Break Time"),
+		interval: getVal("Long Break Interval"),
+		longRest: getVal("Long Break Time")
+	};
+
+	const presetsSetting = draftSettings.value.find(
+		(s) => s.key === "Timer Presets"
+	);
+	if (presetsSetting) {
+		const updatedPresets = [...customPresets.value, newPreset];
+		presetsSetting.value = JSON.stringify(updatedPresets);
+		checkForChanges();
+	}
+
+	presetName.value = "";
+	showPresetDialog.value = false;
+};
+
+const deletePreset = (index: number) => {
+	const presetsSetting = draftSettings.value.find(
+		(s) => s.key === "Timer Presets"
+	);
+	if (presetsSetting) {
+		const updatedPresets = [...customPresets.value];
+		updatedPresets.splice(index, 1);
+		presetsSetting.value = JSON.stringify(updatedPresets);
+		checkForChanges();
+	}
+};
 </script>
 
 <template>
@@ -194,25 +288,99 @@ onBeforeRouteLeave((to, _from, next) => {
         </button>
         <h1 class="text-xl font-bold text-lightText-primary dark:text-white">Settings</h1>
       </div>
-      <button 
-        @click="saveChanges"
-        :disabled="!hasUnsavedChanges"
-        class="px-2 py-1 rounded-lg font-semibold transition-all"
-        :class="hasUnsavedChanges 
-          ? 'bg-gradient-to-r from-pomodo-orange to-pomodo-red text-white hover:opacity-90' 
-          : 'bg-light-surface dark:bg-dark-surface text-lightText-muted dark:text-text-muted cursor-not-allowed'"
-      >
-        Save Changes
-      </button>
+      <div class="flex items-center gap-3">
+        <button 
+          v-if="hasUnsavedChanges"
+          @click="discardChanges"
+          class="w-9 h-9 flex items-center justify-center bg-pomodo-red text-black hover:opacity-90 rounded-lg transition-all shadow-sm"
+          title="Discard Changes"
+        >
+          <Trash2 :size="18" />
+        </button>
+        <button 
+          @click="saveChanges"
+          :disabled="!hasUnsavedChanges"
+          class="px-2 py-1 h-9 flex items-center rounded-lg font-semibold transition-all"
+          :class="hasUnsavedChanges 
+            ? 'bg-gradient-to-r from-pomodo-orange to-pomodo-red text-white hover:opacity-90' 
+            : 'bg-light-surface dark:bg-dark-surface text-lightText-muted dark:text-text-muted cursor-not-allowed'"
+        >
+          Save Changes
+        </button>
+      </div>
     </div>
 
     <div class="flex-1 overflow-y-auto px-6 py-6">
-      <ErrorBoundary v-for="section of settingSections">
+      <ErrorBoundary v-for="section of settingSections" :key="section.sectionTitle">
         <SettingSection 
           :settings="section.settings" 
           :section-title="section.sectionTitle"
           @change="handleSettingChange"
         >
+          <template v-if="section.sectionTitle.toLowerCase() === 'timer'" #header-actions>
+            <v-menu location="bottom end" :close-on-content-click="false">
+              <template v-slot:activator="{ props }">
+                <button 
+                  v-bind="props"
+                  class="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold text-pomodo-orange bg-pomodo-orange/10 border border-pomodo-orange/20 rounded hover:bg-pomodo-orange/20 transition-colors uppercase tracking-wider"
+                >
+                  <LayoutGrid :size="12" />
+                  Presets
+                </button>
+              </template>
+              <div class="bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg shadow-xl min-w-[200px] py-1 mt-1 overflow-hidden">
+                <!-- Built-in -->
+                <div class="px-3 py-1.5 text-[10px] font-bold text-lightText-muted dark:text-text-muted uppercase tracking-widest bg-light-bg/50 dark:bg-dark-bg/50">
+                  Built-in
+                </div>
+                <button 
+                  v-for="p in builtInPresets" 
+                  :key="p.name"
+                  @click="applyPreset(p)"
+                  class="w-full flex items-center justify-between px-4 py-2 text-sm text-lightText-primary dark:text-white hover:bg-light-bg dark:hover:bg-dark-bg transition-colors"
+                >
+                  {{ p.name }}
+                  <span class="text-[10px] text-lightText-muted dark:text-text-muted">{{ p.focus }}/{{ p.rest }}</span>
+                </button>
+
+                <!-- Custom -->
+                <template v-if="customPresets.length > 0">
+                  <div class="px-3 py-1.5 text-[10px] font-bold text-lightText-muted dark:text-text-muted uppercase tracking-widest bg-light-bg/50 dark:bg-dark-bg/50 border-t border-light-border dark:border-dark-border">
+                    Custom
+                  </div>
+                  <div 
+                    v-for="(p, i) in customPresets" 
+                    :key="p.name"
+                    class="group flex items-center hover:bg-light-bg dark:hover:bg-dark-bg"
+                  >
+                    <button 
+                      @click="applyPreset(p)"
+                      class="flex-1 flex items-center justify-between px-4 py-2 text-sm text-lightText-primary dark:text-white transition-colors text-left"
+                    >
+                      {{ p.name }}
+                      <span class="text-[10px] text-lightText-muted dark:text-text-muted">{{ p.focus }}/{{ p.rest }}</span>
+                    </button>
+                    <button 
+                      @click="deletePreset(i)"
+                      class="opacity-0 group-hover:opacity-100 p-2 text-pomodo-red hover:bg-pomodo-red/10 transition-all rounded"
+                    >
+                      <X :size="14" />
+                    </button>
+                  </div>
+                </template>
+
+                <div class="border-t border-light-border dark:border-dark-border mt-1 pt-1">
+                  <button 
+                    @click="showPresetDialog = true"
+                    class="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-pomodo-orange hover:bg-pomodo-orange/5 transition-colors"
+                  >
+                    <Save :size="14" />
+                    Save current as preset
+                  </button>
+                </div>
+              </div>
+            </v-menu>
+          </template>
         </SettingSection>
       </ErrorBoundary>
       <!-- Theme Settings -->
@@ -356,5 +524,41 @@ onBeforeRouteLeave((to, _from, next) => {
       @secondary="discardChanges"
       @close="cancelNavigation"
     />
+
+    <!-- Save Preset Dialog -->
+    <v-dialog v-model="showPresetDialog" max-width="400">
+      <div class="bg-light-surface dark:bg-dark-surface p-6 rounded-xl border border-light-border dark:border-dark-border shadow-2xl">
+        <h3 class="text-lg font-bold text-lightText-primary dark:text-white mb-2">Save Timer Preset</h3>
+        <p class="text-sm text-lightText-muted dark:text-text-muted mb-4">Give your preset a name to quickly apply these settings later.</p>
+        
+        <v-text-field
+          v-model="presetName"
+          label="Preset Name"
+          variant="outlined"
+          density="comfortable"
+          color="primary"
+          autofocus
+          @keyup.enter="handleSavePreset"
+          hide-details
+          class="mb-6"
+        ></v-text-field>
+
+        <div class="flex justify-end gap-3">
+          <button 
+            @click="showPresetDialog = false"
+            class="px-4 py-2 text-sm font-semibold text-lightText-muted dark:text-text-muted hover:text-lightText-primary dark:hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+          <button 
+            @click="handleSavePreset"
+            :disabled="!presetName.trim()"
+            class="px-4 py-2 bg-gradient-to-r from-pomodo-orange to-pomodo-red text-white text-sm font-bold rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Save Preset
+          </button>
+        </div>
+      </div>
+    </v-dialog>
   </div>
 </template>
