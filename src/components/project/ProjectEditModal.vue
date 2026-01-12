@@ -3,7 +3,6 @@ import { X } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
 import type { Project } from "../../funcs/commands";
 import { useCategoryStore } from "../../stores/categories";
-import { useProjectStore } from "../../stores/project";
 import ScrollIndicator from "../ui/ScrollIndicator.vue";
 
 const props = defineProps<{
@@ -15,7 +14,6 @@ const emit = defineEmits<{
 	save: [project: Project];
 }>();
 
-const projectStore = useProjectStore();
 const categoryStore = useCategoryStore();
 
 const isOpen = ref(true);
