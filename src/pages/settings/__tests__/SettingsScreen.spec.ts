@@ -21,7 +21,11 @@ vi.mock("lucide-vue-next", () => ({
 	LayoutGrid: { template: '<svg class="lucide-layout-grid"></svg>' },
 	Save: { template: '<svg class="lucide-save"></svg>' },
 	Plus: { template: '<svg class="lucide-plus"></svg>' },
-	Trash2: { template: '<svg class="lucide-trash-2"></svg>' }
+	Trash2: { template: '<svg class="lucide-trash-2"></svg>' },
+	Calendar: { template: '<svg class="lucide-calendar"></svg>' },
+	Copy: { template: '<svg class="lucide-copy"></svg>' },
+	ExternalLink: { template: '<svg class="lucide-external-link"></svg>' },
+	RotateCcw: { template: '<svg class="lucide-rotate-ccw"></svg>' }
 }));
 
 // Mock Vue Router

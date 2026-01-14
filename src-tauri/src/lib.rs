@@ -20,6 +20,7 @@ use crate::database::{
         Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, Project, ProjectGetVec, Session,
         SessionGetVec, SettingCatGetVec, SettingGetVec, StringReturn, Task, TaskGetVec,
     },
+    ical::ICalActions,
     project::ProjectActions,
     session::SessionActions,
     settings::SettingActions,
@@ -32,6 +33,7 @@ pub struct AppState {
     pub settings: SettingActions,
     pub tasks: TaskActions,
     pub projects: ProjectActions,
+    pub ical: ICalActions,
 }
 
 pub struct TrayState {
@@ -120,7 +122,8 @@ tauri_commands! {
     projects::add_project(project: Project) -> IdReturn,
     projects::get_projects() -> ProjectGetVec,
     projects::update_project(project: Project) -> NoReturn,
-    projects::delete_project(id: i64) -> NoReturn
+    projects::delete_project(id: i64) -> NoReturn,
+    ical::sync_ical() -> NoReturn
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -158,6 +161,7 @@ pub fn run() {
             projects_get_projects,
             projects_update_project,
             projects_delete_project,
+            ical_sync_ical,
             update_tray
         ]);
 
@@ -188,24 +192,23 @@ pub fn run() {
         .invoke_handler(specta_builder.invoke_handler())
         .setup(|app| {
             tauri::async_runtime::block_on(async {
-                println!("Setup: starting async block");
                 match database::create_database(Some(app)).await {
                     Ok(db) => {
-                        println!("Setup: database created, managing state");
                         let db = Arc::new(db);
                         let sa = SessionActions::new(db.clone());
                         let sta = SettingActions::new(db.clone());
                         let ca = CategoryActions::new(db.clone());
                         let ta = TaskActions::new(db.clone());
                         let pa = ProjectActions::new(db.clone());
+                        let ia = ICalActions::new(db.clone());
                         app.manage(AppState {
                             categories: ca,
                             session: sa,
                             settings: sta,
                             tasks: ta,
                             projects: pa,
+                            ical: ia,
                         });
-                        println!("Setup: state managed");
                     }
                     Err(e) => {
                         eprintln!("Error creating database: {e}");

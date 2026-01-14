@@ -240,16 +240,10 @@ const handleCalendarCreateTask = (date: Date) => {
 
 const handleMouseDown = (e: MouseEvent) => {
 	const isMobile = mobile.value && !window.matchMedia("(hover: hover)").matches;
-	console.log("handleMouseDown triggered", {
-		isMobile,
-		mobile: mobile.value,
-		viewMode: viewMode.value
-	});
 	if (isMobile || viewMode.value !== "timeline") return;
 
 	const target = e.target as HTMLElement;
 	if (target.closest('[data-testid="timeline-task-block"]')) {
-		console.log("Clicked on a task block, ignoring drag.");
 		return;
 	}
 
@@ -258,9 +252,6 @@ const handleMouseDown = (e: MouseEvent) => {
 	const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
 	timelineRect = rect;
 	const y = e.clientY - rect.top;
-	console.log(
-		`Drag starting at absolute Y: ${y}, viewport clientY: ${e.clientY}`
-	);
 
 	isDragging.value = true;
 
@@ -293,11 +284,6 @@ const handleMouseMove = (e: MouseEvent) => {
 
 	const y = e.clientY - timelineRect.top;
 	dragCurrentY.value = y;
-
-	if (Math.abs(y - dragStartY.value) > 2) {
-		// Just to reduce log noise
-		// console.log(`Dragging... Y: ${y}, Current Cycle Guess: ${dragCycles.value}`);
-	}
 
 	// Calculate how many cycles fit in the drag distance
 	const dragDistance = Math.abs(y - dragStartY.value);
@@ -340,7 +326,6 @@ const handleMouseUp = () => {
 	showCreateModal.value = true;
 
 	isDragging.value = false;
-	console.log(`Drag ended. Cycles: ${createCycles.value}, Start: ${date}`);
 	window.removeEventListener("mousemove", handleMouseMove);
 	window.removeEventListener("mouseup", handleMouseUp);
 };

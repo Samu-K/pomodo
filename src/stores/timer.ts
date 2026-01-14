@@ -228,13 +228,7 @@ export const useTimerStore = defineStore("timer", () => {
 		if (mode.value === TimerMode.FOCUS) {
 			if (currentSessionId.value) {
 				try {
-					console.log(
-						`Attempting to delete session ID: ${currentSessionId.value}`
-					);
 					await delete_session(currentSessionId.value);
-					console.log(
-						`Successfully deleted session ID: ${currentSessionId.value}`
-					);
 				} catch (e) {
 					console.error(
 						`Failed to delete session ${currentSessionId.value}:`,
