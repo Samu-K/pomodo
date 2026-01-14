@@ -371,6 +371,7 @@ describe("Tasks Store", () => {
 				if (cmd === "tasks_get_tasks") return [];
 				if (cmd === "categories_get_categories") return [];
 				if (cmd === "tasks_add_task") return 1;
+				if (cmd === "ical_sync_ical") return undefined;
 				return [];
 			});
 
@@ -398,6 +399,7 @@ describe("Tasks Store", () => {
 					is_completed: false
 				})
 			});
+			expect(invoke).toHaveBeenCalledWith("ical_sync_ical");
 		});
 
 		it("creates new category if not found", async () => {
@@ -474,6 +476,7 @@ describe("Tasks Store", () => {
 				if (cmd === "tasks_get_tasks") return [];
 				if (cmd === "categories_get_categories") return [];
 				if (cmd === "tasks_update_task") return undefined;
+				if (cmd === "ical_sync_ical") return undefined;
 				return [];
 			});
 
@@ -502,6 +505,7 @@ describe("Tasks Store", () => {
 					recurrence_rule: "FREQ=DAILY"
 				})
 			});
+			expect(invoke).toHaveBeenCalledWith("ical_sync_ical");
 		});
 
 		it("regenerates recurrence rule when recurrenceChanged is true", async () => {
@@ -547,6 +551,7 @@ describe("Tasks Store", () => {
 				if (cmd === "tasks_get_tasks") return [];
 				if (cmd === "categories_get_categories") return [];
 				if (cmd === "tasks_delete_task") return undefined;
+				if (cmd === "ical_sync_ical") return undefined;
 				return [];
 			});
 
@@ -555,6 +560,7 @@ describe("Tasks Store", () => {
 			expect(invoke).toHaveBeenCalledWith("tasks_delete_task", { id: 5 });
 			// Should also fetch tasks after delete
 			expect(invoke).toHaveBeenCalledWith("tasks_get_tasks");
+			expect(invoke).toHaveBeenCalledWith("ical_sync_ical");
 		});
 
 		it("handles delete error gracefully and sets ui store error", async () => {
@@ -574,6 +580,7 @@ describe("Tasks Store", () => {
 			vi.mocked(invoke).mockImplementation(async (cmd: string) => {
 				if (cmd === "tasks_get_tasks") return [];
 				if (cmd === "categories_get_categories") return [];
+				if (cmd === "ical_sync_ical") return undefined;
 				return undefined;
 			});
 		});
@@ -602,6 +609,7 @@ describe("Tasks Store", () => {
 				parentTaskId: 1,
 				date: "2024-03-15T10:00:00"
 			});
+			expect(invoke).toHaveBeenCalledWith("ical_sync_ical");
 		});
 
 		it("completes non-recurring task via update", async () => {
@@ -629,6 +637,7 @@ describe("Tasks Store", () => {
 					is_completed: true
 				})
 			});
+			expect(invoke).toHaveBeenCalledWith("ical_sync_ical");
 		});
 
 		it("completes exception task (child of recurring) via update", async () => {
@@ -658,6 +667,36 @@ describe("Tasks Store", () => {
 					parent_task_id: 1
 				})
 			});
+			expect(invoke).toHaveBeenCalledWith("ical_sync_ical");
+		});
+	});
+
+	describe("syncICal", () => {
+		it("calls ical_sync_ical command", async () => {
+			const { invoke } = await import("@tauri-apps/api/core");
+
+			vi.mocked(invoke).mockResolvedValue(undefined);
+
+			await tasksStore.syncICal();
+
+			expect(invoke).toHaveBeenCalledWith("ical_sync_ical");
+		});
+
+		it("logs error if sync fails", async () => {
+			const { invoke } = await import("@tauri-apps/api/core");
+			const consoleSpy = vi
+				.spyOn(console, "error")
+				.mockImplementation(() => {});
+
+			vi.mocked(invoke).mockRejectedValue(new Error("Sync error"));
+
+			await tasksStore.syncICal();
+
+			expect(consoleSpy).toHaveBeenCalledWith(
+				"Failed to sync iCal",
+				expect.any(Error)
+			);
+			consoleSpy.mockRestore();
 		});
 	});
 });
