@@ -21,7 +21,11 @@ vi.mock("lucide-vue-next", () => ({
 	LayoutGrid: { template: '<svg class="lucide-layout-grid"></svg>' },
 	Save: { template: '<svg class="lucide-save"></svg>' },
 	Plus: { template: '<svg class="lucide-plus"></svg>' },
-	Trash2: { template: '<svg class="lucide-trash-2"></svg>' }
+	Trash2: { template: '<svg class="lucide-trash-2"></svg>' },
+	Calendar: { template: '<svg class="lucide-calendar"></svg>' },
+	Copy: { template: '<svg class="lucide-copy"></svg>' },
+	ExternalLink: { template: '<svg class="lucide-external-link"></svg>' },
+	RotateCcw: { template: '<svg class="lucide-rotate-ccw"></svg>' }
 }));
 
 // Mock Vue Router
@@ -48,6 +52,12 @@ type SettingsComponent = {
 	presetName: string;
 	applyPreset: (preset: TimerPreset) => void;
 	handleSavePreset: () => void;
+	handleEnableICal: () => Promise<void>;
+	showICalModal: boolean;
+	handleDisableICal: () => void;
+	showDisableConfirm: boolean;
+	confirmDisableICal: () => Promise<void>;
+	icalFeedUrl: string;
 };
 
 vi.mock("vue-router", () => ({
@@ -355,5 +365,112 @@ describe("SettingsScreen.vue", () => {
 		expect(presets).toHaveLength(1);
 		expect(presets[0].name).toBe("Deep Work");
 		expect(presets[0].focus).toBe(60);
+	});
+
+	it("Enabling iCal sync generates token, saves, and triggers sync", async () => {
+		// Mock crypto.randomUUID
+		Object.defineProperty(global, "crypto", {
+			value: {
+				randomUUID: vi.fn(() => "test-uuid-1234")
+			},
+			writable: true
+		});
+
+		(wrapper.vm as object as SettingsComponent).draftSettings = [
+			{ id: 10, key: "iCal sync enabled", value: "false" } as Setting,
+			{ id: 11, key: "iCal sync token", value: "" } as Setting,
+			{ id: 12, key: "iCal sync URL", value: "" } as Setting
+		];
+
+		// Populate store settings so change detection works
+		settingsStore.settings = [
+			{ id: 10, key: "iCal sync enabled", value: "false" } as Setting,
+			{ id: 11, key: "iCal sync token", value: "" } as Setting,
+			{ id: 12, key: "iCal sync URL", value: "" } as Setting
+		];
+
+		// Mock syncICal
+		const tasksStore = await import("../../../stores/task").then((m) =>
+			m.useTasks()
+		);
+		tasksStore.syncICal = vi.fn();
+
+		// Trigger enable
+		await (wrapper.vm as unknown as SettingsComponent).handleEnableICal();
+
+		// Verify settings updated
+		const draft = (wrapper.vm as object as SettingsComponent).draftSettings;
+		expect(draft.find((s) => s.key === "iCal sync enabled")?.value).toBe(
+			"true"
+		);
+		expect(draft.find((s) => s.key === "iCal sync token")?.value).toBe(
+			"test-uuid-1234"
+		);
+		expect(draft.find((s) => s.key === "iCal sync URL")?.value).toBe(
+			"https://kasame.net/pomodo/ical-sync"
+		);
+
+		// Verify save was called
+		expect(settingsStore.updateSetting).toHaveBeenCalledTimes(3);
+
+		// Verify sync triggered
+		expect(tasksStore.syncICal).toHaveBeenCalled();
+
+		// Verify modal shown
+		expect((wrapper.vm as unknown as SettingsComponent).showICalModal).toBe(
+			true
+		);
+	});
+
+	it("Disabling iCal sync shows confirmation", async () => {
+		(wrapper.vm as object as SettingsComponent).draftSettings = [
+			{ id: 10, key: "iCal sync enabled", value: "true" } as Setting
+		];
+
+		(wrapper.vm as unknown as SettingsComponent).handleDisableICal();
+		await wrapper.vm.$nextTick();
+
+		expect(
+			(wrapper.vm as unknown as SettingsComponent).showDisableConfirm
+		).toBe(true);
+	});
+
+	it("Confirming disable updates setting and saves", async () => {
+		(wrapper.vm as object as SettingsComponent).draftSettings = [
+			{ id: 10, key: "iCal sync enabled", value: "true" } as Setting
+		];
+
+		// Populate store settings
+		settingsStore.settings = [
+			{ id: 10, key: "iCal sync enabled", value: "true" } as Setting
+		];
+		await wrapper.vm.$nextTick();
+
+		(wrapper.vm as unknown as SettingsComponent).showDisableConfirm = true;
+
+		await (wrapper.vm as unknown as SettingsComponent).confirmDisableICal();
+
+		const draft = (wrapper.vm as object as SettingsComponent).draftSettings;
+		expect(draft.find((s) => s.key === "iCal sync enabled")?.value).toBe(
+			"false"
+		);
+		expect(settingsStore.updateSetting).toHaveBeenCalledWith(10, "false");
+		expect(
+			(wrapper.vm as unknown as SettingsComponent).showDisableConfirm
+		).toBe(false);
+	});
+
+	it("Computes icalFeedUrl correctly", async () => {
+		(wrapper.vm as object as SettingsComponent).draftSettings = [
+			{ id: 11, key: "iCal sync token", value: "abcdef-123456" } as Setting,
+			{
+				id: 12,
+				key: "iCal sync URL",
+				value: "https://example.com/api"
+			} as Setting
+		];
+
+		const url = (wrapper.vm as unknown as SettingsComponent).icalFeedUrl;
+		expect(url).toBe("https://example.com/api/cal/abcdef-123456");
 	});
 });

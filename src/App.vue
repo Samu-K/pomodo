@@ -55,9 +55,6 @@ const toggleTimerSetting = computed(
 
 watch(toggleTimerSetting, async (newValue, oldValue) => {
 	if (newValue && newValue !== oldValue) {
-		console.log(
-			`[App] Toggle timer setting changed from ${oldValue} to ${newValue}, re-registering...`
-		);
 		await registerShortcuts();
 	}
 });

@@ -1,74 +1,54 @@
 pub mod category;
 pub mod decls;
+pub mod ical;
 pub mod project;
 pub mod session;
 pub mod settings;
 pub mod task;
 
 use decls::Db;
-use sqlx::{migrate::MigrateDatabase, sqlite::SqlitePoolOptions, Sqlite};
+use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
 use std::fs::create_dir_all;
-use tauri::{App, Manager as _};
+use tauri::Manager as _;
 
-pub async fn create_database(app: Option<&App>) -> Result<Db, String> {
-    println!("Database init: starting");
-    let mut app_dir;
-    match app {
-        Some(app) => {
-            println!("Database init: getting app dir");
-            app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
-        }
+pub async fn create_database(app: Option<&tauri::App>) -> Result<SqlitePool, String> {
+    let app_dir = match app {
+        Some(a) => a.path().app_data_dir().map_err(|e| e.to_string())?,
         None => {
-            app_dir = std::path::PathBuf::from("/home/samuk/.local/share/com.pomodo.app/");
+            let mut path = std::env::current_dir().unwrap();
+            path.push("data");
+            path
         }
     };
-
-    println!("Database init: creating dir at {:?}", app_dir);
     create_dir_all(&app_dir).map_err(|e| format!("failed to create dir: {e}"))?;
-    println!("Creating db at {app_dir:?}");
-    app_dir.push("pomodo.sqlite");
+    let db_path = app_dir.join("pomodo.db");
 
-    let db_url = format!(
-        "sqlite:{}",
-        app_dir.to_str().ok_or("path should be valid unicode")?
-    );
-    println!("Database init: db_url is {}", db_url);
+    let db_url = format!("sqlite:{}", db_path.to_str().unwrap());
 
     if !Sqlite::database_exists(&db_url).await.unwrap_or(false) {
-        println!("Database init: creating database file");
         Sqlite::create_database(&db_url)
             .await
-            .map_err(|e| format!("failed to create database: {e}"))?;
-    } else {
-        println!("Database init: database exists");
+            .map_err(|e| e.to_string())?;
     }
 
-    println!("Database init: connecting");
-    let db = SqlitePoolOptions::new()
-        .connect(&db_url)
+    let pool = SqlitePool::connect(&db_url)
         .await
-        .map_err(|e| format!("Failed to connect to database: {e}"))?;
+        .map_err(|e| e.to_string())?;
 
-    println!("Database init: running migrations");
     sqlx::migrate!("./migrations")
-        .run(&db)
+        .run(&pool)
         .await
-        .map_err(|e| format!("failed to run migrations: {e}"))?;
+        .map_err(|e| e.to_string())?;
 
     #[cfg(debug_assertions)]
     {
         if std::env::var("POMODO_SKIP_SEEDING").is_err() {
-            println!("Database init: Dev seed data");
-            let seed_sql = include_str!("../../migrations/seed/20260105120000_dev_seed_data.sql");
-            sqlx::query(seed_sql)
-                .execute(&db)
+            sqlx::migrate!("./migrations/seed")
+                .run(&pool)
                 .await
-                .map_err(|e| format!("failed to run seed migrations: {e}"))?;
-        } else {
-            println!("Database init: Skipping dev seed data (POMODO_SKIP_SEEDING is set)");
+                .map_err(|e| e.to_string())?;
         }
     }
 
-    println!("Database init: success");
-    Ok(db)
+    Ok(pool)
 }
