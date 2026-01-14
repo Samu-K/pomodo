@@ -16,6 +16,8 @@ export enum TimerMode {
 	REST = 1
 }
 
+const NOTIFICATION_BUFFER_MS = 500;
+
 export const useTimerStore = defineStore("timer", () => {
 	const settingsStore = useSettingsStore();
 	const ui = useUIStore();
@@ -137,7 +139,18 @@ export const useTimerStore = defineStore("timer", () => {
 		pauseTimer();
 
 		// Check for notifications
-		const { triggerAllFeedback } = useTimerFeedback();
+		const { triggerAllFeedback, cancelScheduledNotification } =
+			useTimerFeedback();
+		// We still trigger feedback (sound/haptics) here for open app experience
+		// The scheduled notification might have already fired if backgrounded,
+		// or will fire momentarily if we are exact.
+		// However, triggerAllFeedback also sends a notification if we are NOT focused.
+		// But since we just finished, we might be focused.
+		// Let's just trigger sound/haptics here explicitly if we want to avoid double notification?
+		// Actually triggerAllFeedback checks focus.
+		// IMPORTANT: Cancel the schedule so it doesn't fire LATER if we somehow finished early (unlikely for timer).
+		// But for a timer, "finish" means time is up.
+		await cancelScheduledNotification();
 		await triggerAllFeedback(mode.value === TimerMode.FOCUS);
 
 		if (mode.value === TimerMode.FOCUS) {
@@ -206,7 +219,19 @@ export const useTimerStore = defineStore("timer", () => {
 		}
 
 		// Calculate end time based on current remaining time
-		endTime = Date.now() + remainingTime.value * 1000;
+		const durationMs = remainingTime.value * 1000;
+		endTime = Date.now() + durationMs;
+
+		// Schedule notification
+		// Add a small buffer to the scheduled time to ensure that if the app is open,
+		// we have time to cancel it before it fires. The worker fires exactly at durationMs,
+		// and we cancel immediately. If they happen at the exact same ms, it's a race.
+		// 500ms buffer ensures we win the race if the app is foregrounded.
+		const { scheduleFinishedNotification } = useTimerFeedback();
+		scheduleFinishedNotification(
+			mode.value === TimerMode.FOCUS,
+			durationMs + NOTIFICATION_BUFFER_MS
+		);
 
 		isRunning.value = true;
 		worker.postMessage({ type: "START", payload: { endTime } });
@@ -216,6 +241,9 @@ export const useTimerStore = defineStore("timer", () => {
 		isRunning.value = false;
 		worker.postMessage({ type: "PAUSE" });
 		endTime = undefined;
+
+		const { cancelScheduledNotification } = useTimerFeedback();
+		await cancelScheduledNotification();
 	};
 
 	const toggleTimer = () => {
@@ -224,6 +252,9 @@ export const useTimerStore = defineStore("timer", () => {
 
 	const resetTimer = async () => {
 		await pauseTimer();
+		const { cancelScheduledNotification } = useTimerFeedback();
+		await cancelScheduledNotification();
+
 		// if we reset a running focus session, delete it from DB
 		if (mode.value === TimerMode.FOCUS) {
 			if (currentSessionId.value) {
@@ -260,8 +291,11 @@ export const useTimerStore = defineStore("timer", () => {
 		}
 	};
 
-	const skip = () => {
-		pauseTimer();
+	const skip = async () => {
+		await pauseTimer();
+		const { cancelScheduledNotification } = useTimerFeedback();
+		await cancelScheduledNotification();
+
 		// switch modes immediately
 		if (mode.value === TimerMode.FOCUS) {
 			// Clear the session ID since we're abandoning this session
