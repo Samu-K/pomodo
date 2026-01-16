@@ -4,13 +4,17 @@ pub mod project;
 pub mod session;
 pub mod settings;
 pub mod task;
+pub mod snapshot;
 
 use decls::Db;
 use sqlx::{migrate::MigrateDatabase, sqlite::SqlitePoolOptions, Sqlite};
 use std::fs::create_dir_all;
 use tauri::{App, Manager as _};
 
-pub async fn create_database(app: Option<&App>) -> Result<Db, String> {
+use std::path::PathBuf;
+
+pub async fn create_database(app: Option<&App>) -> Result<(Db, PathBuf), String> {
+
     println!("Database init: starting");
     let mut app_dir;
     match app {
@@ -70,5 +74,6 @@ pub async fn create_database(app: Option<&App>) -> Result<Db, String> {
     }
 
     println!("Database init: success");
-    Ok(db)
+    Ok((db, app_dir))
 }
+

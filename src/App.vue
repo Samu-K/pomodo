@@ -21,17 +21,22 @@ import AddCategoryDialog from "./components/timer/AddCategoryDialog.vue";
 import WelcomeDialog from "./components/WelcomeDialog.vue";
 import { RecurrenceType } from "./defines/recur.ts";
 import { Task } from "./defines/task.ts";
+import { commands } from "./funcs/commands";
 import { registerShortcuts } from "./funcs/shortcuts";
+import { useAuthStore } from "./stores/auth";
 import { useSettingsStore } from "./stores/settings";
 import { useThemeStore } from "./stores/theme";
 import { TimerMode, useTimerStore } from "./stores/timer";
 import { useUIStore } from "./stores/ui";
 
 const route = useRoute();
+
 const router = useRouter();
 const settingsStore = useSettingsStore();
 const uiStore = useUIStore();
+const authStore = useAuthStore();
 const themeStore = useThemeStore();
+
 const vuetifyTheme = useTheme();
 const isLoading = ref(true);
 
@@ -130,6 +135,32 @@ onMounted(async () => {
 
 	// Register shortcuts
 	await registerShortcuts();
+
+	// Check for Cloud Updates
+	if (authStore.isAuthenticated) {
+		try {
+			const lastRestoreKey = "pomodo-last-auto-restore";
+			const now = Date.now();
+			const lastRestore = parseInt(localStorage.getItem(lastRestoreKey) || "0");
+
+			// Cooldown of 10 seconds to prevent infinite loops if local clock is skewed
+			if (now - lastRestore > 10000) {
+				const hasUpdate = await authStore.checkUpdates();
+				if (hasUpdate) {
+					console.log("Auto-restoring cloud backup...");
+					localStorage.setItem(lastRestoreKey, Date.now().toString());
+
+					isLoading.value = true;
+					await authStore.restore();
+					window.location.reload();
+				}
+			}
+			const debugMsg = await (commands as any).supabaseTestConnection();
+			console.log("[Supabase Debug]", debugMsg);
+		} catch (e) {
+			console.error("Failed to check for updates:", e);
+		}
+	}
 });
 
 // Watch settings store theme and sync Vuetify theme
@@ -331,4 +362,24 @@ function navigateTabs(offset: number) {
       </v-btn>
     </template>
   </v-snackbar>
+
+  <!-- Global Success Notification -->
+  <v-snackbar
+    :model-value="!!uiStore.successMessage"
+    color="success"
+    location="top"
+    :timeout="3000"
+    @update:model-value="(val) => !val && (uiStore.successMessage = null)"
+  >
+    {{ uiStore.successMessage }}
+    <template #actions>
+      <v-btn
+        variant="text"
+        @click="uiStore.successMessage = null"
+      >
+        Close
+      </v-btn>
+    </template>
+  </v-snackbar>
+
 </template>

@@ -1,5 +1,10 @@
 pub mod database;
+pub mod integrations;
+
 use chrono::{NaiveDate, NaiveDateTime};
+use serde::Deserialize;
+
+
 use paste::paste;
 use specta::specta;
 use std::sync::Arc;
@@ -24,7 +29,11 @@ use crate::database::{
     session::SessionActions,
     settings::SettingActions,
     task::TaskActions,
+    snapshot::Snapshot,
 };
+use crate::integrations::supabase::{SupabaseClient, SupabaseSession};
+use std::sync::Mutex;
+
 
 pub struct AppState {
     pub categories: CategoryActions,
@@ -32,7 +41,22 @@ pub struct AppState {
     pub settings: SettingActions,
     pub tasks: TaskActions,
     pub projects: ProjectActions,
+    pub db_path: std::path::PathBuf,
 }
+
+
+pub struct AuthState {
+    pub client: SupabaseClient,
+    pub session: Mutex<Option<SupabaseSession>>,
+}
+
+#[derive(Deserialize)]
+struct SupabaseConfig {
+    url: String,
+    key: String,
+}
+
+
 
 pub struct TrayState {
     #[cfg(not(mobile))]
@@ -123,6 +147,168 @@ tauri_commands! {
     projects::delete_project(id: i64) -> NoReturn
 }
 
+#[tauri::command]
+#[specta]
+async fn supabase_login(
+    state: State<'_, AuthState>,
+    email: String,
+    password: String,
+) -> Result<SupabaseSession, String> {
+    let session = state
+        .client
+        .sign_in(&email, &password)
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    *state.session.lock().unwrap() = Some(session.clone());
+    Ok(session)
+}
+
+#[tauri::command]
+#[specta]
+async fn supabase_signup(
+    state: State<'_, AuthState>,
+    email: String,
+    password: String,
+) -> Result<Option<SupabaseSession>, String> {
+    let session = state
+        .client
+        .sign_up(&email, &password)
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    if let Some(ref s) = session {
+        *state.session.lock().unwrap() = Some(s.clone());
+    }
+    
+    Ok(session)
+}
+
+
+#[tauri::command]
+#[specta]
+async fn supabase_sync_now(
+    app_state: State<'_, AppState>,
+    auth_state: State<'_, AuthState>,
+) -> Result<(), String> {
+    // 1. Check if logged in
+    let token = {
+        let guard = auth_state.session.lock().unwrap();
+        guard.as_ref().map(|s| s.access_token.clone())
+    }.ok_or("Not logged in")?;
+
+    let user_id = {
+        let guard = auth_state.session.lock().unwrap();
+        guard.as_ref().map(|s| s.user.id.clone())
+    }.ok_or("No user ID")?;
+
+    // 2. Create Snapshot
+    let db = app_state.categories.db.clone(); // Access DB from any action
+    let snapshot = Snapshot::create(db).await.map_err(|e| e.to_string())?;
+
+    // 3. Upload
+    auth_state
+        .client
+        .upload_snapshot(&token, &user_id, snapshot)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta]
+async fn supabase_restore(
+    _app: tauri::AppHandle, // Need app handle to potentially restart or clear DB?
+    app_state: State<'_, AppState>,
+
+    auth_state: State<'_, AuthState>,
+) -> Result<(), String> {
+     // 1. Check if logged in
+     let token = {
+        let guard = auth_state.session.lock().unwrap();
+        guard.as_ref().map(|s| s.access_token.clone())
+    }.ok_or("Not logged in")?;
+
+    // 2. Fetch latest backup
+    let backup_json = auth_state.client.get_latest_backup(&token).await.map_err(|e| e.to_string())?;
+
+    if let Some(mut json) = backup_json {
+        // Supabase returns a JSON object, the snapshot is in the "data" field?
+        // upload_snapshot sends: { user_id, data: snapshot, app_version }
+        // So we need to extract "data".
+        
+        let snapshot_val = json.get_mut("data").ok_or("Backup missing data field")?.take();
+        let snapshot: Snapshot = serde_json::from_value(snapshot_val).map_err(|e| format!("Invalid snapshot: {}", e))?;
+
+        // 3. Restore
+        let db = app_state.categories.db.clone();
+        snapshot.restore(db).await.map_err(|e| e.to_string())?;
+    } else {
+        return Err("No backup found".to_string());
+    }
+    
+    Ok(())
+}
+
+
+
+#[tauri::command]
+#[specta]
+async fn supabase_check_updates(
+    app_state: State<'_, AppState>,
+    auth_state: State<'_, AuthState>,
+) -> Result<bool, String> {
+    // 1. Check if logged in
+    let token = {
+        let guard = auth_state.session.lock().unwrap();
+        guard.as_ref().map(|s| s.access_token.clone())
+    }.ok_or("Not logged in")?;
+
+    // 2. Head check latest backup
+    let latest_backup = auth_state.client.get_latest_backup(&token).await.map_err(|e| e.to_string())?;
+    
+    if let Some(backup) = latest_backup {
+         let created_at_str = backup["created_at"].as_str().ok_or("Invalid created_at")?;
+         let created_at = chrono::DateTime::parse_from_rfc3339(created_at_str).map_err(|e| e.to_string())?;
+         
+         // 3. Check local file time
+         let metadata = std::fs::metadata(&app_state.db_path).map_err(|e| e.to_string())?;
+         let modified_sys = metadata.modified().map_err(|e| e.to_string())?;
+         let modified: chrono::DateTime<chrono::Utc> = modified_sys.into();
+         
+         println!("Cloud Backup: {}, Local File: {}", created_at, modified);
+
+         // If Cloud is NEWER than Local File + Buffer (e.g. 1 sec), return true
+         if created_at > (modified + chrono::Duration::seconds(1)) {
+             return Ok(true);
+         }
+    }
+
+    Ok(false)
+}
+
+#[tauri::command]
+#[specta]
+async fn supabase_test_connection(
+    auth_state: State<'_, AuthState>,
+) -> Result<String, String> {
+    let token = {
+        let guard = auth_state.session.lock().unwrap();
+        guard.as_ref().map(|s| s.access_token.clone())
+    };
+
+    if let Some(token) = token {
+        match auth_state.client.get_user(&token).await {
+            Ok(user) => Ok(format!("Connected to Supabase. User: {}", user.email.unwrap_or("No Email".to_string()))),
+            Err(e) => Err(format!("Connection Error: {}", e))
+        }
+    } else {
+        Ok("Not logged in (Connection untested)".to_string())
+    }
+}
+
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let specta_builder =
@@ -158,7 +344,17 @@ pub fn run() {
             projects_get_projects,
             projects_update_project,
             projects_delete_project,
+            supabase_login,
+            supabase_signup,
+            supabase_sync_now,
+
+            supabase_restore,
+            supabase_check_updates,
+            supabase_test_connection,
             update_tray
+
+
+
         ]);
 
     #[cfg(all(debug_assertions, not(mobile)))]
@@ -190,7 +386,7 @@ pub fn run() {
             tauri::async_runtime::block_on(async {
                 println!("Setup: starting async block");
                 match database::create_database(Some(app)).await {
-                    Ok(db) => {
+                    Ok((db, path)) => {
                         println!("Setup: database created, managing state");
                         let db = Arc::new(db);
                         let sa = SessionActions::new(db.clone());
@@ -204,8 +400,22 @@ pub fn run() {
                             settings: sta,
                             tasks: ta,
                             projects: pa,
+                            db_path: path
                         });
+
                         println!("Setup: state managed");
+
+                        // Init Supabase
+                        let config_str = include_str!("../supabase.json");
+                        let config: SupabaseConfig = serde_json::from_str(config_str).expect("Failed to parse supabase.json");
+                        
+                        let client = SupabaseClient::new(config.url, config.key);
+
+                        app.manage(AuthState {
+                            client,
+                            session: Mutex::new(None),
+                        });
+
                     }
                     Err(e) => {
                         eprintln!("Error creating database: {e}");

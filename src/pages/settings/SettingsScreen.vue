@@ -5,11 +5,13 @@ import {
 	FileJson,
 	FileSpreadsheet,
 	LayoutGrid,
+	Loader2,
 	Lock,
 	Save,
 	Trash2,
 	X
 } from "lucide-vue-next";
+import { storeToRefs } from "pinia"; // New Import
 import { computed, onMounted, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import ErrorBoundary from "../../components/ErrorBoundary.vue";
@@ -19,6 +21,7 @@ import ShortcutRecorder from "../../components/settings/ShortcutRecorder.vue"; /
 import ConfirmationModal from "../../components/ui/ConfirmationModal.vue";
 import type { Setting } from "../../funcs/commands";
 import { exportUserData } from "../../funcs/export";
+import { useAuthStore } from "../../stores/auth"; // New Import
 import { useSettingsStore } from "../../stores/settings";
 import { useUIStore } from "../../stores/ui";
 
@@ -33,6 +36,45 @@ const draftSettings = ref<Setting[]>([]);
 const hasUnsavedChanges = ref(false);
 const showUnsavedChangesModal = ref(false);
 const pendingRoute = ref<string | null>(null);
+
+const authStore = useAuthStore();
+const { isAuthenticated } = storeToRefs(authStore);
+const isSyncing = ref(false);
+const showRestoreConfirmation = ref(false);
+
+const handleSync = async () => {
+	isSyncing.value = true;
+	try {
+		await authStore.syncNow();
+		console.log("Sync complete");
+		uiStore.showSuccess("Sync successful");
+	} catch (e) {
+		uiStore.setError(`Sync failed: ${e}`);
+	} finally {
+		isSyncing.value = false;
+	}
+};
+
+const handleRestore = () => {
+	showRestoreConfirmation.value = true;
+};
+
+const executeRestore = async () => {
+	showRestoreConfirmation.value = false;
+	isSyncing.value = true;
+	try {
+		await authStore.restore();
+		console.log("Restore complete");
+		uiStore.showSuccess("Restore successful");
+
+		// Reload settings
+		await settingsStore.fetchSettings();
+	} catch (e) {
+		uiStore.setError(`Restore failed: ${e}`);
+	} finally {
+		isSyncing.value = false;
+	}
+};
 
 // Initialize drafts when store data is available
 watch(
@@ -446,24 +488,51 @@ const deletePreset = (index: number) => {
           Cloud
         </h2>
         
-        <div class="flex items-center justify-between py-4 border-b border-light-border dark:border-dark-border">
-          <div class="flex-1">
-            <h3 class="text-lightText-primary dark:text-white font-medium">Sync Data</h3>
-            <p class="text-xs text-lightText-muted dark:text-text-muted mt-1">Sync your data to the cloud</p>
-          </div>
-          <div class="relative group">
-            <button
-              disabled
-              class="flex items-center gap-2 px-3 py-2 bg-pomodo-orange/50 text-white/50 rounded-lg cursor-not-allowed whitespace-nowrap"
-            >
-              <Cloud :size="16" />
-              <span>Sync to cloud</span>
-            </button>
-            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-              Coming Soon
+        <div class="py-4 border-b border-light-border dark:border-dark-border">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex-1">
+              <h3 class="text-lightText-primary dark:text-white font-medium">Cloud Sync</h3>
+              <p class="text-xs text-lightText-muted dark:text-text-muted mt-1">
+                  {{ authStore.lastSyncTime ? `Last sync: ${authStore.lastSyncTime}` : (isAuthenticated ? "Signed in with Supabase" : "Sign in to sync your data") }}
+              </p>
             </div>
+
+          </div>
+          
+          <div class="flex gap-3">
+            <template v-if="!isAuthenticated">
+                 <button
+                    @click="router.push('/auth')"
+                    class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-pomodo-orange text-white rounded-lg hover:opacity-90 transition-all font-semibold text-sm"
+                 >
+                    <Cloud :size="16" />
+                    <span>Sign In</span>
+                 </button>
+            </template>
+            <template v-else>
+                 <button
+                    @click="handleRestore"
+                    :disabled="isSyncing"
+                    class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border text-lightText-primary dark:text-white rounded-lg hover:bg-light-bg dark:hover:bg-dark-bg transition-all text-sm"
+                    :class="{ 'opacity-50 cursor-not-allowed': isSyncing }"
+                 >
+                    <Cloud :size="16" />
+                    <span>Restore</span>
+                 </button>
+                 <button
+                    @click="handleSync"
+                    :disabled="isSyncing"
+                    class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-pomodo-orange text-white rounded-lg hover:opacity-90 transition-all text-sm font-semibold"
+                    :class="{ 'opacity-50 cursor-not-allowed': isSyncing }"
+                 >
+                    <Cloud :size="16" v-if="!isSyncing" />
+                    <Loader2 :size="16" v-else class="animate-spin" />
+                    <span>{{ isSyncing ? "Syncing..." : "Sync Now" }}</span>
+                 </button>
+            </template>
           </div>
         </div>
+
       </section>
 
       <!-- Data Management -->
@@ -525,6 +594,19 @@ const deletePreset = (index: number) => {
       @close="cancelNavigation"
     />
 
+    <!-- Restore Confirmation Modal -->
+    <ConfirmationModal 
+      v-if="showRestoreConfirmation"
+      title="Restore Backup"
+      message="This will overwrite your local data with the latest cloud backup. Are you sure you want to proceed?"
+      primaryBtnText="Restore"
+      secondaryBtnText="Cancel"
+      :isDanger="true"
+      @primary="executeRestore"
+      @secondary="showRestoreConfirmation = false"
+      @close="showRestoreConfirmation = false"
+    />
+
     <!-- Save Preset Dialog -->
     <v-dialog v-model="showPresetDialog" max-width="400">
       <div class="bg-light-surface dark:bg-dark-surface p-6 rounded-xl border border-light-border dark:border-dark-border shadow-2xl">
@@ -562,3 +644,4 @@ const deletePreset = (index: number) => {
     </v-dialog>
   </div>
 </template>
+
