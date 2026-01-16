@@ -29,14 +29,14 @@ tauri-plugin-fs = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1.47.1", features = ["macros"] }
-sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio", "chrono" ] }
+sqlx = { version = "0.8.6", default-features = false, features = ["sqlite", "runtime-tokio", "chrono", "macros", "migrate"] }
 fs = "0.0.5"
 futures = "0.3.31"
 chrono = { version = "0.4.41", features = ["serde"] }
 paste = "1.0.15"
 syn = "2.0.106"
 quote = "1.0.40"
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 uuid = { version = "1.14", features = ["v4"] }
 specta = { version = "=2.0.0-rc.22", features = ["chrono", "serde"] }
 specta-typescript = "0.0.9"
