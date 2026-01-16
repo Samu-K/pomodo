@@ -76,7 +76,6 @@ The project uses a specific color palette defined in `tailwind.config.js`.
 ## 🏗 Architecture & Patterns
 
 ### Routing
-- **Manual Routing**: The app uses a manual state-based routing system in `App.vue` (using `activeTab`, `showSettings`, etc.) instead of `vue-router`.
 - **Navigation**: Controlled by `AppLayout` events and state variables in `App.vue`.
 
 ### Persistence & Data

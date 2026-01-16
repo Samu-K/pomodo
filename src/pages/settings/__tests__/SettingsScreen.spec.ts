@@ -396,7 +396,7 @@ describe("SettingsScreen.vue", () => {
 		tasksStore.syncICal = vi.fn();
 
 		// Trigger enable
-		await (wrapper.vm as unknown as SettingsComponent).handleEnableICal();
+		await (wrapper.vm as object as SettingsComponent).handleEnableICal();
 
 		// Verify settings updated
 		const draft = (wrapper.vm as object as SettingsComponent).draftSettings;
@@ -417,7 +417,7 @@ describe("SettingsScreen.vue", () => {
 		expect(tasksStore.syncICal).toHaveBeenCalled();
 
 		// Verify modal shown
-		expect((wrapper.vm as unknown as SettingsComponent).showICalModal).toBe(
+		expect((wrapper.vm as object as SettingsComponent).showICalModal).toBe(
 			true
 		);
 	});
@@ -427,12 +427,12 @@ describe("SettingsScreen.vue", () => {
 			{ id: 10, key: "iCal sync enabled", value: "true" } as Setting
 		];
 
-		(wrapper.vm as unknown as SettingsComponent).handleDisableICal();
+		(wrapper.vm as object as SettingsComponent).handleDisableICal();
 		await wrapper.vm.$nextTick();
 
-		expect(
-			(wrapper.vm as unknown as SettingsComponent).showDisableConfirm
-		).toBe(true);
+		expect((wrapper.vm as object as SettingsComponent).showDisableConfirm).toBe(
+			true
+		);
 	});
 
 	it("Confirming disable updates setting and saves", async () => {
@@ -446,18 +446,18 @@ describe("SettingsScreen.vue", () => {
 		];
 		await wrapper.vm.$nextTick();
 
-		(wrapper.vm as unknown as SettingsComponent).showDisableConfirm = true;
+		(wrapper.vm as object as SettingsComponent).showDisableConfirm = true;
 
-		await (wrapper.vm as unknown as SettingsComponent).confirmDisableICal();
+		await (wrapper.vm as object as SettingsComponent).confirmDisableICal();
 
 		const draft = (wrapper.vm as object as SettingsComponent).draftSettings;
 		expect(draft.find((s) => s.key === "iCal sync enabled")?.value).toBe(
 			"false"
 		);
 		expect(settingsStore.updateSetting).toHaveBeenCalledWith(10, "false");
-		expect(
-			(wrapper.vm as unknown as SettingsComponent).showDisableConfirm
-		).toBe(false);
+		expect((wrapper.vm as object as SettingsComponent).showDisableConfirm).toBe(
+			false
+		);
 	});
 
 	it("Computes icalFeedUrl correctly", async () => {
@@ -470,7 +470,7 @@ describe("SettingsScreen.vue", () => {
 			} as Setting
 		];
 
-		const url = (wrapper.vm as unknown as SettingsComponent).icalFeedUrl;
+		const url = (wrapper.vm as object as SettingsComponent).icalFeedUrl;
 		expect(url).toBe("https://example.com/api/cal/abcdef-123456");
 	});
 });
