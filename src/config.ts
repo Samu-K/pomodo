@@ -4,13 +4,14 @@ import { ref } from "vue";
  * Global App Configuration
  */
 
-interface CustomWindow extends Window {
-	_isTest?: boolean;
-	__POMODO_TOGGLE_PREMIUM_FEATURES?: (val: boolean) => void;
+declare global {
+	interface Window {
+		_isTest?: boolean;
+		__POMODO_TOGGLE_PREMIUM_FEATURES?: (val: boolean) => void;
+	}
 }
 
-const win =
-	typeof window !== "undefined" ? (window as unknown as CustomWindow) : null;
+const win = typeof window !== "undefined" ? window : null;
 
 // Default to false for dev, but allow override for tests
 const isTest = win?._isTest === true;
