@@ -77,6 +77,10 @@ const selectedTask = ref<Task>({
 const hideBottomNav = computed(
 	() => timer.isRunning && timer.mode === TimerMode.FOCUS
 );
+
+const saveWelcomeSeen = () => {
+	localStorage.setItem("pomodo-welcome-seen", "true");
+};
 </script>
 
 <template>
@@ -97,8 +101,8 @@ const hideBottomNav = computed(
   <TaskDetailsModal v-if="showTaskDetails" :selTask="selectedTask" @close="showTaskDetails = false" />
   <PremiumModal v-if="uiStore.showPremiumModal" @close="uiStore.setPremiumModal(false)" />
   <ProjectLimitModal v-if="uiStore.showProjectLimitModal" @close="uiStore.setProjectLimitModal(false)" />
-  <WelcomeDialog v-if="showWelcomeDialog" @close="showWelcomeDialog = false; localStorage.setItem('pomodo-welcome-seen', 'true')"
-    @create-categories="showWelcomeDialog = false; localStorage.setItem('pomodo-welcome-seen', 'true'); showCreateCategory = true"
+  <WelcomeDialog v-if="showWelcomeDialog" @close="showWelcomeDialog = false; saveWelcomeSeen()"
+    @create-categories="showWelcomeDialog = false; saveWelcomeSeen(); showCreateCategory = true"
   />
   <AddCategoryDialog v-model="showCreateCategory" />
 

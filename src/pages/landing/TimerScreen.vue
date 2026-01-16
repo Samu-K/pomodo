@@ -201,7 +201,7 @@ const handleAddOvertime = async (amount: number) => {
                 />
                 <TaskManager v-if="showTaskManager" :selectedTaskId="timer.taskId"
                     @select="handleTaskSelect" @selectProject="handleProjectSelect" @clear="handleTaskClear"
-                    @selectCategory="categoryManagerRef.showDialog = true" @close="showTaskManager = false"
+                    @selectCategory="categoryManagerRef && (categoryManagerRef.showDialog = true)" @close="showTaskManager = false"
                 />
                 <div class="absolute" style="width: 0; height: 0; overflow: hidden;">
                     <CategoryManager ref="categoryManagerRef" :selectedCategory="selectedCategory" @select="(cat) => timer.setCategoryId(cat.id)" />

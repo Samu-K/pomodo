@@ -160,7 +160,7 @@ const onMinuteSelected = () => {
       label="Time"
       readonly
     >
-      <template v-slot:prepend-icon>
+      <template v-slot:prepend-inner>
         <Clock :size="24" class="text-lightText-secondary dark:text-text-secondary" />
       </template>
       <v-menu

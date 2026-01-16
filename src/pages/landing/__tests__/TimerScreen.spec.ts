@@ -70,8 +70,7 @@ describe("TimerScreen.vue", () => {
 	beforeEach(() => {
 		const pinia = createTestingPinia({
 			createSpy: vi.fn,
-			stubActions: true,
-			stubGetters: false // Let computed properties be real
+			stubActions: true
 		});
 
 		timerStore = useTimerStore();

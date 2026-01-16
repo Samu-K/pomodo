@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LayoutGrid, Save, Trash2, X } from "lucide-vue-next";
+import { LayoutGrid, Save, X } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import type { Setting } from "../../../funcs/commands";
 

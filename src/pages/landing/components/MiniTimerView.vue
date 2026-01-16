@@ -3,7 +3,7 @@ import { Maximize2, Pause, Play } from "lucide-vue-next";
 import { TimerMode } from "../../../stores/timer";
 
 defineProps<{
-	taskId: string | null;
+	taskId: number | null;
 	projectId: number | null;
 	selectedTaskTitle?: string;
 	selectedProjectName?: string;

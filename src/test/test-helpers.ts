@@ -101,7 +101,8 @@ export const commonIconStubs = {
 	FileSpreadsheet: { template: '<svg class="lucide-file-spreadsheet"></svg>' },
 	Lock: { template: '<svg class="lucide-lock"></svg>' },
 	RotateCcw: { template: '<svg class="lucide-rotate-ccw"></svg>' },
-	SkipForward: { template: '<svg class="lucide-skip-forward"></svg>' }
+	SkipForward: { template: '<svg class="lucide-skip-forward"></svg>' },
+	LayoutGrid: { template: '<svg class="lucide-layout-grid"></svg>' }
 };
 
 /**
