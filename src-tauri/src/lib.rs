@@ -188,7 +188,6 @@ pub fn run() {
     }
 
     builder
-        // .plugin(tauri_plugin_safe_area_insets_css::init())
         .invoke_handler(specta_builder.invoke_handler())
         .setup(|app| {
             tauri::async_runtime::block_on(async {
