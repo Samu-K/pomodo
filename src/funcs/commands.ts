@@ -253,6 +253,7 @@ async projectsDeleteProject(id: number) : Promise<Result<null, AppError>> {
     else return { status: "error", error: e  as any };
 }
 },
+<<<<<<< HEAD
 async supabaseLogin(email: string, password: string) : Promise<Result<SupabaseSession, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("supabase_login", { email, password }) };
@@ -296,6 +297,11 @@ async supabaseCheckUpdates() : Promise<Result<boolean, string>> {
 async supabaseTestConnection() : Promise<Result<string, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("supabase_test_connection") };
+=======
+async icalSyncIcal() : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("ical_sync_ical") };
+>>>>>>> feature
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };

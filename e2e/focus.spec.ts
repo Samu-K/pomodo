@@ -32,18 +32,14 @@ test.describe('Focus Sessions', () => {
         // 1. Select Project - use task selector
         await page.getByTestId('task-selector').click();
         
-        // Wait for modal to load then look for project
+        // Wait for modal to load
         await expect(page.getByRole('dialog')).toBeVisible();
         
-        // Projects might be in a tab or listed. Try finding the project directly.
-        const projectOption = page.getByText('E2E Project');
-        if (await projectOption.isVisible()) {
-            await projectOption.click();
-        } else {
-            // Click "No task" then select category instead
-            await page.getByRole('button', { name: 'No task' }).click();
-            await page.getByRole('button', { name: 'Work' }).first().click();
-        }
+        // Switch to PROJECTS tab (scoped to dialog to avoid nav element match)
+        await page.getByRole('dialog').getByRole('tab', { name: 'PROJECTS' }).click();
+        
+        // Find and click the project (test fails if project not visible)
+        await page.getByText('E2E Project').click();
 
         // 2. Skip to complete session
         await page.getByTestId('skip-timer').click();

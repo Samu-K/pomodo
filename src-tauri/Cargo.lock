@@ -3296,6 +3296,7 @@ name = "pomodo"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "dotenvy",
  "fs",
  "futures 0.3.31",
  "objc",
@@ -3319,6 +3320,7 @@ dependencies = [
  "tauri-plugin-safe-area-insets-css",
  "tauri-specta",
  "tokio",
+ "uuid",
 ]
 
 [[package]]

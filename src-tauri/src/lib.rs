@@ -25,6 +25,7 @@ use crate::database::{
         Category, CategoryGet, CategoryGetVec, IdReturn, NoReturn, Project, ProjectGetVec, Session,
         SessionGetVec, SettingCatGetVec, SettingGetVec, StringReturn, Task, TaskGetVec,
     },
+    ical::ICalActions,
     project::ProjectActions,
     session::SessionActions,
     settings::SettingActions,
@@ -41,7 +42,11 @@ pub struct AppState {
     pub settings: SettingActions,
     pub tasks: TaskActions,
     pub projects: ProjectActions,
+<<<<<<< HEAD
     pub db_path: std::path::PathBuf,
+=======
+    pub ical: ICalActions,
+>>>>>>> feature
 }
 
 
@@ -144,7 +149,8 @@ tauri_commands! {
     projects::add_project(project: Project) -> IdReturn,
     projects::get_projects() -> ProjectGetVec,
     projects::update_project(project: Project) -> NoReturn,
-    projects::delete_project(id: i64) -> NoReturn
+    projects::delete_project(id: i64) -> NoReturn,
+    ical::sync_ical() -> NoReturn
 }
 
 #[tauri::command]
@@ -347,10 +353,10 @@ pub fn run() {
             supabase_login,
             supabase_signup,
             supabase_sync_now,
-
             supabase_restore,
             supabase_check_updates,
             supabase_test_connection,
+            ical_sync_ical,
             update_tray
 
 
@@ -380,26 +386,30 @@ pub fn run() {
     }
 
     builder
-        // .plugin(tauri_plugin_safe_area_insets_css::init())
         .invoke_handler(specta_builder.invoke_handler())
         .setup(|app| {
             tauri::async_runtime::block_on(async {
-                println!("Setup: starting async block");
                 match database::create_database(Some(app)).await {
+<<<<<<< HEAD
                     Ok((db, path)) => {
                         println!("Setup: database created, managing state");
+=======
+                    Ok(db) => {
+>>>>>>> feature
                         let db = Arc::new(db);
                         let sa = SessionActions::new(db.clone());
                         let sta = SettingActions::new(db.clone());
                         let ca = CategoryActions::new(db.clone());
                         let ta = TaskActions::new(db.clone());
                         let pa = ProjectActions::new(db.clone());
+                        let ia = ICalActions::new(db.clone());
                         app.manage(AppState {
                             categories: ca,
                             session: sa,
                             settings: sta,
                             tasks: ta,
                             projects: pa,
+<<<<<<< HEAD
                             db_path: path
                         });
 
@@ -416,6 +426,10 @@ pub fn run() {
                             session: Mutex::new(None),
                         });
 
+=======
+                            ical: ia,
+                        });
+>>>>>>> feature
                     }
                     Err(e) => {
                         eprintln!("Error creating database: {e}");
