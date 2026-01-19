@@ -14,14 +14,15 @@ use tauri::Manager as _;
 
 use std::path::PathBuf;
 
+use tauri::App;
+
 pub async fn create_database(app: Option<&App>) -> Result<(Db, PathBuf), String> {
 
     println!("Database init: starting");
-    let mut app_dir;
-    match app {
+    let app_dir = match app {
         Some(app) => {
             println!("Database init: getting app dir");
-            app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+            app.path().app_data_dir().map_err(|e| e.to_string())?
         }
         None => {
             let mut path = std::env::current_dir().unwrap();
@@ -67,6 +68,6 @@ pub async fn create_database(app: Option<&App>) -> Result<(Db, PathBuf), String>
     }
 
     println!("Database init: success");
-    Ok((db, app_dir))
+    Ok((pool, app_dir))
 }
 

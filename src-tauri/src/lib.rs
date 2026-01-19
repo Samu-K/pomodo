@@ -42,11 +42,8 @@ pub struct AppState {
     pub settings: SettingActions,
     pub tasks: TaskActions,
     pub projects: ProjectActions,
-<<<<<<< HEAD
     pub db_path: std::path::PathBuf,
-=======
     pub ical: ICalActions,
->>>>>>> feature
 }
 
 
@@ -390,12 +387,8 @@ pub fn run() {
         .setup(|app| {
             tauri::async_runtime::block_on(async {
                 match database::create_database(Some(app)).await {
-<<<<<<< HEAD
                     Ok((db, path)) => {
                         println!("Setup: database created, managing state");
-=======
-                    Ok(db) => {
->>>>>>> feature
                         let db = Arc::new(db);
                         let sa = SessionActions::new(db.clone());
                         let sta = SettingActions::new(db.clone());
@@ -409,8 +402,8 @@ pub fn run() {
                             settings: sta,
                             tasks: ta,
                             projects: pa,
-<<<<<<< HEAD
-                            db_path: path
+                            db_path: path,
+                            ical: ia,
                         });
 
                         println!("Setup: state managed");
@@ -426,10 +419,6 @@ pub fn run() {
                             session: Mutex::new(None),
                         });
 
-=======
-                            ical: ia,
-                        });
->>>>>>> feature
                     }
                     Err(e) => {
                         eprintln!("Error creating database: {e}");
