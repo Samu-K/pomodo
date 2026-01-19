@@ -47,6 +47,7 @@ describe("Tasks Store - CRUD", () => {
 		});
 
 		it("handles fetch error gracefully", async () => {
+			vi.spyOn(console, "error").mockImplementation(() => {});
 			const { invoke } = await import("@tauri-apps/api/core");
 			vi.mocked(invoke).mockRejectedValue(new Error("DB Error"));
 			await tasksStore.fetchTasks();
@@ -85,6 +86,7 @@ describe("Tasks Store - CRUD", () => {
 			const { invoke } = await import("@tauri-apps/api/core");
 			vi.mocked(invoke).mockImplementation(async (cmd: string) => {
 				if (cmd === "categories_get_categories") return [];
+				if (cmd === "tasks_get_tasks") return [];
 				if (cmd === "categories_add_category") return 42;
 				return 1;
 			});
@@ -112,6 +114,11 @@ describe("Tasks Store - CRUD", () => {
 	describe("deleteTask", () => {
 		it("deletes task and refreshes list", async () => {
 			const { invoke } = await import("@tauri-apps/api/core");
+			vi.mocked(invoke).mockImplementation(async (cmd) => {
+				if (cmd === "tasks_get_tasks") return []; // items after delete
+				if (cmd === "categories_get_categories") return [];
+				return undefined;
+			});
 			await tasksStore.deleteTask(5);
 			expect(invoke).toHaveBeenCalledWith("tasks_delete_task", { id: 5 });
 			expect(invoke).toHaveBeenCalledWith("tasks_get_tasks");

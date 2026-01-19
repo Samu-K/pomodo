@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { LogicalSize } from "@tauri-apps/api/dpi";
+import { currentMonitor, getCurrentWindow } from "@tauri-apps/api/window";
 import {
 	isPermissionGranted,
 	requestPermission
 } from "@tauri-apps/plugin-notification";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
+import { type ThemeInstance, useTheme } from "vuetify";
 import AppLayout from "./components/AppLayout.vue";
 import PremiumModal from "./components/premium/PremiumModal.vue";
 import ProjectLimitModal from "./components/premium/ProjectLimitModal.vue";
@@ -26,11 +29,9 @@ import { useUIStore } from "./stores/ui";
 
 const route = useRoute();
 
-const router = useRouter();
 const settingsStore = useSettingsStore();
 const uiStore = useUIStore();
 const authStore = useAuthStore();
-const themeStore = useThemeStore();
 
 const vuetifyTheme = useTheme();
 const timer = useTimerStore();
@@ -135,7 +136,10 @@ onMounted(async () => {
 		try {
 			const lastRestoreKey = "pomodo-last-auto-restore";
 			const now = Date.now();
-			const lastRestore = parseInt(localStorage.getItem(lastRestoreKey) || "0");
+			const lastRestore = parseInt(
+				localStorage.getItem(lastRestoreKey) || "0",
+				10
+			);
 
 			// Cooldown of 10 seconds to prevent infinite loops if local clock is skewed
 			if (now - lastRestore > 10000) {
@@ -149,7 +153,7 @@ onMounted(async () => {
 					window.location.reload();
 				}
 			}
-			const debugMsg = await (commands as any).supabaseTestConnection();
+			const debugMsg = await commands.supabaseTestConnection();
 			console.log("[Supabase Debug]", debugMsg);
 		} catch (e) {
 			console.error("Failed to check for updates:", e);

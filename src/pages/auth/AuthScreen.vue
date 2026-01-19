@@ -60,7 +60,7 @@ const handleSubmit = async () => {
 				showConfirmation.value = true;
 			}
 		}
-	} catch (e: any) {
+	} catch (e: unknown) {
 		console.error(e);
 		error.value = getFriendlyErrorMessage(e);
 	} finally {
@@ -68,8 +68,8 @@ const handleSubmit = async () => {
 	}
 };
 
-function getFriendlyErrorMessage(err: any): string {
-	const str = err.toString();
+function getFriendlyErrorMessage(err: unknown): string {
+	const str = String(err);
 
 	// Try to extract JSON from the error string (Supabase errors often come as JSON strings)
 	// Matches content between first { and last }

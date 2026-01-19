@@ -1,33 +1,16 @@
 <script setup lang="ts">
-<<<<<<< HEAD
-import {
-	ChevronLeft,
-	Cloud,
-	FileJson,
-	FileSpreadsheet,
-	LayoutGrid,
-	Loader2,
-	Lock,
-	Save,
-	Trash2,
-	X
-} from "lucide-vue-next";
-import { storeToRefs } from "pinia"; // New Import
-=======
-import { ChevronLeft, Trash2 } from "lucide-vue-next";
->>>>>>> feature
+import { ChevronLeft, Cloud, Loader2, Trash2 } from "lucide-vue-next";
+import { storeToRefs } from "pinia";
 import { computed, onMounted, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import ErrorBoundary from "../../components/ErrorBoundary.vue";
 import SettingSection from "../../components/settings/SettingSection.vue";
 import ConfirmationModal from "../../components/ui/ConfirmationModal.vue";
 import type { Setting } from "../../funcs/commands";
-<<<<<<< HEAD
-import { exportUserData } from "../../funcs/export";
-import { useAuthStore } from "../../stores/auth"; // New Import
-=======
->>>>>>> feature
+import { useAuthStore } from "../../stores/auth";
 import { useSettingsStore } from "../../stores/settings";
+import { useUIStore } from "../../stores/ui";
+
 import AppearanceSettings from "./components/AppearanceSettings.vue";
 import DataManagement from "./components/DataManagement.vue";
 import ICalSettings from "./components/ICalSettings.vue";
@@ -36,14 +19,16 @@ import TimerPresets from "./components/TimerPresets.vue";
 
 const router = useRouter();
 const settingsStore = useSettingsStore();
+const authStore = useAuthStore();
+const uiStore = useUIStore();
+const { isAuthenticated } = storeToRefs(authStore);
+
 const draftSettings = ref<Setting[]>([]);
 const hasUnsavedChanges = ref(false);
 const showUnsavedChangesModal = ref(false);
 const pendingRoute = ref<string | null>(null);
 
-<<<<<<< HEAD
-const authStore = useAuthStore();
-const { isAuthenticated } = storeToRefs(authStore);
+// Cloud Sync State
 const isSyncing = ref(false);
 const showRestoreConfirmation = ref(false);
 
@@ -82,8 +67,6 @@ const executeRestore = async () => {
 };
 
 // Initialize drafts when store data is available
-=======
->>>>>>> feature
 watch(
 	() => settingsStore.settings,
 	(ns) => {
@@ -96,10 +79,14 @@ onMounted(() => settingsStore.fetchSettings());
 const settingSections = computed(() => {
 	if (settingsStore.categories.length === 0 || draftSettings.value.length === 0)
 		return [];
-	return settingsStore.categories.map((cat) => ({
-		sectionTitle: cat.name,
-		settings: draftSettings.value.filter((s) => s.category_id === cat.id)
-	}));
+	// Handle categories NOT covered by specific components
+	// Assuming Appearance, Shortcuts are covered. Timer might need the loop if not componentized.
+	return settingsStore.categories
+		.filter((cat) => cat.name.toLowerCase() === "timer") // Only keep Timer for the loop
+		.map((cat) => ({
+			sectionTitle: cat.name,
+			settings: draftSettings.value.filter((s) => s.category_id === cat.id)
+		}));
 });
 
 const handleSettingChange = (
@@ -169,6 +156,10 @@ defineExpose({
     </div>
 
     <div class="flex-1 overflow-y-auto px-6 py-6">
+      
+      <AppearanceSettings />
+
+      <!-- Timer Settings Loop -->
       <ErrorBoundary v-for="section of settingSections" :key="section.sectionTitle">
         <SettingSection :settings="section.settings" :section-title="section.sectionTitle" @change="handleSettingChange">
           <template v-if="section.sectionTitle.toLowerCase() === 'timer'" #header-actions>
@@ -177,32 +168,9 @@ defineExpose({
         </SettingSection>
       </ErrorBoundary>
 
-<<<<<<< HEAD
-      <!-- Shortcuts Settings -->
-      <section class="mb-8">
-        <h2 class="text-xs font-semibold text-pomodo-orange uppercase tracking-wider mb-4">
-          Shortcuts
-        </h2>
-        
-        <div class="flex items-center justify-between py-4 border-b border-light-border dark:border-dark-border">
-          <div class="flex-1 mr-4">
-           <!-- Label is handled inside recorder or we can hide it here and let recorder handle it -->
-           <!-- Actually user asked for "Pause Timer" and then the box. Recorder has label prop but let's conform to design -->
-          </div>
-          <div class="w-full">
-             <div v-for="setting in draftSettings.filter(s => s.key === 'Toggle Timer')" :key="setting.id">
-                <ShortcutRecorder
-                    data-testid="shortcut-recorder-toggle-timer"
-                    label="Pause Timer"
-                    v-model="setting.value"
-                    @update:model-value="checkForChanges"
-                />
-             </div>
-          </div>
-        </div>
-      </section>
+      <ShortcutSettings :draftSettings="draftSettings" @change="hasUnsavedChanges = true" />
 
-      <!-- Cloud Settings -->
+      <!-- Cloud Settings (Manual from HEAD) -->
       <section class="mb-8">
         <h2 class="text-xs font-semibold text-pomodo-orange uppercase tracking-wider mb-4">
           Cloud
@@ -252,54 +220,12 @@ defineExpose({
             </template>
           </div>
         </div>
-
       </section>
 
-      <!-- Data Management -->
-      <section class="mb-8">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xs font-semibold text-pomodo-orange uppercase tracking-wider">
-            Data Management
-            </h2>
-            <span v-if="!settingsStore.isPremium" class="text-[10px] px-1.5 py-0.5 bg-pomodo-orange/10 text-pomodo-orange rounded border border-pomodo-orange/20 font-bold">PREMIUM</span>
-        </div>
-        
-        <div class="py-4 border-b border-light-border dark:border-dark-border relative">
-            <!-- Blur overlay if not premium -->
-             <!-- Actually, let's just disabling the buttons and showing a lock icon -->
-             
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex-1">
-                <h3 class="text-lightText-primary dark:text-white font-medium flex items-center gap-2">
-                    Export Data
-                    <Lock v-if="!settingsStore.isPremium" :size="14" class="text-lightText-muted dark:text-text-muted" />
-                </h3>
-                <p class="text-xs text-lightText-muted dark:text-text-muted mt-1">Download your sessions, projects, and categories.</p>
-            </div>
-          </div>
+      <ICalSettings :settings="draftSettings" :is-premium="settingsStore.isPremium" @update-setting="handleSettingChange" @save-all="saveChanges" @change="hasUnsavedChanges = true" />
+      
+      <DataManagement />
 
-          <div class="flex gap-3">
-            <button
-                @click="handleExport('json')"
-                :disabled="isExporting"
-                class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg hover:bg-light-bg dark:hover:bg-dark-bg transition-colors text-lightText-primary dark:text-white text-sm"
-                :class="{ 'opacity-50 cursor-not-allowed': isExporting }"
-            >
-                <FileJson :size="16" />
-                <span>JSON</span>
-            </button>
-            <button
-                @click="handleExport('csv')"
-                :disabled="isExporting"
-                class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg hover:bg-light-bg dark:hover:bg-dark-bg transition-colors text-lightText-primary dark:text-white text-sm"
-                :class="{ 'opacity-50 cursor-not-allowed': isExporting }"
-            >
-                <FileSpreadsheet :size="16" />
-                <span>CSV</span>
-            </button>
-          </div>
-        </div>
-      </section>
     </div>
 
     <!-- Unsaved Changes Modal -->
@@ -311,7 +237,7 @@ defineExpose({
       secondaryBtnText="Discard Changes"
       @primary="saveChanges"
       @secondary="discardChanges"
-      @close="cancelNavigation"
+      @close="showUnsavedChangesModal = false; pendingRoute = null"
     />
 
     <!-- Restore Confirmation Modal -->
@@ -327,50 +253,5 @@ defineExpose({
       @close="showRestoreConfirmation = false"
     />
 
-    <!-- Save Preset Dialog -->
-    <v-dialog v-model="showPresetDialog" max-width="400">
-      <div class="bg-light-surface dark:bg-dark-surface p-6 rounded-xl border border-light-border dark:border-dark-border shadow-2xl">
-        <h3 class="text-lg font-bold text-lightText-primary dark:text-white mb-2">Save Timer Preset</h3>
-        <p class="text-sm text-lightText-muted dark:text-text-muted mb-4">Give your preset a name to quickly apply these settings later.</p>
-        
-        <v-text-field
-          v-model="presetName"
-          label="Preset Name"
-          variant="outlined"
-          density="comfortable"
-          color="primary"
-          autofocus
-          @keyup.enter="handleSavePreset"
-          hide-details
-          class="mb-6"
-        ></v-text-field>
-
-        <div class="flex justify-end gap-3">
-          <button 
-            @click="showPresetDialog = false"
-            class="px-4 py-2 text-sm font-semibold text-lightText-muted dark:text-text-muted hover:text-lightText-primary dark:hover:text-white transition-colors"
-          >
-            Cancel
-          </button>
-          <button 
-            @click="handleSavePreset"
-            :disabled="!presetName.trim()"
-            class="px-4 py-2 bg-gradient-to-r from-pomodo-orange to-pomodo-red text-white text-sm font-bold rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            Save Preset
-          </button>
-        </div>
-      </div>
-    </v-dialog>
-=======
-      <AppearanceSettings />
-      <ShortcutSettings :draftSettings="draftSettings" @change="hasUnsavedChanges = true" />
-      <ICalSettings :settings="draftSettings" :is-premium="settingsStore.isPremium" @update-setting="handleSettingChange" @save-all="saveChanges" @change="hasUnsavedChanges = true" />
-      <DataManagement />
-    </div>
-
-    <ConfirmationModal v-if="showUnsavedChangesModal" title="Unsaved Changes" message="You have unsaved changes. Save before leaving?" primaryBtnText="Save Changes" secondaryBtnText="Discard Changes" @primary="saveChanges" @secondary="discardChanges" @close="showUnsavedChangesModal = false; pendingRoute = null" />
->>>>>>> feature
   </div>
 </template>
-

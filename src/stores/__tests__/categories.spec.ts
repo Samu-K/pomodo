@@ -55,6 +55,7 @@ describe("Category Store", () => {
 		});
 
 		it("fetchCategories handles errors and sets ui store error", async () => {
+			vi.spyOn(console, "error").mockImplementation(() => {});
 			vi.mocked(get_categories).mockRejectedValue(new Error("DB Error"));
 
 			await categoryStore.fetchCategories();

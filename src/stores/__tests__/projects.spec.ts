@@ -50,6 +50,7 @@ describe("Projects Store", () => {
 	});
 
 	it("handles fetch error gracefully", async () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
 		const store = useProjectStore();
 		const uiStore = useUIStore();
 		vi.mocked(commands.projectsGetProjects).mockResolvedValue({

@@ -179,6 +179,7 @@ describe("Tasks Store - Expansion", () => {
 		});
 
 		it("handles invalid recurrence rules gracefully", () => {
+			vi.spyOn(console, "error").mockImplementation(() => {});
 			const task: Task = {
 				id: 1,
 				title: "Bad Rule",

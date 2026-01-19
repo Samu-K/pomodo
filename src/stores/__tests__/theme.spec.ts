@@ -1,5 +1,5 @@
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useThemeStore } from "../theme";
 
 describe("Theme Store", () => {
@@ -44,6 +44,8 @@ describe("Theme Store", () => {
 		});
 
 		it("should return fallback for invalid path", () => {
+			vi.spyOn(console, "error").mockImplementation(() => {});
+			vi.spyOn(console, "warn").mockImplementation(() => {});
 			const themeStore = useThemeStore();
 			expect(themeStore.getColor("invalid.path")).toBe("#888888");
 		});
@@ -129,6 +131,8 @@ describe("Theme Store", () => {
 		});
 
 		it("should return fallback for unknown color names", () => {
+			vi.spyOn(console, "error").mockImplementation(() => {});
+			vi.spyOn(console, "warn").mockImplementation(() => {});
 			const themeStore = useThemeStore();
 			expect(themeStore.resolveColor("unknown-color")).toBe("#888888");
 		});
