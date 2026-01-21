@@ -30,3 +30,9 @@ test-results
 
 #env
 .env
+
+# Playwright
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
