@@ -1,6 +1,6 @@
 [package]
 name = "pomodo"
-version = "0.1.0"
+version = "0.2.0"
 description = "Cross-platform Pomodoro timer and task manager for Desktop, Android, and iOS."
 authors = ["Samu Kaarlela"]
 license = "FSL-1.1-MIT"

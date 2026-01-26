@@ -1,3 +1,7 @@
+if (import.meta.env.PROD) {
+	console.error = () => {};
+}
+
 import { createApp } from "vue";
 import "./style.css";
 import App from "./App.vue";
