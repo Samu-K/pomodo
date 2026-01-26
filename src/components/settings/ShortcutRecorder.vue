@@ -37,14 +37,12 @@ const startRecording = () => {
 	isRecording.value = true;
 	currentKeys.value.clear();
 	window.addEventListener("keydown", handleKeyDown);
-	window.addEventListener("keyup", handleKeyUp);
 };
 
 const stopRecording = () => {
 	isRecording.value = false;
 	currentKeys.value.clear();
 	window.removeEventListener("keydown", handleKeyDown);
-	window.removeEventListener("keyup", handleKeyUp);
 };
 
 const handleKeyDown = (e: KeyboardEvent) => {

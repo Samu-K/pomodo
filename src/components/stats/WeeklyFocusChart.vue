@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import type { Session } from "../../funcs/commands";
-import { fromUTCString, isToday } from "../../funcs/stats/date_handling";
+import { fromUTCString } from "../../funcs/stats/date_handling";
 
 const props = defineProps<{
 	data: Session[];
