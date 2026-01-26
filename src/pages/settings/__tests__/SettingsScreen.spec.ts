@@ -78,7 +78,7 @@ describe("SettingsScreen.vue", () => {
 								settings: [
 									{ id: 1, key: "Test", value: "false", category_id: 1 }
 								],
-								categories: [{ id: 1, name: "General" }]
+								categories: [{ id: 1, name: "Timer" }]
 							}
 						}
 					}),

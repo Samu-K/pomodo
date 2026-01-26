@@ -253,6 +253,54 @@ async projectsDeleteProject(id: number) : Promise<Result<null, AppError>> {
     else return { status: "error", error: e  as any };
 }
 },
+async supabaseLogin(email: string, password: string) : Promise<Result<SupabaseSession, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("supabase_login", { email, password }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async supabaseSignup(email: string, password: string) : Promise<Result<SupabaseSession | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("supabase_signup", { email, password }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async supabaseSyncNow() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("supabase_sync_now") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async supabaseRestore() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("supabase_restore") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async supabaseCheckUpdates() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("supabase_check_updates") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async supabaseTestConnection() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("supabase_test_connection") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async icalSyncIcal() : Promise<Result<null, AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("ical_sync_ical") };
@@ -287,6 +335,8 @@ export type Project = { id: number; name: string; description: string | null; co
 export type Session = { id: number | null; start_time: string; duration: number | null; finished: boolean; category_id: number | null; task_id: number | null; project_id: number | null; notes: string | null; created_at: string | null; last_modified: string | null }
 export type Setting = { id: number; key: string; description: string | null; value: string; category_id: number; data_type: string }
 export type SettingCategory = { id: number; name: string }
+export type SupabaseSession = { access_token: string; token_type: string; expires_in: number; refresh_token: string; user: SupabaseUser }
+export type SupabaseUser = { id: string; email: string | null }
 export type Task = { id: number; title: string; description: string | null; category_id: number | null; project_id: number | null; estimated_pomodoros: number | null; start_datetime: string | null; recurrence_rule: string | null; is_completed: boolean; completed_pomodoros?: number; parent_task_id: number | null; created_at: string | null }
 
 /** tauri-specta globals **/

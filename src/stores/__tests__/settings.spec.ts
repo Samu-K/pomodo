@@ -79,6 +79,7 @@ describe("Settings Store", () => {
 		});
 
 		it("handles errors gracefully and sets ui store error", async () => {
+			vi.spyOn(console, "error").mockImplementation(() => {});
 			vi.mocked(get_settings).mockRejectedValue(new Error("DB Error"));
 
 			await settingsStore.fetchSettings();
