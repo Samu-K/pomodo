@@ -4,8 +4,8 @@ pub mod ical;
 pub mod project;
 pub mod session;
 pub mod settings;
-pub mod task;
 pub mod snapshot;
+pub mod task;
 
 use decls::Db;
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
@@ -17,7 +17,6 @@ use std::path::PathBuf;
 use tauri::App;
 
 pub async fn create_database(app: Option<&App>) -> Result<(Db, PathBuf), String> {
-
     println!("Database init: starting");
     let app_dir = match app {
         Some(app) => {
@@ -52,6 +51,7 @@ pub async fn create_database(app: Option<&App>) -> Result<(Db, PathBuf), String>
 
     println!("DB: Running migrations");
     sqlx::migrate!("./migrations")
+        .set_ignore_missing(true)
         .run(&pool)
         .await
         .map_err(|e| e.to_string())?;
@@ -70,4 +70,3 @@ pub async fn create_database(app: Option<&App>) -> Result<(Db, PathBuf), String>
     println!("Database init: success");
     Ok((pool, app_dir))
 }
-

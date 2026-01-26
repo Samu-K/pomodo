@@ -1,13 +1,13 @@
-use serde::{Deserialize, Serialize};
-use specta::Type;
-use super::decls::*;
 use super::category::CategoryActions;
+use super::decls::*;
 use super::project::ProjectActions;
 use super::session::SessionActions;
-use super::task::TaskActions;
 use super::settings::SettingActions;
-use std::sync::Arc;
+use super::task::TaskActions;
 use chrono::Local;
+use serde::{Deserialize, Serialize};
+use specta::Type;
+use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Debug, Type)]
 pub struct Snapshot {
@@ -53,11 +53,21 @@ impl Snapshot {
 
         // 1. Wipe existing data (Order matters for foreign keys if enforced, but here we wipe all)
         sqlx::query("DELETE FROM tasks").execute(&mut *tx).await?;
-        sqlx::query("DELETE FROM sessions").execute(&mut *tx).await?;
-        sqlx::query("DELETE FROM projects").execute(&mut *tx).await?;
-        sqlx::query("DELETE FROM user_settings").execute(&mut *tx).await?;
-        sqlx::query("DELETE FROM settings_categories").execute(&mut *tx).await?;
-        sqlx::query("DELETE FROM categories").execute(&mut *tx).await?;
+        sqlx::query("DELETE FROM sessions")
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query("DELETE FROM projects")
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query("DELETE FROM user_settings")
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query("DELETE FROM settings_categories")
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query("DELETE FROM categories")
+            .execute(&mut *tx)
+            .await?;
 
         // 2. Insert Categories
         for cat in &self.categories {
@@ -71,7 +81,7 @@ impl Snapshot {
 
         // 3. Insert Settings Categories
         for cat in &self.setting_categories {
-             sqlx::query("INSERT INTO settings_categories (id, name) VALUES (?, ?)")
+            sqlx::query("INSERT INTO settings_categories (id, name) VALUES (?, ?)")
                 .bind(cat.id)
                 .bind(&cat.name)
                 .execute(&mut *tx)
@@ -80,7 +90,7 @@ impl Snapshot {
 
         // 4. Insert Settings
         for setting in &self.settings {
-             sqlx::query("INSERT INTO user_settings (id, key, description, value, category_id, data_type) VALUES (?, ?, ?, ?, ?, ?)")
+            sqlx::query("INSERT INTO user_settings (id, key, description, value, category_id, data_type) VALUES (?, ?, ?, ?, ?, ?)")
                 .bind(setting.id)
                 .bind(&setting.key)
                 .bind(&setting.description)
@@ -93,7 +103,7 @@ impl Snapshot {
 
         // 5. Insert Projects
         for p in &self.projects {
-             sqlx::query("INSERT INTO projects (id, name, description, color, estimated_pomodoros, category_id, is_completed, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            sqlx::query("INSERT INTO projects (id, name, description, color, estimated_pomodoros, category_id, is_completed, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
                 .bind(p.id)
                 .bind(&p.name)
                 .bind(&p.description)
@@ -114,10 +124,12 @@ impl Snapshot {
         // SQLite doesn't support deferred FKs by default unless configured.
         // Safe bet: Insert those with parent_task_id = NULL first, then others.
         // Or just disable FK checks temporarily?
-        sqlx::query("PRAGMA foreign_keys = OFF").execute(&mut *tx).await?;
+        sqlx::query("PRAGMA foreign_keys = OFF")
+            .execute(&mut *tx)
+            .await?;
 
         for t in &self.tasks {
-             sqlx::query("INSERT INTO tasks (id, title, description, category_id, project_id, estimated_pomodoros, start_datetime, recurrence_rule, is_completed, completed_pomodoros, parent_task_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+            sqlx::query("INSERT INTO tasks (id, title, description, category_id, project_id, estimated_pomodoros, start_datetime, recurrence_rule, is_completed, completed_pomodoros, parent_task_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
                 .bind(t.id)
                 .bind(&t.title)
                 .bind(&t.description)
@@ -134,7 +146,9 @@ impl Snapshot {
                 .await?;
         }
 
-        sqlx::query("PRAGMA foreign_keys = ON").execute(&mut *tx).await?;
+        sqlx::query("PRAGMA foreign_keys = ON")
+            .execute(&mut *tx)
+            .await?;
 
         // 7. Insert Sessions
         for s in &self.sessions {

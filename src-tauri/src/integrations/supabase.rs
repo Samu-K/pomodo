@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use reqwest::Client;
-use std::error::Error;
-use specta::Type;
 use super::super::database::snapshot::Snapshot;
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use specta::Type;
+use std::error::Error;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 pub struct SupabaseUser {
@@ -12,7 +12,6 @@ pub struct SupabaseUser {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 pub struct SupabaseSession {
-
     pub access_token: String,
     pub token_type: String,
     pub expires_in: i64,
@@ -36,9 +35,15 @@ impl SupabaseClient {
         }
     }
 
-    pub async fn sign_up(&self, email: &str, password: &str) -> Result<Option<SupabaseSession>, Box<dyn Error>> {
+    pub async fn sign_up(
+        &self,
+        email: &str,
+        password: &str,
+    ) -> Result<Option<SupabaseSession>, Box<dyn Error>> {
         let url = format!("{}/auth/v1/signup", self.url);
-        let resp = self.client.post(&url)
+        let resp = self
+            .client
+            .post(&url)
             .header("apikey", &self.anon_key)
             .header("Content-Type", "application/json")
             .json(&serde_json::json!({
@@ -54,7 +59,7 @@ impl SupabaseClient {
         }
 
         let body: serde_json::Value = resp.json().await?;
-        
+
         // If "access_token" exists, we are logged in.
         if body.get("access_token").is_some() {
             let session: SupabaseSession = serde_json::from_value(body)?;
@@ -65,10 +70,15 @@ impl SupabaseClient {
         }
     }
 
-
-    pub async fn sign_in(&self, email: &str, password: &str) -> Result<SupabaseSession, Box<dyn Error>> {
+    pub async fn sign_in(
+        &self,
+        email: &str,
+        password: &str,
+    ) -> Result<SupabaseSession, Box<dyn Error>> {
         let url = format!("{}/auth/v1/token?grant_type=password", self.url);
-        let resp = self.client.post(&url)
+        let resp = self
+            .client
+            .post(&url)
             .header("apikey", &self.anon_key)
             .header("Content-Type", "application/json")
             .json(&serde_json::json!({
@@ -89,7 +99,9 @@ impl SupabaseClient {
 
     pub async fn get_user(&self, token: &str) -> Result<SupabaseUser, Box<dyn Error>> {
         let url = format!("{}/auth/v1/user", self.url);
-        let resp = self.client.get(&url)
+        let resp = self
+            .client
+            .get(&url)
             .header("apikey", &self.anon_key)
             .header("Authorization", format!("Bearer {}", token))
             .send()
@@ -104,7 +116,12 @@ impl SupabaseClient {
         Ok(user)
     }
 
-    pub async fn upload_snapshot(&self, token: &str, user_id: &str, snapshot: Snapshot) -> Result<(), Box<dyn Error>> {
+    pub async fn upload_snapshot(
+        &self,
+        token: &str,
+        user_id: &str,
+        snapshot: Snapshot,
+    ) -> Result<(), Box<dyn Error>> {
         let url = format!("{}/rest/v1/backups", self.url);
         // We use JSONB so we wrap the snapshot in a "data" field
         let body = serde_json::json!({
@@ -113,7 +130,9 @@ impl SupabaseClient {
             "app_version": env!("CARGO_PKG_VERSION"),
         });
 
-        let resp = self.client.post(&url)
+        let resp = self
+            .client
+            .post(&url)
             .header("apikey", &self.anon_key)
             .header("Authorization", format!("Bearer {}", token))
             .header("Content-Type", "application/json")
@@ -131,10 +150,18 @@ impl SupabaseClient {
     }
 
     // Fetch the LATEST backup
-    pub async fn get_latest_backup(&self, token: &str) -> Result<Option<serde_json::Value>, Box<dyn Error>> {
-        let url = format!("{}/rest/v1/backups?select=*&order=created_at.desc&limit=1", self.url);
-        
-        let resp = self.client.get(&url)
+    pub async fn get_latest_backup(
+        &self,
+        token: &str,
+    ) -> Result<Option<serde_json::Value>, Box<dyn Error>> {
+        let url = format!(
+            "{}/rest/v1/backups?select=*&order=created_at.desc&limit=1",
+            self.url
+        );
+
+        let resp = self
+            .client
+            .get(&url)
             .header("apikey", &self.anon_key)
             .header("Authorization", format!("Bearer {}", token))
             .send()

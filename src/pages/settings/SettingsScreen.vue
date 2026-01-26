@@ -219,7 +219,7 @@ defineExpose({
         </div>
       </section>
 
-      <ICalSettings :settings="draftSettings" :is-premium="settingsStore.isPremium" @update-setting="handleSettingChange" @save-all="saveChanges" @change="hasUnsavedChanges = true" />
+      <ICalSettings :settings="draftSettings" :is-premium="settingsStore.isPremium" :save-settings="saveChanges" @update-setting="handleSettingChange" @save-all="saveChanges" @change="hasUnsavedChanges = true" />
       
       <DataManagement />
 

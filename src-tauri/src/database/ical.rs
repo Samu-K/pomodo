@@ -19,6 +19,7 @@ impl ICalActions {
     }
 
     pub async fn sync_ical(&self) -> NoReturn {
+        println!("iCal Sync: Starting...");
         // Load .env if present
         let _ = dotenvy::dotenv();
 
@@ -27,10 +28,7 @@ impl ICalActions {
             sqlx::query_scalar("SELECT value FROM user_settings WHERE key = 'iCal sync URL'")
                 .fetch_optional(&*self.db)
                 .await
-                .map_err(|e| {
-                    {}
-                    AppError::new(e.to_string())
-                })?
+                .map_err(|e| AppError::new(e.to_string()))?
                 .unwrap_or_default();
 
         let token: String =
@@ -59,7 +57,25 @@ impl ICalActions {
                 .map_err(|e| AppError::new(e.to_string()))?
                 .unwrap_or_else(|| "false".to_string());
 
-        if enabled != "true" || url.is_empty() || token.is_empty() || secret.is_empty() {
+        println!(
+            "iCal Sync: Settings - Enabled: {}, URL: {}, Token present: {}",
+            enabled,
+            if url.is_empty() { "MISSING" } else { &url },
+            !token.is_empty()
+        );
+
+        if enabled != "true" {
+            println!("iCal Sync: Aborting - Sync disabled.");
+            return Ok(());
+        }
+
+        if url.is_empty() || token.is_empty() {
+            println!("iCal Sync: Aborting - Missing URL or Token.");
+            return Ok(());
+        }
+
+        if secret.is_empty() {
+            println!("iCal Sync: Aborting - Missing Secret.");
             return Ok(());
         }
 
@@ -68,6 +84,8 @@ impl ICalActions {
             .fetch_all(&*self.db)
             .await
             .map_err(|e| AppError::new(e.to_string()))?;
+
+        println!("iCal Sync: Fetched {} tasks", tasks.len());
 
         // 3. Prepare payload
         let payload = ICalSyncPayload {
@@ -79,23 +97,32 @@ impl ICalActions {
         let client = reqwest::Client::new();
         let sync_url = format!("{}/sync", url.trim_end_matches('/'));
 
+        println!("iCal Sync: Sending payload to {}", sync_url);
+
         let res = client
             .post(sync_url)
             .header("x-pomodo-secret", secret)
             .json(&payload)
             .send()
             .await
-            .map_err(|e| AppError::new(format!("Failed to send to VPS: {}", e)))?;
+            .map_err(|e| {
+                println!("iCal Sync: Network error: {}", e);
+                AppError::new(format!("Failed to send to VPS: {}", e))
+            })?;
 
-        if !res.status().is_success() {
-            let status = res.status();
+        let status = res.status();
+        println!("iCal Sync: Response status: {}", status);
+
+        if !status.is_success() {
             let body = res.text().await.unwrap_or_default();
+            println!("iCal Sync: Failed with body: {}", body);
             return Err(AppError::new(format!(
                 "VPS Sync failed ({}): {}",
                 status, body
             )));
         }
 
+        println!("iCal Sync: Success");
         Ok(())
     }
 }

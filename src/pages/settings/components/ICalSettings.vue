@@ -9,6 +9,7 @@ import { useUIStore } from "../../../stores/ui";
 const props = defineProps<{
 	settings: Setting[];
 	isPremium: boolean;
+	saveSettings?: () => Promise<void>;
 }>();
 
 const emit = defineEmits<{
@@ -76,8 +77,11 @@ const handleEnableICal = async () => {
 		emit("update-setting", "iCal sync enabled", "true");
 	}
 
-	// Trigger immediate save and sync
-	emit("save-all");
+	if (props.saveSettings) {
+		await props.saveSettings();
+	}
+	emit("save-all"); // KEEP THIS for legacy/tests for now
+
 	await handleSyncNow();
 	showICalModal.value = true;
 };
