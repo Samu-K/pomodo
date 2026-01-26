@@ -51,11 +51,6 @@ const handleKeyDown = (e: KeyboardEvent) => {
 	e.preventDefault();
 	e.stopPropagation();
 
-	// Reset if this is a new combination starting
-	if (currentKeys.value.size === 0) {
-		// Nothing to do
-	}
-
 	let key = e.key;
 
 	// Format modifiers
@@ -67,8 +62,8 @@ const handleKeyDown = (e: KeyboardEvent) => {
 
 	currentKeys.value.add(key);
 
-	// Check if we have a valid combination (at least one modifier and one non-modifier, or just function keys)
-	// Simple heuristic: If the last pressed key is NOT a modifier, we might be done.
+	// Simple heuristic:
+	// If the last pressed key is NOT a modifier, we might be done.
 	const modifiers = ["CommandOrControl", "Alt", "Shift", "Super"];
 	const hasModifier = Array.from(currentKeys.value).some((k) =>
 		modifiers.includes(k)
@@ -81,16 +76,11 @@ const handleKeyDown = (e: KeyboardEvent) => {
 	}
 };
 
-const handleKeyUp = (_e: KeyboardEvent) => {
-	// Optional: could use this to finalize recording if we want to support holding down keys
-};
-
 const saveShortcut = () => {
 	// Sort keys: Modifiers first (Ctrl > Alt > Shift > Super), then Key
 	const modifiers = ["CommandOrControl", "Alt", "Shift", "Super"];
 	const keys = Array.from(currentKeys.value);
-
-	// Filter out duplicates just in case
+	// Filter out duplicates
 	const uniqueKeys = [...new Set(keys)];
 
 	const sorted = uniqueKeys.sort((a, b) => {

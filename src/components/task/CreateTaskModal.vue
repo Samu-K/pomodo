@@ -150,7 +150,4 @@ const onAfterLeave = () => {
 </template>
 
 <style scoped>
-/* Scoped styles can be removed if handled by Vuetify transitions, 
-   but keeping specific ones if needed. 
-   Vuetify handles entry/exit fade/scale for dialog. */
 </style>

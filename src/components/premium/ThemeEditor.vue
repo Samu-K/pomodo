@@ -27,8 +27,6 @@ const colors = [
 		key: "text.primary",
 		default: themeStore.colors.text.primary
 	}
-	// Advanced: Backgrounds (might break contrast if user is not careful, but requested)
-	// { label: "Background (Dark)", key: "dark.bg", default: themeStore.colors.dark.bg },
 ];
 
 const getColor = (key: string) => {
@@ -42,7 +40,6 @@ const updateColor = (key: string, event: Event) => {
 
 const reset = () => {
 	settings.themeOverrides = {};
-	// Store already watches and resets
 };
 </script>
 

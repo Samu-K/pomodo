@@ -309,7 +309,6 @@ describe("CategoryManager.vue", () => {
 		const nameInput = inputs[0];
 		await nameInput.setValue("New Cat");
 
-		// Find color buttons
 		// The buttons are rendered in the grid. We can find them by their class.
 		const colorButtons = wrapper.findAll(".rounded-full.transition-all");
 		expect(colorButtons.length).toBeGreaterThan(0);

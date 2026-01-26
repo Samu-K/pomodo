@@ -54,7 +54,6 @@ function calculateTaskPos(time: Date): number {
 
 const onMouseDown = (e: MouseEvent) => {
 	const isMobile = mobile.value && !window.matchMedia("(hover: hover)").matches;
-	// We don't check viewMode here as it's the grid's job to just handle drag if shown
 	if (isMobile) return;
 	handleMouseDown(e);
 };

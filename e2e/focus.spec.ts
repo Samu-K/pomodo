@@ -35,10 +35,10 @@ test.describe('Focus Sessions', () => {
         // Wait for modal to load
         await expect(page.getByRole('dialog')).toBeVisible();
         
-        // Switch to PROJECTS tab (scoped to dialog to avoid nav element match)
+        // Switch to PROJECTS tab
         await page.getByRole('dialog').getByRole('tab', { name: 'PROJECTS' }).click();
         
-        // Find and click the project (test fails if project not visible)
+        // Find and click the project
         await page.getByText('E2E Project').click();
 
         // 2. Skip to complete session

@@ -14,11 +14,10 @@ const hasError = ref(false);
 onErrorCaptured((err, _instance, _info) => {
 	console.error("Captured Error:", err);
 
-	// 1. Mark this specific instance as having an error
+	// Mark this specific instance as having an error
 	hasError.value = true;
 
-	// 2. Return false to STOP the error from bubbling up to global handlers
-	// If you don't return false, the app might still crash or log globally
+	// Return false to STOP the error from bubbling up to global handlers
 	return false;
 });
 </script>

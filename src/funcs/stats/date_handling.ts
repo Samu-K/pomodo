@@ -1,4 +1,3 @@
-// Helper to check if a date string is "Today"
 const isToday = (date: Date | string | null) => {
 	if (!date) return false; // Null check
 	const d = date instanceof Date ? date : new Date(date);
@@ -10,7 +9,6 @@ const isToday = (date: Date | string | null) => {
 	);
 };
 
-// Helper to check if a date is in the "Current Week"
 const isSameWeek = (date: Date | string | null) => {
 	if (!date) return false; // Null check
 	const d = date instanceof Date ? date : new Date(date);

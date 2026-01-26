@@ -61,7 +61,6 @@ export const useSettingsStore = defineStore("settings", () => {
 			let msg = "Failed to update setting";
 			if (e instanceof Error) msg = e.message;
 			ui.setError(msg);
-			// Rollback or ignore? For now, just show error.
 		}
 	};
 
@@ -75,9 +74,7 @@ export const useSettingsStore = defineStore("settings", () => {
 		return value as "light" | "dark" | "system";
 	});
 
-	/**
-	 * Get the system's preferred color scheme
-	 */
+	// Get the system's preferred color scheme
 	const getSystemTheme = (): "light" | "dark" => {
 		if (typeof window !== "undefined" && window.matchMedia) {
 			return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -87,9 +84,7 @@ export const useSettingsStore = defineStore("settings", () => {
 		return "dark"; // Default to dark if can't detect
 	};
 
-	/**
-	 * Get the resolved theme (resolve "system" to actual light/dark)
-	 */
+	// Get the resolved theme (resolve "system" to actual light/dark)
 	const resolvedTheme = computed((): "light" | "dark" => {
 		if (theme.value === "system") {
 			return getSystemTheme();
@@ -97,9 +92,7 @@ export const useSettingsStore = defineStore("settings", () => {
 		return theme.value;
 	});
 
-	/**
-	 * Set theme and update database
-	 */
+	// Set theme and update database
 	const setTheme = async (newTheme: "light" | "dark" | "system") => {
 		const setting = themeSetting.value;
 		if (setting) {
@@ -108,9 +101,7 @@ export const useSettingsStore = defineStore("settings", () => {
 		}
 	};
 
-	/**
-	 * Apply theme to DOM by toggling dark class on html element
-	 */
+	// Apply theme to DOM by toggling dark class on html element
 	const applyTheme = (themeValue: "light" | "dark" | "system") => {
 		// Resolve "system" to actual theme
 		const effectiveTheme =
@@ -136,12 +127,9 @@ export const useSettingsStore = defineStore("settings", () => {
 			| null;
 
 		if (localStorageTheme && themeSetting.value) {
-			// Migrate to database
 			await setTheme(localStorageTheme);
-			// Clear localStorage
 			localStorage.removeItem(THEME_STORAGE_KEY);
 		} else {
-			// Just apply current theme
 			applyTheme(theme.value);
 		}
 
@@ -167,13 +155,10 @@ export const useSettingsStore = defineStore("settings", () => {
 
 	const setPremium = (status: boolean) => {
 		_isPremium.value = status;
-		// Persist if needed, or just keep in memory for mock
 	};
 
 	const updateThemeOverride = (key: string, value: string) => {
 		themeOverrides.value[key] = value;
-		// Apply immediately via CSS variables or similar mechanism in theme.ts
-		// For now just updating state
 	};
 
 	return {

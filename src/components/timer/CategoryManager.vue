@@ -13,14 +13,12 @@ const emit = defineEmits<(e: "select", category: Category) => void>();
 
 const categoryStore = useCategoryStore();
 
-// --- Data ---
 onMounted(() => {
 	if (categoryStore.categories.length === 0) {
 		categoryStore.fetchCategories();
 	}
 });
 
-// --- UI State ---
 const showDialog = ref(false);
 const showAddCategoryModal = ref(false);
 const catEditMode = ref(false);
@@ -29,14 +27,10 @@ const categoryToDelete = ref<Category | null>(null);
 
 import AddCategoryDialog from "./AddCategoryDialog.vue";
 
-// Edit Mode State (Deep Copy)
 const editableCategories = ref<Category[]>([]);
-
-// --- Logic ---
 
 const openEditMode = () => {
 	if (categoryStore.categories) {
-		// Deep copy for safe editing
 		editableCategories.value = JSON.parse(
 			JSON.stringify(categoryStore.categories)
 		);
@@ -56,7 +50,6 @@ const saveEdits = async () => {
 	const toUpdate: Category[] = [];
 	const toDelete: Category[] = [];
 
-	// Find Updates
 	for (const editedCat of editableCategories.value) {
 		if (editedCat.id > 0) {
 			const original = categoryStore.categories.find(

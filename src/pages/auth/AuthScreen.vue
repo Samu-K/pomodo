@@ -71,8 +71,6 @@ const handleSubmit = async () => {
 function getFriendlyErrorMessage(err: unknown): string {
 	const str = String(err);
 
-	// Try to extract JSON from the error string (Supabase errors often come as JSON strings)
-	// Matches content between first { and last }
 	const jsonMatch = str.match(/\{.*\}/);
 	if (jsonMatch) {
 		try {

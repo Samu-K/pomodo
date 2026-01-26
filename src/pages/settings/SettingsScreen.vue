@@ -28,7 +28,6 @@ const hasUnsavedChanges = ref(false);
 const showUnsavedChangesModal = ref(false);
 const pendingRoute = ref<string | null>(null);
 
-// Cloud Sync State
 const isSyncing = ref(false);
 const showRestoreConfirmation = ref(false);
 
@@ -79,10 +78,8 @@ onMounted(() => settingsStore.fetchSettings());
 const settingSections = computed(() => {
 	if (settingsStore.categories.length === 0 || draftSettings.value.length === 0)
 		return [];
-	// Handle categories NOT covered by specific components
-	// Assuming Appearance, Shortcuts are covered. Timer might need the loop if not componentized.
 	return settingsStore.categories
-		.filter((cat) => cat.name.toLowerCase() === "timer") // Only keep Timer for the loop
+		.filter((cat) => cat.name.toLowerCase() === "timer")
 		.map((cat) => ({
 			sectionTitle: cat.name,
 			settings: draftSettings.value.filter((s) => s.category_id === cat.id)

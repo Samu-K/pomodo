@@ -71,9 +71,6 @@ test.describe('Timer Functionality', () => {
         // In our mock, Work category exists. Let's select it.
         await page.getByRole('button', { name: 'Work' }).first().click();
 
-        // Wait for modal to close (it should close on selection if implemented that way, or we click close)
-        // TaskManager closes on @select and we Emit handled in TimerScreen.
-
         // 2. Start timer
         const toggleBtn = page.getByTestId('toggle-timer');
         const initialTimeText = await page.locator('.text-timer').textContent();
@@ -156,11 +153,6 @@ test.describe('Theme Switching', () => {
         // Change to light
         await page.getByTestId('theme-selector').click();
         await page.getByText('Light').click();
-
-        // In this app, we need to click "Save Changes" if there's no auto-save for theme?
-        // Let's check SettingsScreen.vue: handleThemeChange calls settingsStore.setTheme(value).
-        // settingsStore.setTheme calls updateSetting and applyTheme.
-
         await expect(page.locator('html')).not.toHaveClass(/dark/);
 
         // Change back to dark

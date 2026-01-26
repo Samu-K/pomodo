@@ -11,13 +11,11 @@ const weeklyStats = computed(() => {
 	const allWeek = props.data;
 	const finishedWeek = allWeek.filter((s) => s.finished);
 
-	// Total Seconds
 	const totalSeconds = finishedWeek.reduce(
 		(sum, s) => sum + (s.duration || 0),
 		0
 	);
 
-	// Convert Seconds to Hours (Fixed to 1 decimal)
 	const totalHours = (totalSeconds / 3600).toFixed(1);
 
 	const totalCount = allWeek.length;
@@ -25,7 +23,6 @@ const weeklyStats = computed(() => {
 	const completionRate =
 		totalCount > 0 ? Math.round((finishedCount / totalCount) * 100) : 0;
 
-	// Daily Avg remains count-based, so no change here
 	const dailyAvg = (finishedCount / 7).toFixed(1);
 
 	return { totalHours, completionRate, dailyAvg };

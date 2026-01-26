@@ -65,7 +65,7 @@ describe("GamificationStats", () => {
 				duration: 100,
 				start_time: new Date("2024-01-10").toISOString(),
 				category_id: 1
-			}) // Ignored
+			})
 		];
 
 		const wrapper = mount(GamificationStats, {

@@ -29,17 +29,6 @@ const series = computed(() => {
 		if (isSameWeek(d)) {
 			currentWeekData[getDayIndex(d)] += s.duration / 60;
 		} else {
-			// Check if it is "Last Week"
-			// Simple check: same as current week but offset by 1 week?
-			// Let's just check if it's within the 7 days prior to start of this week
-			// Or simpler: get week number.
-			// For now, I'll just check if it falls in the "Last Week" range roughly
-			// Actually, let's use a rough heuristic:
-			// (Now - d) is between 7 and 14 days? No that's rolling window.
-			// isSameWeek checks ISO week.
-			// I'll implement a 'isLastWeek' check if I had the helper.
-			// For brevity, let's assume anything between 7-14 days ago is "Last Week" for this chart
-			// to show a comparison trend.
 			const diffTime = Math.abs(now.getTime() - d.getTime());
 			const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 			if (diffDays > 7 && diffDays <= 14) {

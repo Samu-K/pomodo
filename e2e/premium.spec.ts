@@ -25,34 +25,18 @@ test.describe('Premium Features', () => {
         await expect(page.getByRole('heading', { name: 'Upgrade to Premium' })).not.toBeVisible();
 
         // 3. Try clicking prev month again - it should NOT show paywall now
-        // Note: The heatmap component uses settingsStore.isPremium which is updated in memory.
         await prevBtn.click();
         await expect(page.getByRole('heading', { name: 'Upgrade to Premium' })).not.toBeVisible();
-        
-        // Heatmap should show previous month (the title changes)
-        // Default is current month, let's just check it doesn't show paywall.
     });
 
     test('should show paywall when exceeding project limit (10 projects)', async ({ page }) => {
-        await page.goto('/stats'); // To get to projects via nav
-        await page.getByTestId('nav-timeline').click(); // Just to navigate around
-        await page.getByTestId('nav-tasks').click();
-        
-        // Let's go to projects (likely in some sub-menu or via Task selector)
-        // Actually, ProjectListScreen is /projects? Let's check router.
+        // Go to projects
         await page.goto('/projects'); 
         
         // Wait for page
         await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
 
         // Add 10 projects
-        const addBtn = page.getByTestId('add-project-btn');
-        if (await addBtn.isVisible()) {
-           // If there's an add button
-        } else {
-            // Check for FAB or similar
-        }
-
         // Since we are mocking, we can just pre-fill localStorage with 10 projects
         await page.evaluate(() => {
             const projects = Array.from({ length: 10 }, (_, i) => ({

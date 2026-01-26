@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { X } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
+import { useTaskCalculations } from "../../composables/useTaskCalculations";
 import type { Project } from "../../funcs/commands";
 import { useCategoryStore } from "../../stores/categories";
 import ScrollIndicator from "../ui/ScrollIndicator.vue";
@@ -15,6 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const categoryStore = useCategoryStore();
+const { focusDuration } = useTaskCalculations();
 
 const isOpen = ref(true);
 const scrollContainerRef = ref<HTMLElement | null>(null);
@@ -37,8 +39,7 @@ const save = () => {
 
 const formatEstimatedTime = (cycles: number | null | undefined) => {
 	if (!cycles) return "0m";
-	// Using default 25-minute cycle as in ProjectListScreen.vue
-	const totalMinutes = cycles * 25;
+	const totalMinutes = cycles * focusDuration.value;
 	const h = Math.floor(totalMinutes / 60);
 	const m = totalMinutes % 60;
 

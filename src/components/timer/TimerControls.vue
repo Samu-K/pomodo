@@ -17,13 +17,11 @@ const isDark = computed(() => settingsStore.resolvedTheme === "dark");
 
 const allowSkip = computed(() => {
 	if (timer.mode === TimerMode.REST) return true;
-	// Focus mode: only if paused (and maybe canStart? No, skipping implies abandoning session or moving to break, usually allowed)
 	return !timer.isRunning;
 });
 
 const allowReset = computed(() => {
 	if (timer.mode === TimerMode.REST) return false;
-	// Focus mode: only if paused
 	return !timer.isRunning && timer.percent < 100;
 });
 </script>

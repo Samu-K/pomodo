@@ -64,8 +64,6 @@ watch(toggleTimerSetting, async (nv, ov) => {
 	if (nv && nv !== ov) await registerShortcuts();
 });
 
-// Initialize theme and splashscreen on app mount
-// Initial Resize Logic
 const getSafeWindowSize = async () => {
 	try {
 		const monitor = await currentMonitor();
@@ -128,7 +126,6 @@ onMounted(async () => {
 
 	isLoading.value = false;
 
-	// Register shortcuts
 	await registerShortcuts();
 
 	// Check for Cloud Updates

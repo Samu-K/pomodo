@@ -7,23 +7,16 @@ export interface OverlapInfo {
 	overlapEndTime: Date;
 }
 
-/**
- * Composable for detecting task time overlaps
- */
+// Composable for detecting task time overlaps
 export function useTaskOverlap() {
 	const { calculateTaskDuration } = useTaskCalculations();
 
-	/**
-	 * Calculate the end time of a task based on its start time and duration
-	 */
 	function getTaskEndTime(task: Task): Date {
 		const durationMinutes = calculateTaskDuration(task.cycles);
 		return new Date(task.startTime.getTime() + durationMinutes * 60 * 1000);
 	}
 
-	/**
-	 * Check if two time ranges overlap
-	 */
+	// Check if two time ranges overlap
 	function timeRangesOverlap(
 		start1: Date,
 		end1: Date,

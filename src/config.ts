@@ -3,7 +3,6 @@ import { ref } from "vue";
 /**
  * Global App Configuration
  */
-
 declare global {
 	interface Window {
 		_isTest?: boolean;
@@ -17,12 +16,6 @@ const win = typeof window !== "undefined" ? window : null;
 const isTest = win?._isTest === true;
 const _showPremiumFeatures = ref(isTest);
 
-/**
- * If false, all premium features are unlocked and paywalls are hidden.
- * Set to true for production/app store deployments.
- *
- * In E2E tests, this can be toggled via window.__POMODO_TOGGLE_PREMIUM_FEATURES(true/false)
- */
 export const SHOW_PREMIUM_FEATURES = _showPremiumFeatures;
 
 if (win) {

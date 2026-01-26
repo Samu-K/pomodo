@@ -85,7 +85,7 @@ test.describe('Task Management', () => {
         await page.getByTestId('add-task-fab').click();
         await expect(page.getByText('Create New Task')).toBeVisible();
 
-        // Fill in task title (time defaults to current time, which overlaps with existing task)
+        // Fill in task title
         await page.getByTestId('task-name-input').locator('input').fill('Overlapping Task');
 
         // Try to create the task

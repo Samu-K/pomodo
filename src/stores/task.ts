@@ -22,7 +22,7 @@ export const useTasks = defineStore("tasks", () => {
 				throw new Error(failedRes.error.message);
 			const fetched = failedRes.data;
 
-			// Fetch categories to map names (using commands directly for now as it's a simple read)
+			// Fetch categories to map names
 			const catRes = await commands.categoriesGetCategories();
 			if (catRes.status === "error") throw new Error(catRes.error.message);
 			const categories = catRes.data;
