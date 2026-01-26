@@ -90,8 +90,6 @@ const handleTouchEnd = (e: TouchEvent) => {
 const mainTabs = ["/", "/timeline", "/projects", "/tasks", "/stats"];
 
 const handleSwipeLeft = () => {
-	// If we are on a sub-page (like settings), do nothing or handle differently?
-	// For now, only switch tabs if we are on one of the main tabs
 	const currentIndex = mainTabs.indexOf(route.path);
 	if (currentIndex !== -1 && currentIndex < mainTabs.length - 1) {
 		router.push(mainTabs[currentIndex + 1]);

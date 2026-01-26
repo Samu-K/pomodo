@@ -83,7 +83,6 @@ const processedSessions = computed(() => {
 				displayName = cat.name;
 			}
 
-			// If it's a task, try to use its project/category color, otherwise valid category color, else default
 			let color = "bg-pomodo-orange";
 			if (cat?.color) {
 				color = `bg-${cat.color}`;

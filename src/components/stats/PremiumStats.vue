@@ -16,11 +16,6 @@ const settings = useSettingsStore();
 const ui = useUIStore();
 
 const isLocked = computed(() => !settings.isPremium);
-
-// If locked, we could pass dummy data to charts to make them look "active" behind the blur
-// or just pass the real data (if available) and blur it.
-// If the user has little data, the charts might look empty even if blurred.
-// Let's pass the real data.
 </script>
 
 <template>

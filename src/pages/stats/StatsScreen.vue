@@ -22,8 +22,6 @@ import { useTasks } from "../../stores/task";
 const router = useRouter();
 const tasksStore = useTasks();
 
-// Task Stats Logic
-// Task Stats Logic
 const todayTaskStats = computed(() => {
 	const todaysTasks = tasksStore.expandedTasks.filter((t) =>
 		isToday(t.startTime)

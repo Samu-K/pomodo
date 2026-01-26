@@ -14,38 +14,6 @@ describe("calculateHourlyDistribution", () => {
 		const sessions: Partial<Session>[] = [
 			{ start_time: "2024-01-01T10:15:00Z", duration: 30 * 60 }
 		];
-		// Timezone note: The function uses `fromUTCString` which results in local time.
-		// For deterministic tests we assume local time is consistent or we invoke `fromUTCString` to check expected hour.
-		// But wait, the function takes `Session[]` which has `start_time` as string.
-		// `fromUTCString` logic: if ends with Z, treat as UTC.
-
-		// To make this test simpler and robust against test runner timezone,
-		// we can mock `fromUTCString` or construct `start_time` carefully.
-
-		// Let's use a known local date string format for the test input if possible,
-		// but `fromUTCString` expects ISO-like.
-
-		// Better approach: Since `calculateHourlyDistribution` uses `fromUTCString` (which does `new Date(string)`),
-		// we'll rely on the fact that `2024-01-01T10:00:00` (without Z) is treated as local time in many comparisons,
-		// OR we adjust expectations to the local timezone.
-
-		// Wait, `fromUTCString` ensures it ends with Z.
-		// So "2024-01-01T10:15:00" -> "2024-01-01T10:15:00Z" -> UTC time.
-		// Then `startDate.getHours()` gets LOCAL hour.
-		// If I run this in UTC environment, 10Z is 10.
-		// If I run in +2, 10Z is 12.
-
-		// To verify logic independent of timezone, let's construct sessions such that we know the local hour.
-		// But we can't easily control "Local Hour" from `start_time` string without knowing the offset.
-
-		// Workaround: We can check if the logic *distributes* correctly relative to the *start hour*.
-		// But the array is fixed 0-23.
-
-		// Let's just create a date object, get its local ISO string, and use that.
-		// Actually, `fromUTCString` forces `Z` at the end if missing.
-
-		// Let's assume the test runner is in a specific timezone or we accept whatever hour it lands in.
-		// We'll calculate expected hour dynamically.
 		const date = new Date("2024-01-01T10:15:00Z");
 		const localHour = date.getHours(); // e.g. 12 if +2
 
@@ -56,10 +24,6 @@ describe("calculateHourlyDistribution", () => {
 	});
 
 	it("should split session spanning two hours (User Case: 08:30 + 45m)", () => {
-		// 08:30 UTC + 45m -> 08:30 to 09:15 UTC
-		// Logic: 30m in 08, 15m in 09 (in UTC terms).
-		// In local time, it shifts but relative split is same.
-
 		const start = "2024-01-01T08:30:00Z";
 		const sessions: Partial<Session>[] = [
 			{ start_time: start, duration: 45 * 60 }
@@ -106,7 +70,6 @@ describe("calculateHourlyDistribution", () => {
 		];
 
 		const localHour = new Date(s1).getHours();
-		// Assumption: s2 lands in same local hour (24h later usually does, unless DST shift)
 
 		const result = calculateHourlyDistribution(sessions as Session[], false); // auto divisor
 

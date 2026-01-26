@@ -46,12 +46,10 @@ const toggleCompletedCategory = (id: number | null) => {
 	}
 };
 
-// Group tasks by category
 const groupedTasks = computed(() => {
 	const groups: { categoryId: number | null; name: string; tasks: Task[] }[] =
 		[];
 
-	// 1. Existing Categories
 	for (const cat of categoryStore.categories) {
 		const tasks = tasksStore.tasks.filter(
 			(t) => t.category_id === cat.id && !t.completed
@@ -65,7 +63,6 @@ const groupedTasks = computed(() => {
 		}
 	}
 
-	// 2. Uncategorized
 	const uncategorized = tasksStore.tasks.filter(
 		(t) => !t.category_id && !t.completed
 	);
@@ -80,12 +77,10 @@ const groupedTasks = computed(() => {
 	return groups;
 });
 
-// Group completed tasks by category
 const groupedCompletedTasks = computed(() => {
 	const groups: { categoryId: number | null; name: string; tasks: Task[] }[] =
 		[];
 
-	// 1. Existing Categories
 	for (const cat of categoryStore.categories) {
 		const tasks = tasksStore.tasks.filter(
 			(t) => t.category_id === cat.id && t.completed
@@ -99,7 +94,6 @@ const groupedCompletedTasks = computed(() => {
 		}
 	}
 
-	// 2. Uncategorized
 	const uncategorized = tasksStore.tasks.filter(
 		(t) => !t.category_id && t.completed
 	);

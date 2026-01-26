@@ -22,7 +22,7 @@ export const useTasks = defineStore("tasks", () => {
 				throw new Error(failedRes.error.message);
 			const fetched = failedRes.data;
 
-			// Fetch categories to map names (using commands directly for now as it's a simple read)
+			// Fetch categories to map names
 			const catRes = await commands.categoriesGetCategories();
 			if (catRes.status === "error") throw new Error(catRes.error.message);
 			const categories = catRes.data;
@@ -99,6 +99,7 @@ export const useTasks = defineStore("tasks", () => {
 
 			await db.addTask(payload);
 			await fetchTasks();
+			await syncICal();
 		} catch (e) {
 			console.error("Error adding task", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to add task");
@@ -131,6 +132,7 @@ export const useTasks = defineStore("tasks", () => {
 
 			await db.updateTask(payload);
 			await fetchTasks();
+			await syncICal();
 		} catch (e) {
 			console.error("Error updating task", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to update task");
@@ -159,6 +161,7 @@ export const useTasks = defineStore("tasks", () => {
 				await db.updateTask(payload);
 			}
 			await fetchTasks();
+			await syncICal();
 		} catch (e) {
 			console.error("Error completing task instance", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to complete task");
@@ -217,6 +220,7 @@ export const useTasks = defineStore("tasks", () => {
 		try {
 			await db.deleteTask(id);
 			await fetchTasks();
+			await syncICal();
 		} catch (e) {
 			console.error("Failed to delete task", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to delete task");
@@ -241,12 +245,20 @@ export const useTasks = defineStore("tasks", () => {
 			};
 			await db.updateTask(payload);
 			await fetchTasks();
+			await syncICal();
 		} catch (e) {
 			console.error("Error toggling task completion", e);
 			ui.setError(e instanceof Error ? e.message : "Failed to update task");
 		}
 	}
 
+	async function syncICal() {
+		try {
+			await commands.icalSyncIcal();
+		} catch (e) {
+			console.error("Failed to sync iCal", e);
+		}
+	}
 	return {
 		tasks,
 		expandedTasks,
@@ -256,6 +268,7 @@ export const useTasks = defineStore("tasks", () => {
 		deleteTask,
 		completeTaskInstance,
 		toggleTaskCompletion,
-		expandTasksForRange
+		expandTasksForRange,
+		syncICal
 	};
 });

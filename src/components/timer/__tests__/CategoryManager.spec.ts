@@ -1,13 +1,15 @@
 import { createTestingPinia } from "@pinia/testing";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { computed, ref, watch } from "vue";
-import { createVuetify } from "vuetify";
-import * as components from "vuetify/components";
-import * as directives from "vuetify/directives";
 import { useCategoryStore } from "../../../stores/categories";
 import { useThemeStore } from "../../../stores/theme";
 import { useTimerStore } from "../../../stores/timer";
+import {
+	commonIconStubs,
+	setupBrowserMocks,
+	VDialogStub,
+	vuetify
+} from "../../../test/test-helpers";
 import CategoryManager from "../CategoryManager.vue";
 
 // Mock Tauri API
@@ -15,75 +17,14 @@ vi.mock("@tauri-apps/api/core", () => ({
 	invoke: vi.fn()
 }));
 
-// Mock Lucide Icons
+// Mock Lucide Icons using shared stubs
 vi.mock("lucide-vue-next", () => ({
-	MinusCircle: { template: '<svg class="lucide-minus-circle"></svg>' },
-	PlusCircle: { template: '<svg class="lucide-plus-circle"></svg>' }
+	MinusCircle: commonIconStubs.MinusCircle,
+	PlusCircle: commonIconStubs.PlusCircle
 }));
 
-// Mock ResizeObserver & others
-vi.stubGlobal(
-	"ResizeObserver",
-	class ResizeObserver {
-		observe() {}
-		unobserve() {}
-		disconnect() {}
-	}
-);
-vi.stubGlobal(
-	"IntersectionObserver",
-	class IntersectionObserver {
-		observe() {}
-		unobserve() {}
-		disconnect() {}
-	}
-);
-vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>
-	setTimeout(cb, 0)
-);
-vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id));
-vi.stubGlobal("CSS", { supports: () => false });
-
-Object.defineProperty(window, "matchMedia", {
-	writable: true,
-	value: vi.fn().mockImplementation((query) => ({
-		matches: false,
-		media: query,
-		onchange: null,
-		addListener: vi.fn(),
-		removeListener: vi.fn(),
-		addEventListener: vi.fn(),
-		removeEventListener: vi.fn(),
-		dispatchEvent: vi.fn()
-	}))
-});
-
-// Mock window dimensions
-Object.defineProperty(window, "innerWidth", {
-	writable: true,
-	configurable: true,
-	value: 1024
-});
-Object.defineProperty(window, "innerHeight", {
-	writable: true,
-	configurable: true,
-	value: 768
-});
-Object.defineProperty(document.documentElement, "clientWidth", {
-	writable: true,
-	configurable: true,
-	value: 1024
-});
-Object.defineProperty(document.documentElement, "clientHeight", {
-	writable: true,
-	configurable: true,
-	value: 768
-});
-
-const vuetify = createVuetify({
-	components,
-	directives
-});
+// Setup browser mocks (ResizeObserver, etc.)
+setupBrowserMocks();
 
 describe("CategoryManager.vue", () => {
 	let wrapper: ReturnType<typeof mount>;
@@ -103,50 +44,7 @@ describe("CategoryManager.vue", () => {
 					vuetify
 				],
 				stubs: {
-					// Stub VDialog to avoid layout/teleport issues in test env
-					VDialog: {
-						props: ["modelValue"],
-						emits: ["update:modelValue"],
-						setup(props, { emit }) {
-							const isOpen = ref(props.modelValue);
-
-							// Sync with prop changes
-							watch(
-								() => props.modelValue,
-								(newVal: boolean) => {
-									isOpen.value = newVal;
-								}
-							);
-
-							const open = () => {
-								isOpen.value = true;
-								emit("update:modelValue", true);
-							};
-
-							const close = () => {
-								isOpen.value = false;
-								emit("update:modelValue", false);
-							};
-
-							const isActive = computed({
-								get: () => isOpen.value,
-								set: (val: boolean) => {
-									isOpen.value = val;
-									emit("update:modelValue", val);
-								}
-							});
-
-							return { isOpen, open, close, isActive };
-						},
-						template: `
-							<div>
-								<slot name="activator" :props="{ onClick: open }"></slot>
-								<div v-if="isOpen" class="v-dialog-content">
-									<slot :isActive="isActive"></slot>
-								</div>
-							</div>
-						`
-					}
+					VDialog: VDialogStub
 				}
 			}
 		});
@@ -411,7 +309,6 @@ describe("CategoryManager.vue", () => {
 		const nameInput = inputs[0];
 		await nameInput.setValue("New Cat");
 
-		// Find color buttons
 		// The buttons are rendered in the grid. We can find them by their class.
 		const colorButtons = wrapper.findAll(".rounded-full.transition-all");
 		expect(colorButtons.length).toBeGreaterThan(0);

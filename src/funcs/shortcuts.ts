@@ -15,26 +15,15 @@ export async function registerShortcuts() {
 		settingsStore.settings.find((s) => s.key === "Toggle Timer")?.value ||
 		"CommandOrControl+Alt+P";
 
-	console.log(
-		`[Reg] Found toggle shortcut setting: ${toggleShortcut}, all settings length: ${settingsStore.settings.length}`
-	);
-
 	try {
-		console.log(`[Reg] Unregistering all shortcuts...`);
 		await unregisterAll();
-		console.log(`[Reg] Registering new shortcut: ${toggleShortcut}`);
 
 		// Toggle Timer
 		await register(toggleShortcut, async (event) => {
 			if (event.state === "Pressed") {
-				console.log(
-					`[Reg] Shortcut pressed: ${toggleShortcut} -> Toggling timer`
-				);
 				timer.toggleTimer();
 			}
 		});
-
-		console.log(`[Reg] Global shortcuts registered: ${toggleShortcut}`);
 	} catch (error) {
 		console.error("Failed to register global shortcuts:", error);
 	}

@@ -1,28 +1,21 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import type { Session } from "../../funcs/commands";
-import { fromUTCString, isToday } from "../../funcs/stats/date_handling";
+import { fromUTCString } from "../../funcs/stats/date_handling";
 
-// 2. Receive data from parent
 const props = defineProps<{
 	data: Session[];
 }>();
 
-// 3. Timeframe Logic
-type Timeframe = "1D" | "1M" | "1Y" | "YTD";
-const timeframes: Timeframe[] = ["1D", "1M", "1Y", "YTD"];
-const selectedTimeframe = ref<Timeframe>("1D");
+type Timeframe = "1M" | "1Y" | "YTD";
+const timeframes: Timeframe[] = ["1M", "1Y", "YTD"];
+const selectedTimeframe = ref<Timeframe>("1M");
 
 const filteredSessions = computed(() => {
 	const now = new Date();
 	const list = props.data || [];
 
 	switch (selectedTimeframe.value) {
-		case "1D": // Current Week (or just Today?) -> logic below implies averaging over timeframe.
-			// For "1D" in this context (Weekly Chart), users might expect "This Week" or "Last 24h"?
-			// But matching ProductivityTimeOfDay "1D" means "Today".
-			// If we filter to "Today", the chart will show only the current day's bar.
-			return list.filter((s) => isToday(fromUTCString(s.start_time)));
 		case "1M": {
 			const cutoff = new Date(now);
 			cutoff.setDate(now.getDate() - 30);
@@ -40,7 +33,6 @@ const filteredSessions = computed(() => {
 	}
 });
 
-// 4. Transform raw sessions into Chart Bars
 const chartData = computed(() => {
 	const days = ["M", "T", "W", "T", "F", "S", "S"];
 	const dailyTotals = new Array(7).fill(0);
@@ -54,7 +46,6 @@ const chartData = computed(() => {
 			const dayIndex = (d.getDay() + 6) % 7;
 			dailyTotals[dayIndex] += s.duration;
 
-			// Track Unique Weeks for divisor (using Monday of that week as key)
 			const monday = new Date(d);
 			monday.setDate(d.getDate() - dayIndex);
 			monday.setHours(0, 0, 0, 0);
@@ -62,11 +53,7 @@ const chartData = computed(() => {
 		}
 	});
 
-	// Divisor Logic
-	// If 1D, we show totals (Divisor 1).
-	// If longer timeframe, we show Average Weekly Profile (divide by count of active weeks).
-	const divisor =
-		selectedTimeframe.value === "1D" ? 1 : Math.max(1, uniqueWeeks.size);
+	const divisor = Math.max(1, uniqueWeeks.size);
 
 	// Scale
 	const values = dailyTotals.map((t) => t / divisor);
@@ -84,7 +71,6 @@ const chartData = computed(() => {
 	});
 });
 
-// 5. UI State (Local to this component)
 const activeDayIndex = ref<number | null>(null);
 const chartContainerRef = ref<HTMLElement | null>(null);
 
@@ -96,7 +82,6 @@ const toggleTooltip = (index: number) => {
 	}
 };
 
-// 6. Click Outside Logic
 const handleClickOutside = (event: MouseEvent) => {
 	if (activeDayIndex.value !== null) {
 		if (
@@ -108,7 +93,6 @@ const handleClickOutside = (event: MouseEvent) => {
 	}
 };
 
-// 7. Lifecycle Hooks for Event Listeners
 onMounted(() => {
 	document.addEventListener("click", handleClickOutside);
 });
@@ -156,7 +140,7 @@ onUnmounted(() => {
           >
             <span class="text-xs text-pomodo-orange font-mono font-bold">
               {{ day.valueDisplay }}h
-              <span v-if="selectedTimeframe !== '1D'" class="text-[0.6rem] font-normal text-lightText-muted dark:text-text-muted">avg</span>
+              <span class="text-[0.6rem] font-normal text-lightText-muted dark:text-text-muted">avg</span>
             </span>
             <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-light-bg dark:bg-dark-bg border-r border-b border-light-border dark:border-dark-border rotate-45"></div>
           </div>

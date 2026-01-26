@@ -1,5 +1,9 @@
+if (import.meta.env.PROD) {
+	console.error = () => {};
+}
+
 import { createApp } from "vue";
-import "./style.css"; // Your Tailwind CSS imports
+import "./style.css";
 import App from "./App.vue";
 import "vuetify/styles";
 import { VueQueryPlugin } from "@tanstack/vue-query";

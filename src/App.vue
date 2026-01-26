@@ -1,16 +1,12 @@
 <script setup lang="ts">
-import {
-	currentMonitor,
-	getCurrentWindow,
-	LogicalSize
-} from "@tauri-apps/api/window";
+import { LogicalSize } from "@tauri-apps/api/dpi";
+import { currentMonitor, getCurrentWindow } from "@tauri-apps/api/window";
 import {
 	isPermissionGranted,
 	requestPermission
 } from "@tauri-apps/plugin-notification";
-import { useSwipe } from "@vueuse/core";
 import { computed, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { type ThemeInstance, useTheme } from "vuetify";
 import AppLayout from "./components/AppLayout.vue";
 import PremiumModal from "./components/premium/PremiumModal.vue";
@@ -19,53 +15,55 @@ import CreateTaskModal from "./components/task/CreateTaskModal.vue";
 import TaskDetailsModal from "./components/task/TaskDetailsModal.vue";
 import AddCategoryDialog from "./components/timer/AddCategoryDialog.vue";
 import WelcomeDialog from "./components/WelcomeDialog.vue";
+import { useNavigation } from "./composables/useNavigation";
+import { useThemeSync } from "./composables/useThemeSync";
+import { useWindowManagement } from "./composables/useWindowManagement";
 import { RecurrenceType } from "./defines/recur.ts";
 import { Task } from "./defines/task.ts";
+import { commands } from "./funcs/commands";
 import { registerShortcuts } from "./funcs/shortcuts";
+import { useAuthStore } from "./stores/auth";
 import { useSettingsStore } from "./stores/settings";
-import { useThemeStore } from "./stores/theme";
 import { TimerMode, useTimerStore } from "./stores/timer";
 import { useUIStore } from "./stores/ui";
 
 const route = useRoute();
-const router = useRouter();
+
 const settingsStore = useSettingsStore();
 const uiStore = useUIStore();
-const themeStore = useThemeStore();
+const authStore = useAuthStore();
+
 const vuetifyTheme = useTheme();
+const timer = useTimerStore();
 const isLoading = ref(true);
 
-// Apply theme overrides
-watch(
-	() => settingsStore.themeOverrides,
-	(newOverrides) => {
-		if (newOverrides && Object.keys(newOverrides).length > 0) {
-			themeStore.applyTheme(newOverrides, vuetifyTheme);
-		} else {
-			themeStore.resetTheme(vuetifyTheme);
-		}
-	},
-	{ deep: true, immediate: true }
-);
+// Composables
+useThemeSync();
+const { initializeWindow } = useWindowManagement();
+useNavigation();
 
-// Watch for settings changes to update shortcuts
+onMounted(async () => {
+	if (settingsStore.settings.length === 0) await settingsStore.fetchSettings();
+	await settingsStore.initTheme();
+
+	const permissionGranted = await isPermissionGranted();
+	if (!permissionGranted) await requestPermission();
+
+	if (!localStorage.getItem("pomodo-welcome-seen"))
+		showWelcomeDialog.value = true;
+
+	await initializeWindow();
+	await registerShortcuts();
+	isLoading.value = false;
+});
+
 const toggleTimerSetting = computed(
 	() => settingsStore.settings.find((s) => s.key === "Toggle Timer")?.value
 );
-
-watch(toggleTimerSetting, async (newValue, oldValue) => {
-	if (newValue && newValue !== oldValue) {
-		console.log(
-			`[App] Toggle timer setting changed from ${oldValue} to ${newValue}, re-registering...`
-		);
-		await registerShortcuts();
-	}
+watch(toggleTimerSetting, async (nv, ov) => {
+	if (nv && nv !== ov) await registerShortcuts();
 });
 
-// Initialize theme and splashscreen on app mount
-// Initial Resize Logic
-// Initialize theme and splashscreen on app mount
-// Initial Resize Logic
 const getSafeWindowSize = async () => {
 	try {
 		const monitor = await currentMonitor();
@@ -128,8 +126,36 @@ onMounted(async () => {
 
 	isLoading.value = false;
 
-	// Register shortcuts
 	await registerShortcuts();
+
+	// Check for Cloud Updates
+	if (authStore.isAuthenticated) {
+		try {
+			const lastRestoreKey = "pomodo-last-auto-restore";
+			const now = Date.now();
+			const lastRestore = parseInt(
+				localStorage.getItem(lastRestoreKey) || "0",
+				10
+			);
+
+			// Cooldown of 10 seconds to prevent infinite loops if local clock is skewed
+			if (now - lastRestore > 10000) {
+				const hasUpdate = await authStore.checkUpdates();
+				if (hasUpdate) {
+					console.log("Auto-restoring cloud backup...");
+					localStorage.setItem(lastRestoreKey, Date.now().toString());
+
+					isLoading.value = true;
+					await authStore.restore();
+					window.location.reload();
+				}
+			}
+			const debugMsg = await commands.supabaseTestConnection();
+			console.log("[Supabase Debug]", debugMsg);
+		} catch (e) {
+			console.error("Failed to check for updates:", e);
+		}
+	}
 });
 
 // Watch settings store theme and sync Vuetify theme
@@ -163,172 +189,70 @@ const selectedTask = ref<Task>({
 	gradient: "",
 	completed: false,
 	completedCycles: 0,
-	recurrence: {
-		type: RecurrenceType.NONE
-	}
+	recurrence: { type: RecurrenceType.NONE }
 });
 
-const timer = useTimerStore();
-
-watch(
-	[() => timer.isRunning, () => timer.mode],
-	([isRunning, mode]) => {
-		if (isRunning && mode === TimerMode.FOCUS) {
-			document.body.classList.add("focus-mode");
-		} else {
-			document.body.classList.remove("focus-mode");
-		}
-	},
-	{ immediate: true }
+const hideBottomNav = computed(
+	() => timer.isRunning && timer.mode === TimerMode.FOCUS
 );
 
-watch(
-	() => uiStore.isMiniMode,
-	async (isMini) => {
-		if (uiStore.isMobile) return;
-		try {
-			const appWindow = getCurrentWindow();
-			if (isMini) {
-				await appWindow.setSize(new LogicalSize(320, 150));
-				await appWindow.setAlwaysOnTop(true);
-				await appWindow.setResizable(false);
-			} else {
-				const safeSize = await getSafeWindowSize();
-				await appWindow.setSize(safeSize);
-				await appWindow.setAlwaysOnTop(false);
-				await appWindow.setResizable(true);
-				await appWindow.center();
-			}
-		} catch (e) {
-			console.debug("Skipping window resize (likely not in Tauri env)", e);
-		}
-	}
-);
-
-const hideBottomNav = computed(() => {
-	return timer.isRunning && timer.mode === TimerMode.FOCUS;
-});
-
-const showBackButton = computed(() => {
-	return false;
-});
-
-const handleBackClick = () => {
-	router.back();
-};
-
-// Handle FAB click from timeline
-const handleAddTask = () => {
-	showCreateTask.value = true;
-};
-
-const openTaskDetails = (task: Task) => {
-	showTaskDetails.value = true;
-	selectedTask.value = task;
-};
-
-const handleWelcomeClose = () => {
-	showWelcomeDialog.value = false;
+const saveWelcomeSeen = () => {
 	localStorage.setItem("pomodo-welcome-seen", "true");
 };
-
-const handleWelcomeCreateCategories = () => {
-	showWelcomeDialog.value = false;
-	localStorage.setItem("pomodo-welcome-seen", "true");
-	showCreateCategory.value = true;
-};
-
-// Swipe Navigation
-const tabs = ["/", "/timeline", "/tasks", "/stats"];
-useSwipe(document.body, {
-	onSwipeEnd(_e: Event, direction: string) {
-		if (direction === "left") {
-			// Swipe Left -> Go Right (Next Tab)
-			if (!showBackButton.value) {
-				navigateTabs(1);
-			}
-		} else if (direction === "right") {
-			// Swipe Right -> Go Left (Prev Tab) or Back
-			if (showBackButton.value) {
-				router.back();
-			} else {
-				navigateTabs(-1);
-			}
-		}
-	}
-});
-
-function navigateTabs(offset: number) {
-	const current = route.path;
-	const idx = tabs.indexOf(current);
-	if (idx === -1) return;
-
-	const newIdx = idx + offset;
-	if (newIdx >= 0 && newIdx < tabs.length) {
-		router.push(tabs[newIdx]);
-	}
-}
 </script>
 
 <template>
   <AppLayout
     v-if="!isLoading"
     :header-title="route.name?.toString() || 'Pomodo'"
-    :show-back-button="showBackButton"
+    :show-back-button="false"
     :show-settings-button="false"
     :hide-bottom-nav="hideBottomNav"
     :is-mini-mode="uiStore.isMiniMode"
-    @back-click="handleBackClick"
-    @add-task="handleAddTask"
-    @task-details="openTaskDetails"
+    @add-task="showCreateTask = true"
+    @task-details="(task) => { selectedTask = task; showTaskDetails = true; }"
   >
   </AppLayout>
   
   <!-- Modals -->
-  <CreateTaskModal 
-    v-if="showCreateTask" 
-    @close="showCreateTask = false"
+  <CreateTaskModal v-if="showCreateTask" @close="showCreateTask = false" />
+  <TaskDetailsModal v-if="showTaskDetails" :selTask="selectedTask" @close="showTaskDetails = false" />
+  <PremiumModal v-if="uiStore.showPremiumModal" @close="uiStore.setPremiumModal(false)" />
+  <ProjectLimitModal v-if="uiStore.showProjectLimitModal" @close="uiStore.setProjectLimitModal(false)" />
+  <WelcomeDialog v-if="showWelcomeDialog" @close="showWelcomeDialog = false; saveWelcomeSeen()"
+    @create-categories="showWelcomeDialog = false; saveWelcomeSeen(); showCreateCategory = true"
   />
-  <TaskDetailsModal
-    v-if="showTaskDetails"
-    :selTask="selectedTask"
-    @close="showTaskDetails = false"
-  />
-  <PremiumModal
-    v-if="uiStore.showPremiumModal"
-    @close="uiStore.setPremiumModal(false)"
-  />
-  <ProjectLimitModal
-    v-if="uiStore.showProjectLimitModal"
-    @close="uiStore.setProjectLimitModal(false)"
-  />
-
-  <WelcomeDialog
-    v-if="showWelcomeDialog"
-    @close="handleWelcomeClose"
-    @create-categories="handleWelcomeCreateCategories"
-  />
-
-  <AddCategoryDialog
-    v-model="showCreateCategory"
-  />
+  <AddCategoryDialog v-model="showCreateCategory" />
 
   <!-- Global Error Notification -->
   <v-snackbar
     :model-value="!!uiStore.errorMessage"
-    color="error"
-    location="top"
-    :timeout="5000"
+    color="error" location="top" :timeout="5000"
     @update:model-value="(val) => !val && uiStore.clearError()"
   >
     {{ uiStore.errorMessage }}
     <template #actions>
+      <v-btn variant="text" @click="uiStore.clearError()">Close</v-btn>
+    </template>
+  </v-snackbar>
+
+  <!-- Global Success Notification -->
+  <v-snackbar
+    :model-value="!!uiStore.successMessage"
+    color="success"
+    location="top"
+    :timeout="3000"
+    @update:model-value="(val) => !val && (uiStore.successMessage = null)"
+  >
+    {{ uiStore.successMessage }}
+    <template #actions>
       <v-btn
         variant="text"
-        @click="uiStore.clearError()"
+        @click="uiStore.successMessage = null"
       >
         Close
       </v-btn>
     </template>
   </v-snackbar>
+
 </template>

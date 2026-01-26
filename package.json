@@ -1,7 +1,7 @@
 {
   "name": "pomodo",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Samu Kaarlela",
   "description": "Cross-platform Pomodoro timer for Desktop, Android, and iOS.",
   "license": "FSL-1.1-MIT",
@@ -29,7 +29,6 @@
   "homepage": "https://github.com/Samu-K/pomodo#readme",
   "dependencies": {
     "@date-io/date-fns": "^3.2.1",
-    "@mdi/js": "^7.4.47",
     "@tanstack/vue-query": "^5.90.7",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.4.2",

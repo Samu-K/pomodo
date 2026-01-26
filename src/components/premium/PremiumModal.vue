@@ -37,7 +37,7 @@ const handleUpgrade = () => {
 				<div class="bg-gradient-to-br from-pomodo-orange to-pomodo-red w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-pomodo-orange/30">
 					<Crown :size="40" class="text-white" />
 				</div>
-				
+
 				<h2 class="text-2xl font-bold mb-3 text-lightText-primary dark:text-white">Upgrade to Premium</h2>
 				<p class="text-lightText-secondary dark:text-text-secondary text-sm leading-relaxed px-2">
 					Unlock the full power of Pomodo with advanced analytics, customization, and more.

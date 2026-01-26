@@ -3,6 +3,7 @@ import {
 	createWebHistory,
 	type RouteRecordRaw
 } from "vue-router";
+import AuthScreen from "../pages/auth/AuthScreen.vue";
 import TimerScreen from "../pages/landing/TimerScreen.vue";
 import ProjectListScreen from "../pages/projects/ProjectListScreen.vue";
 import SettingsScreen from "../pages/settings/SettingsScreen.vue";
@@ -21,6 +22,11 @@ const routes: Array<RouteRecordRaw> = [
 		path: "/timeline",
 		name: "Timeline",
 		component: TimelineScreen
+	},
+	{
+		path: "/auth",
+		name: "Auth",
+		component: AuthScreen
 	},
 	{
 		path: "/tasks",

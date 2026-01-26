@@ -79,6 +79,7 @@ describe("Settings Store", () => {
 		});
 
 		it("handles errors gracefully and sets ui store error", async () => {
+			vi.spyOn(console, "error").mockImplementation(() => {});
 			vi.mocked(get_settings).mockRejectedValue(new Error("DB Error"));
 
 			await settingsStore.fetchSettings();
@@ -169,8 +170,6 @@ describe("Settings Store", () => {
 			// State should remain unchanged
 			expect(settingsStore.settings[0].value).toBe("Light");
 
-			// DB call should still happen (based on current implementation)
-			// The store implementation calls set_setting_value regardless of whether it found the setting in local state
 			expect(set_setting_value).toHaveBeenCalledWith(999, "Dark");
 		});
 	});

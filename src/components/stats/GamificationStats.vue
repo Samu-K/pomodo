@@ -10,17 +10,15 @@ const props = defineProps<{
 const stats = computed(() => {
 	const finishedSessions = props.data.filter((s) => s.finished && s.start_time);
 
-	// 1. Total Focus Hours
 	const totalSeconds = finishedSessions.reduce(
 		(sum, s) => sum + (s.duration || 0),
 		0
 	);
 	const totalHours = (totalSeconds / 3600).toFixed(1);
 
-	// 2. Total Sessions
 	const totalSessions = finishedSessions.length;
 
-	// 3. Daily Streak
+	// Daily Streak
 	// Get unique dates
 	const uniqueDates = new Set<string>();
 	finishedSessions.forEach((s) => {
@@ -45,15 +43,10 @@ const stats = computed(() => {
 	// Determine start point
 	if (uniqueDates.has(todayStr)) {
 		streak = 1;
-		// Next check is yesterday
 		checkingDate.setDate(checkingDate.getDate() - 1);
 	} else if (uniqueDates.has(yesterdayStr)) {
 		streak = 1;
-		// Next check is day before yesterday
 		checkingDate.setDate(checkingDate.getDate() - 2);
-		// Wait, if today is missing but yesterday exists, streak is valid from yesterday.
-		// So if start with yesterday, we count yesterday as 1, and then check day before yesterday.
-		// So checkingDate should become yesterday - 1.
 	} else {
 		// Streak broken
 		streak = 0;
