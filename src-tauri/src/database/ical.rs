@@ -46,8 +46,12 @@ impl ICalActions {
                 .unwrap_or_default();
 
         // Fallback to .env if empty
+        // Fallback to .env if empty
         if secret.is_empty() {
-            secret = std::env::var("ICAL_SYNC_SECRET").unwrap_or_default();
+            secret = std::env::var("ICAL_SYNC_SECRET")
+                .ok()
+                .or_else(|| option_env!("ICAL_SYNC_SECRET").map(String::from))
+                .unwrap_or_default();
         }
 
         let enabled: String =
