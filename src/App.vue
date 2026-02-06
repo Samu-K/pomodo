@@ -54,6 +54,10 @@ onMounted(async () => {
 
 	await initializeWindow();
 	await registerShortcuts();
+
+    // Check for periodic background sync
+    await taskStore.checkPeriodicICalSync();
+
 	isLoading.value = false;
 });
 

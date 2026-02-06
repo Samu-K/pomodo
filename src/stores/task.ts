@@ -259,6 +259,28 @@ export const useTasks = defineStore("tasks", () => {
 			console.error("Failed to sync iCal", e);
 		}
 	}
+
+	async function checkPeriodicICalSync() {
+		try {
+			const res = await commands.settingsGetSettingValue("last_ical_sync");
+			if (res.status === "error") {
+                // If key doesn't exist (migration pending?), ignore or log
+                console.warn("Could not get last_ical_sync", res.error);
+                return;
+            }
+            const lastSync = parseInt(res.data || "0", 10);
+            const now = Date.now();
+            const oneDay = 24 * 60 * 60 * 1000;
+
+            if (now - lastSync > oneDay) {
+                console.log("Periodic iCal Sync: Triggering (Last sync > 1 day ago)");
+                await syncICal();
+            }
+		} catch (e) {
+			console.error("Failed to check periodic iCal sync", e);
+		}
+	}
+
 	return {
 		tasks,
 		expandedTasks,
@@ -269,6 +291,7 @@ export const useTasks = defineStore("tasks", () => {
 		completeTaskInstance,
 		toggleTaskCompletion,
 		expandTasksForRange,
-		syncICal
+		syncICal,
+        checkPeriodicICalSync
 	};
 });

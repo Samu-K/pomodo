@@ -7,6 +7,7 @@ use std::sync::Arc;
 pub struct ICalSyncPayload {
     pub token: String,
     pub tasks: Vec<Task>,
+    pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
 pub struct ICalActions {
@@ -95,6 +96,7 @@ impl ICalActions {
         let payload = ICalSyncPayload {
             token: token.clone(),
             tasks,
+            timestamp: chrono::Utc::now(),
         };
 
         // 4. Send to VPS
@@ -127,6 +129,19 @@ impl ICalActions {
         }
 
         println!("iCal Sync: Success");
+
+        // 5. Update last_ical_sync
+        let now = chrono::Utc::now().timestamp_millis();
+        let _ = sqlx::query("UPDATE user_settings SET value = $1 WHERE key = 'last_ical_sync'")
+            .bind(now.to_string())
+            .execute(&*self.db)
+            .await
+            .map_err(|e| {
+                println!("iCal Sync: Failed to update last_ical_sync: {}", e);
+                // Don't fail the whole sync just because we couldn't update the timestamp
+                AppError::new(e.to_string())
+            });
+
         Ok(())
     }
 }
